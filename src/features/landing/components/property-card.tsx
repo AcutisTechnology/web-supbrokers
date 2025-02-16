@@ -28,7 +28,7 @@ export function PropertyCard({
     <div
       className="bg-white rounded-lg overflow-hidden border cursor-pointer"
       // TODO: Alterar rota para dinamicamente para a página do imóvel
-      onClick={() => router.push("/218312")}
+      onClick={() => router.push("/218312/123-imovel-123")}
     >
       <div className="aspect-[4/3] relative">
         <Image
