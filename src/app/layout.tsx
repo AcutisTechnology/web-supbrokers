@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
 
 import "./globals.css";
+import { AppProviders } from "@/shared/contexts/providers";
 
 const figtreeSans = Figtree({
   variable: "--font-figtree-sans",
@@ -26,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${figtreeSans.variable} ${figtreeMono.variable}`}>
-        {children}
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

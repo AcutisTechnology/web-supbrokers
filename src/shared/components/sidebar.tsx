@@ -1,8 +1,13 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Home, Building2, Users, Settings, LogOut, Files } from "lucide-react";
+import { useAuth } from "../hooks/auth/use-auth";
 
 export function Sidebar() {
+  const { logout } = useAuth();
+
   return (
     <aside className="w-[240px] bg-white flex flex-col border-r m-5 rounded-2xl border-[1px] border-border">
       <div className="p-6">
@@ -30,7 +35,7 @@ export function Sidebar() {
             Imóveis
           </Link>
           <Link
-            href="#"
+            href="/dashboard/clientes"
             className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-[#141414] rounded-lg hover:bg-gray-100"
           >
             <Users size={20} />
@@ -83,13 +88,13 @@ export function Sidebar() {
           <Settings size={20} />
           Configurações
         </Link>
-        <Link
-          href="/"
+        <button
+          onClick={logout}
           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-gray-100"
         >
           <LogOut size={20} />
           Sair
-        </Link>
+        </button>
       </div>
     </aside>
   );

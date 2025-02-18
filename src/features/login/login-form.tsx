@@ -5,25 +5,31 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { useAuth } from "@/shared/hooks/auth/use-auth";
 
 export function LoginForm() {
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { signin, loading } = useAuth();
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsLoading(true);
+  const {
+    handleSubmit,
+    formState: { errors },
+    register,
+  } = useForm({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    router.replace("/dashboard");
-
-    setIsLoading(false);
+  async function handleSignin(data: { email: string; password: string }) {
+    console.log(data);
+    await signin(data);
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit(handleSignin)} className="space-y-4">
       <div className="space-y-2">
         <label
           htmlFor="email"
@@ -32,6 +38,7 @@ export function LoginForm() {
           E-mail
         </label>
         <Input
+          {...register("email")}
           id="email"
           type="email"
           placeholder="seuemail@voce.com"
@@ -48,6 +55,7 @@ export function LoginForm() {
           Senha
         </label>
         <Input
+          {...register("password")}
           id="password"
           type="password"
           placeholder="********"
@@ -58,10 +66,10 @@ export function LoginForm() {
 
       <Button
         type="submit"
-        disabled={isLoading}
+        disabled={loading}
         className="w-full bg-[#9747ff] hover:bg-[#9747ff]/90 text-white py-3 rounded-lg font-medium"
       >
-        {isLoading ? "Entrando..." : "Entrar na conta"}
+        {loading ? "Entrando..." : "Entrar na conta"}
       </Button>
 
       <Button

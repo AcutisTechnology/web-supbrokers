@@ -1,25 +1,37 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useForm } from "react-hook-form";
+import { useAuth } from "@/shared/hooks/auth/use-auth";
 
 export default function SignUpForm() {
-  const [formData, setFormData] = useState({
-    email: "",
-    phone: "",
-    password: "",
-    confirmPassword: "",
+  const { signup, loading } = useAuth();
+
+  const {
+    handleSubmit,
+    formState: { errors },
+    register,
+  } = useForm({
+    defaultValues: {
+      email: "",
+      password: "",
+      password_confirmation: "",
+      phone: "",
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle form submission
-  };
-
+  async function handleSignup(data: {
+    email: string;
+    password: string;
+    password_confirmation: string;
+    phone: string;
+  }) {
+    await signup(data);
+  }
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-[#F6F6F6]">
       <div className="w-full max-w-[460px] bg-white rounded-lg p-6 space-y-6 border-[1px] border-border">
@@ -42,20 +54,17 @@ export default function SignUpForm() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(handleSignup)} className="space-y-4">
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-[#141414] text-sm">
               E-mail
             </label>
             <Input
+              {...register("email")}
               id="email"
               type="email"
               placeholder="seuemail@voce.com"
               className="border-[#D8D8D8]"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
             />
           </div>
 
@@ -64,14 +73,11 @@ export default function SignUpForm() {
               Telefone
             </label>
             <Input
+              {...register("phone")}
               id="phone"
               type="tel"
               placeholder="DDD + Telefone"
               className="border-[#D8D8D8]"
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
             />
           </div>
 
@@ -80,30 +86,27 @@ export default function SignUpForm() {
               Senha
             </label>
             <Input
+              {...register("password")}
               id="password"
               type="password"
               placeholder="********"
               className="border-[#D8D8D8]"
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
             />
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="confirmPassword" className="text-[#141414] text-sm">
+            <label
+              htmlFor="password_confirmation"
+              className="text-[#141414] text-sm"
+            >
               Confirmar sua senha
             </label>
             <Input
-              id="confirmPassword"
+              {...register("password_confirmation")}
+              id="password_confirmation"
               type="password"
               placeholder="********"
               className="border-[#D8D8D8]"
-              value={formData.confirmPassword}
-              onChange={(e) =>
-                setFormData({ ...formData, confirmPassword: e.target.value })
-              }
             />
           </div>
 
@@ -123,6 +126,7 @@ export default function SignUpForm() {
           {/* Submit Button */}
           <Button
             type="submit"
+            disabled={loading}
             className="w-full bg-[#9747FF] hover:bg-[#9747FF]/90 text-white"
           >
             Criar conta gratuitamente
