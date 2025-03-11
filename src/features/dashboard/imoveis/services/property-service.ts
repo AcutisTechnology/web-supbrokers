@@ -1,0 +1,122 @@
+import { PropertyFormValues } from "../novo/schemas/property-schema";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { api } from "@/shared/configs/api";
+
+// Interface para os dados de um imóvel
+export interface Property {
+  title: string;
+  description: string;
+  slug: string;
+  street: string;
+  neighborhood: string;
+  size: number;
+  bedrooms: number;
+  garages: number;
+  rent: boolean;
+  sale: boolean;
+  value: string;
+  iptu_value: string;
+  code: string;
+  qr_code: string;
+  active: boolean;
+  highlighted: boolean;
+  characteristics: { text: string }[];
+  images: { name: string; url: string }[];
+  created_at: string;
+}
+
+// Interface para a resposta paginada da API
+export interface PaginatedResponse<T> {
+  data: T[];
+  links: {
+    first: string;
+    last: string;
+    prev: string | null;
+    next: string | null;
+  };
+  meta: {
+    current_page: number;
+    from: number;
+    last_page: number;
+    links: {
+      url: string | null;
+      label: string;
+      active: boolean;
+    }[];
+    path: string;
+    per_page: number;
+    to: number;
+    total: number;
+  };
+}
+
+// Hook para buscar imóveis com paginação
+export function useProperties(page = 1) {
+  return useQuery({
+    queryKey: ["properties", page],
+    queryFn: async () => {
+      const response = await api
+        .get(`properties?page=${page}`)
+        .json<PaginatedResponse<Property>>();
+      return response;
+    },
+  });
+}
+
+export function useCreateProperty() {
+  return useMutation({
+    mutationFn: async (data: PropertyFormValues) => {
+      try {
+        // Criar um FormData para enviar arquivos
+        const formData = new FormData();
+
+        // Adicionar todos os campos de texto ao FormData
+        Object.entries(data).forEach(([key, value]) => {
+          if (
+            key !== "images" &&
+            key !== "characteristics" &&
+            key !== "purpose"
+          ) {
+            formData.append(key, String(value));
+          }
+        });
+
+        // Adicionar características no formato correto com o campo "text"
+        if (data.characteristics && data.characteristics.length > 0) {
+          data.characteristics.forEach((characteristic, index) => {
+            // Garantir que não haja problemas de codificação
+            formData.append(`characteristics[${index}][text]`, characteristic);
+          });
+        } else {
+          // Garantir que pelo menos uma característica vazia seja enviada
+          formData.append("characteristics[0][text]", "");
+        }
+
+        // Adicionar imagens (máximo 5)
+        if (data.images && data.images.length > 0) {
+          const limitedImages = data.images.slice(0, 5);
+          limitedImages.forEach((image) => {
+            formData.append("images[]", image);
+          });
+        }
+
+        // Para debug - mostrar o conteúdo do FormData
+        console.log("FormData enviado:");
+        for (const pair of formData.entries()) {
+          console.log(pair[0], pair[1]);
+        }
+
+        const response = await api
+          .post("properties", {
+            body: formData,
+          })
+          .json();
+
+        return response;
+      } catch (error) {
+        console.error("Erro ao criar imóvel:", error);
+        throw error;
+      }
+    },
+  });
+}

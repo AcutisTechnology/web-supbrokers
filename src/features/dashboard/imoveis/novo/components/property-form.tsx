@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,14 +23,102 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@/hooks/use-toast";
+import { FileUpload } from "@/components/ui/file-upload";
+import { PropertyPreview } from "./property-preview";
+import { useCreateProperty } from "../../services/property-service";
+import { PropertyFormValues, defaultValues, propertySchema } from "../schemas/property-schema";
+import { formatCurrency } from "@/lib/utils";
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 export function PropertyForm() {
-  const form = useForm();
   const router = useRouter();
+  const { toast } = useToast();
+  const createPropertyMutation = useCreateProperty();
+
+  const form = useForm<PropertyFormValues>({
+    resolver: zodResolver(propertySchema),
+    defaultValues,
+  });
+
+  const watchedValues = form.watch();
+
+  // Lista de características disponíveis
+  const characteristicOptions = [
+    { id: "serviceArea", label: "Área de serviço" },
+    { id: "bedroomCloset", label: "Armários no quarto" },
+    { id: "kitchenCabinets", label: "Armários na cozinha" },
+    { id: "furnished", label: "Mobiliado" },
+    { id: "airConditioning", label: "Ar condicionado" },
+    { id: "bbq", label: "Churrasqueira" },
+    { id: "balcony", label: "Varanda" },
+    { id: "gym", label: "Academia" },
+    { id: "pool", label: "Piscina" },
+    { id: "serviceRoom", label: "Quarto de serviço" },
+  ];
+
+  // Função para lidar com a seleção de características
+  const handleCharacteristicChange = (checked: boolean, value: string) => {
+    const currentCharacteristics = form.getValues("characteristics") || [];
+    
+    if (checked) {
+      form.setValue("characteristics", [...currentCharacteristics, value]);
+    } else {
+      form.setValue(
+        "characteristics",
+        currentCharacteristics.filter((item) => item !== value)
+      );
+    }
+  };
+
+  // Função para verificar se uma característica está selecionada
+  const isCharacteristicSelected = (value: string) => {
+    return (form.getValues("characteristics") || []).includes(value);
+  };
+
+  const onSubmit = async (data: PropertyFormValues) => {
+    try {
+      // Definir rent ou sale com base na seleção
+      if (data.purpose === "rent") {
+        data.rent = 1;
+        data.sale = 0;
+      } else {
+        data.rent = 0;
+        data.sale = 1;
+      }
+      
+      // Enviar dados para a API
+      await createPropertyMutation.mutateAsync(data, {
+        onSuccess: () => {
+          toast({
+            title: "Imóvel criado com sucesso!",
+            description: "O imóvel foi publicado e já está disponível.",
+          });
+          
+          router.push("/dashboard/imoveis");
+        },
+        onError: (error) => {
+          console.error("Erro ao criar imóvel:", error);
+          toast({
+            title: "Erro ao criar imóvel",
+            description: "Ocorreu um erro ao criar o imóvel. Tente novamente.",
+            variant: "destructive",
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Erro ao criar imóvel:", error);
+      toast({
+        title: "Erro ao criar imóvel",
+        description: "Ocorreu um erro ao criar o imóvel. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="mx-auto">
@@ -44,8 +134,9 @@ export function PropertyForm() {
             <p className="text-sm">Os itens com (*) são obrigatórios</p>
           </Card>
           <Form {...form}>
-            <div className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <FormField
+                control={form.control}
                 name="title"
                 render={({ field }) => (
                   <FormItem>
@@ -60,10 +151,12 @@ export function PropertyForm() {
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
+                control={form.control}
                 name="description"
                 render={({ field }) => (
                   <FormItem>
@@ -77,40 +170,65 @@ export function PropertyForm() {
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
+              
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
-                  name="type"
+                  control={form.control}
+                  name="street"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Tipo<span className="text-red-500">*</span>
+                        Endereço<span className="text-red-500">*</span>
                       </FormLabel>
-                      <Select>
-                        <FormControl>
-                          <SelectTrigger className="bg-white">
-                            <SelectValue placeholder="Escolha" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="apartment">Apartamento</SelectItem>
-                          <SelectItem value="house">Casa</SelectItem>
-                          <SelectItem value="commercial">Comercial</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <Input
+                          className="bg-white"
+                          placeholder="Rua, número, complemento"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
                 <FormField
+                  control={form.control}
+                  name="neighborhood"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Bairro<span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          className="bg-white"
+                          placeholder="Bairro"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
                   name="purpose"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
                         Vender ou alugar?<span className="text-red-500">*</span>
                       </FormLabel>
-                      <Select>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger className="bg-white">
                             <SelectValue placeholder="Escolha" />
@@ -121,36 +239,120 @@ export function PropertyForm() {
                           <SelectItem value="rent">Alugar</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Código do imóvel<span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          className="bg-white"
+                          placeholder="Código do imóvel"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+              
               <div className="grid gap-4 sm:grid-cols-3">
                 <FormField
-                  name="rooms"
+                  control={form.control}
+                  name="value"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Valor<span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <CurrencyInput
+                          placeholder="Valor do imóvel"
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="iptu_value"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor do IPTU</FormLabel>
+                      <FormControl>
+                        <CurrencyInput
+                          placeholder="Valor do IPTU"
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="condo_value"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor do Condomínio</FormLabel>
+                      <FormControl>
+                        <CurrencyInput
+                          placeholder="Valor do condomínio"
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid gap-4 sm:grid-cols-3">
+                <FormField
+                  control={form.control}
+                  name="bedrooms"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
                         Número de quartos<span className="text-red-500">*</span>
                       </FormLabel>
-                      <Select>
+                      <Select
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                        defaultValue={field.value?.toString()}
+                      >
                         <FormControl>
                           <SelectTrigger className="bg-white">
                             <SelectValue placeholder="Escolha" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                          <SelectItem value="0">0</SelectItem>
                           <SelectItem value="1">1</SelectItem>
                           <SelectItem value="2">2</SelectItem>
                           <SelectItem value="3">3</SelectItem>
                           <SelectItem value="4">4+</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
                 <FormField
-                  name="area"
+                  control={form.control}
+                  name="size"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
@@ -164,15 +366,20 @@ export function PropertyForm() {
                           {...field}
                         />
                       </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
                 <FormField
-                  name="parking"
+                  control={form.control}
+                  name="garages"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Vagas na garagem</FormLabel>
-                      <Select>
+                      <Select
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                        defaultValue={field.value?.toString()}
+                      >
                         <FormControl>
                           <SelectTrigger className="bg-white">
                             <SelectValue placeholder="Escolha" />
@@ -185,383 +392,88 @@ export function PropertyForm() {
                           <SelectItem value="3">3+</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+              
               <div>
-                <h2 className="mb-4 text-lg font-medium">Detalhes do imóvel</h2>
+                <h2 className="mb-4 text-lg font-medium">Características do imóvel</h2>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    name="serviceArea"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          Área de serviço
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    name="bedroomCloset"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          Armários no quarto
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    name="kitchenCabinets"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          Armários na cozinha
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    name="furnished"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox />
-                        </FormControl>
-                        <FormLabel className="font-normal">Mobiliado</FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    name="airConditioning"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          Ar condicionado
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    name="bbq"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          Churrasqueira
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    name="balcony"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox />
-                        </FormControl>
-                        <FormLabel className="font-normal">Varanda</FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    name="gym"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox />
-                        </FormControl>
-                        <FormLabel className="font-normal">Academia</FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    name="pool"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox />
-                        </FormControl>
-                        <FormLabel className="font-normal">Piscina</FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    name="serviceRoom"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          Quarto de serviço
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
+                  {characteristicOptions.map((option) => (
+                    <div key={option.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={option.id}
+                        checked={isCharacteristicSelected(option.label)}
+                        onCheckedChange={(checked) => 
+                          handleCharacteristicChange(checked as boolean, option.label)
+                        }
+                      />
+                      <label
+                        htmlFor={option.id}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {option.label}
+                      </label>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+              
+              <div>
+                <h2 className="mb-4 text-lg font-medium">Imagens do imóvel</h2>
+                <FormField
+                  control={form.control}
+                  name="images"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <FileUpload
+                          value={field.value as File[]}
+                          onChange={field.onChange}
+                          multiple={true}
+                          accept="image/*"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="mt-8 flex items-center justify-end gap-4 border-t pt-8">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push("/dashboard/imoveis")}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-[#219653] hover:bg-[#219653]/90"
+                  disabled={createPropertyMutation.isPending}
+                >
+                  {createPropertyMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    "Salvar e publicar imóvel"
+                  )}
+                </Button>
+              </div>
+            </form>
           </Form>
         </div>
         <div className="space-y-6">
           <div>
             <h2 className="mb-1 text-lg font-medium">Visualização</h2>
-            <Card className="overflow-hidden">
-              <img
-                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Supbrokers__C_C3_B3pia_S_C3_A9rgio_-i5IjBZhamqbTXLQvYD1E6xOv8YJ5Vg.png"
-                alt="Property Preview"
-                className="aspect-[4/3] w-full object-cover"
-              />
-              <div className="p-4">
-                <div className="mb-4">
-                  <div className="mb-1 text-2xl font-semibold text-[#9747ff]">
-                    R$ 330.000
-                  </div>
-                  <div className="font-medium">Bessa, João Pessoa</div>
-                  <div className="text-sm text-muted-foreground">
-                    Rua Randal Cavalcanti Pimentel
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 text-sm">
-                  <div>55m²</div>
-                  <div>3 quartos</div>
-                  <div>Piscina</div>
-                </div>
-              </div>
-            </Card>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-border shadow-md">
-            <h2 className="mb-4 text-lg font-medium">Integração</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-pink-50">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M17.5 7.5L17.5 16.5M6.5 9.5V14.5M12 6.5V17.5M12 12L12 12.01M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2Z"
-                        stroke="#E1306C"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-medium">Instagram</div>
-                    <div className="text-sm text-muted-foreground">
-                      @supbrokersbr
-                    </div>
-                  </div>
-                </div>
-                <Switch checked />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-blue-50">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
-                        stroke="#287EFF"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M8.5 12H15.5"
-                        stroke="#287EFF"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M12 8.5V15.5"
-                        stroke="#287EFF"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-medium">Viva Real</div>
-                    <div className="text-sm text-muted-foreground">
-                      vivareal.com
-                    </div>
-                  </div>
-                </div>
-                <Switch />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-red-50">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
-                        stroke="#EF4444"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M8.5 12H15.5"
-                        stroke="#EF4444"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M12 8.5V15.5"
-                        stroke="#EF4444"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-medium">Chaves na mão</div>
-                    <div className="text-sm text-muted-foreground">
-                      chavesnamao.com
-                    </div>
-                  </div>
-                </div>
-                <Switch checked />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-orange-50">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
-                        stroke="#F97316"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M8.5 12H15.5"
-                        stroke="#F97316"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M12 8.5V15.5"
-                        stroke="#F97316"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-medium">Zap Imóveis</div>
-                    <div className="text-sm text-muted-foreground">
-                      zapimoveis.com
-                    </div>
-                  </div>
-                </div>
-                <Switch checked />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-purple-50">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
-                        stroke="#9333EA"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M8.5 12H15.5"
-                        stroke="#9333EA"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M12 8.5V15.5"
-                        stroke="#9333EA"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-medium">OLX</div>
-                    <div className="text-sm text-muted-foreground">
-                      /supbrokersbr
-                    </div>
-                  </div>
-                </div>
-                <Switch />
-              </div>
-            </div>
+            <PropertyPreview data={watchedValues} />
           </div>
         </div>
-      </div>
-      <div className="mt-8 flex items-center justify-end gap-4 border-t pt-8">
-        <Button
-          variant="outline"
-          onClick={() => router.push("/dashboard/imoveis")}
-        >
-          Cancelar
-        </Button>
-        <Button
-          className="bg-[#219653] hover:bg-[#219653]/90"
-          onClick={() => router.push("/dashboard/imoveis")}
-        >
-          Salvar e publicar imóvel
-        </Button>
       </div>
     </div>
   );
