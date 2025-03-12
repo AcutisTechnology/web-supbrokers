@@ -56,14 +56,14 @@ export function Sidebar() {
           </p>
           <nav className="mt-2 space-y-1">
             <Link
-              href="#"
+              href="/dashboard/perfil"
               className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-[#141414] rounded-lg hover:bg-gray-100"
             >
               <span className="w-5 h-5 rounded bg-gray-100" />
               Meu perfil
             </Link>
             <Link
-              href="#"
+              href="/dashboard/planos"
               className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-[#141414] rounded-lg hover:bg-gray-100"
             >
               <span className="w-5 h-5 rounded bg-gray-100" />

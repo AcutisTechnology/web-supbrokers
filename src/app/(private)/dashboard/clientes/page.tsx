@@ -1,9 +1,34 @@
+"use client";
+
+import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TopNav } from "@/features/dashboard/imoveis/top-nav";
+import { useCustomers, Customer, PaginatedResponse } from "@/features/dashboard/clientes/services/customer-service";
+import { LoadingState } from "@/components/ui/loading-state";
+import { Pagination } from "@/components/ui/pagination";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function ClientesPage() {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [currentTab, setCurrentTab] = useState("todos");
+  
+  // Buscar clientes com React Query
+  const { 
+    data, 
+    isLoading, 
+    isError, 
+    error, 
+    refetch 
+  } = useCustomers(currentPage);
+  
+  // Função para mudar de página
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   return (
     <>
       <div className="flex-1">
@@ -22,76 +47,107 @@ export default function ClientesPage() {
             </div>
           </div>
 
-          {/* Tabs para filtrar os contratos */}
-          <Tabs defaultValue="todos" className="bg-white rounded-lg shadow-sm">
-            <div className="border-b px-6 py-3">
-              <TabsList className="flex gap-6 justify-start">
-                <TabsTrigger value="todos">Todos</TabsTrigger>
-                <TabsTrigger value="atendidos">Já atendido</TabsTrigger>
-                <TabsTrigger value="atrasados">Aprovados</TabsTrigger>
-                <TabsTrigger value="finalizados">Reprovados</TabsTrigger>
-              </TabsList>
-            </div>
+          {/* Estado de carregamento e erro */}
+          <LoadingState 
+            isLoading={isLoading} 
+            isError={isError} 
+            error={error as Error} 
+            onRetry={() => refetch()}
+          />
 
-            {/* Conteúdo das Tabs */}
-            <TabsContent value="todos">
-              <RentalTable />
-            </TabsContent>
-            <TabsContent value="atendidos">
-              <RentalTable status="atendidos" />
-            </TabsContent>
-            <TabsContent value="atrasados">
-              <RentalTable status="atrasados" />
-            </TabsContent>
-            <TabsContent value="finalizados">
-              <RentalTable status="finalizados" />
-            </TabsContent>
-          </Tabs>
+          {!isLoading && !isError && (
+            <>
+              {/* Tabs para filtrar os clientes */}
+              <Tabs 
+                defaultValue="todos" 
+                className="bg-white rounded-lg shadow-sm"
+                onValueChange={(value) => setCurrentTab(value)}
+              >
+                <div className="border-b px-6 py-3">
+                  <TabsList className="flex gap-6 justify-start">
+                    <TabsTrigger value="todos">Todos</TabsTrigger>
+                    <TabsTrigger value="interessados">Interessados</TabsTrigger>
+                    <TabsTrigger value="sem-interesse">Sem interesse</TabsTrigger>
+                    <TabsTrigger value="em-analise">Em análise</TabsTrigger>
+                  </TabsList>
+                </div>
+
+                {/* Conteúdo das Tabs */}
+                <TabsContent value="todos">
+                  <ClientesTable data={data} />
+                </TabsContent>
+                <TabsContent value="interessados">
+                  <ClientesTable data={data} status="Interessado" />
+                </TabsContent>
+                <TabsContent value="sem-interesse">
+                  <ClientesTable data={data} status="Sem interesse" />
+                </TabsContent>
+                <TabsContent value="em-analise">
+                  <ClientesTable data={data} status="Em análise" />
+                </TabsContent>
+              </Tabs>
+
+              {/* Paginação */}
+              {data?.meta && data.meta.last_page > 1 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={data.meta.last_page}
+                  onPageChange={handlePageChange}
+                  className="mt-8"
+                />
+              )}
+            </>
+          )}
         </main>
       </div>
     </>
   );
 }
 
-// Componente da Tabela de Aluguéis
-function RentalTable({ status = "todos" }: { status?: string }) {
-  const rentals = [
-    {
-      id: 1,
-      endereco: "Rua Renato de Souza Maciel, 660, APT. 402",
-      bairro: "Bessa - João Pessoa, PB",
-      inquilino: "Lucas Santana Ramos Cartaxo",
-      situacao: "Interessado",
-      corSituacao: "#16ae4f",
-      valor: "R$ 1.200,00",
-    },
-    {
-      id: 2,
-      endereco: "Avenida Principal, 123, Casa",
-      bairro: "Tambaú - João Pessoa, PB",
-      inquilino: "Ana Carolina Souza",
-      situacao: "Sem interesse",
-      corSituacao: "#e63946",
-      valor: "R$ 2.000,00",
-    },
-    {
-      id: 3,
-      endereco: "Rua das Flores, 45, APT. 101",
-      bairro: "Manaíra - João Pessoa, PB",
-      inquilino: "João Pedro Ferreira",
-      situacao: "Em análise",
-      corSituacao: "#969696",
-      valor: "R$ 1.500,00",
-    },
-  ];
+// Componente da Tabela de Clientes
+function ClientesTable({ 
+  data, 
+  status = "todos" 
+}: { 
+  data: PaginatedResponse<Customer> | undefined, 
+  status?: string 
+}) {
+  const router = useRouter();
+  
+  // Se não houver dados, mostrar mensagem
+  if (!data || !data.data || data.data.length === 0) {
+    return (
+      <div className="p-6 text-center text-[#969696]">
+        Nenhum cliente encontrado.
+      </div>
+    );
+  }
 
-  // Filtrando contratos conforme a aba selecionada
-  const filteredRentals =
-    status === "todos"
-      ? rentals
-      : rentals.filter((rental) =>
-          rental.situacao.toLowerCase().includes(status),
-        );
+  // Função para determinar a situação do cliente com base nas propriedades de interesse
+  const getSituacao = (cliente: Customer) => {
+    if (cliente.interested_properties && cliente.interested_properties.length > 0) {
+      return "Interessado";
+    }
+    return "Em análise";
+  };
+
+  // Função para determinar a cor da situação
+  const getCorSituacao = (situacao: string) => {
+    switch (situacao) {
+      case "Interessado":
+        return "#16ae4f";
+      case "Sem interesse":
+        return "#e63946";
+      case "Em análise":
+      default:
+        return "#969696";
+    }
+  };
+
+  // Filtrando clientes conforme a aba selecionada
+  const filteredClientes = status === "todos"
+    ? data.data
+    : data.data.filter((cliente) => getSituacao(cliente) === status);
 
   return (
     <div>
@@ -99,80 +155,84 @@ function RentalTable({ status = "todos" }: { status?: string }) {
         <thead>
           <tr className="border-b">
             <th className="text-left px-6 py-3 text-sm font-medium text-[#969696]">
-              IMÓVEL
+              CLIENTE
             </th>
             <th className="text-left px-6 py-3 text-sm font-medium text-[#969696]">
               SITUAÇÃO
             </th>
             <th className="text-left px-6 py-3 text-sm font-medium text-[#969696]">
-              VALOR
+              IMÓVEIS DE INTERESSE
             </th>
             <th className="w-8 px-6 py-3"></th>
           </tr>
         </thead>
         <tbody>
-          {filteredRentals.length > 0 ? (
-            filteredRentals.map((rental) => (
-              <tr key={rental.id} className="border-b last:border-0">
-                <td className="px-6 py-4">
-                  <div>
-                    <div className="font-medium text-[#1c1b1f]">
-                      {rental.endereco}
+          {filteredClientes.length > 0 ? (
+            filteredClientes.map((cliente) => {
+              const situacao = getSituacao(cliente);
+              const corSituacao = getCorSituacao(situacao);
+              const imovelInteresse = cliente.interested_properties && cliente.interested_properties.length > 0
+                ? cliente.interested_properties[0]
+                : null;
+
+              return (
+                <tr key={cliente.id} className="border-b last:border-0">
+                  <td className="px-6 py-4">
+                    <div>
+                      <div className="font-medium text-[#1c1b1f]">
+                        {cliente.name}
+                      </div>
+                      <div className="text-sm text-[#969696]">
+                        {cliente.email}
+                      </div>
+                      <div className="text-sm text-[#969696] mt-1">
+                        {cliente.phone}
+                      </div>
                     </div>
-                    <div className="text-sm text-[#969696]">
-                      {rental.bairro}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: corSituacao }}
+                        />
+                        <span className="text-[#1c1b1f]">{situacao}</span>
+                      </div>
+                      <div className="text-sm text-[#969696]">
+                        {cliente.interested_properties.length} imóveis de interesse
+                      </div>
                     </div>
-                    <div className="text-sm text-[#969696] mt-1">
-                      {rental.inquilino}
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: rental.corSituacao }}
-                      />
-                      <span className="text-[#1c1b1f]">{rental.situacao}</span>
-                    </div>
-                    <div className="text-sm text-[#969696]">
-                      O contrato vence em 12 meses
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-[#1c1b1f]">{rental.valor}</td>
-                <td className="px-6 py-4">
-                  <Button variant="ghost" size="icon">
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </td>
-              </tr>
-            ))
+                  </td>
+                  <td className="px-6 py-4">
+                    {imovelInteresse ? (
+                      <div>
+                        <div className="font-medium text-[#1c1b1f]">
+                          {imovelInteresse.title}
+                        </div>
+                        <div className="text-sm text-[#969696]">
+                          {imovelInteresse.neighborhood}, {imovelInteresse.street}
+                        </div>
+                        <div className="text-sm text-[#969696] mt-1">
+                          {imovelInteresse.rent ? "Aluguel" : "Venda"}: R$ {imovelInteresse.value}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-[#969696]">Nenhum imóvel de interesse</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })
           ) : (
             <tr>
               <td colSpan={4} className="text-center py-6 text-[#969696]">
-                Nenhum contrato encontrado.
+                Nenhum cliente encontrado.
               </td>
             </tr>
           )}
         </tbody>
       </table>
-
-      {/* Paginação */}
-      <div className="px-6 py-3 border-t flex items-center justify-between">
-        <Button variant="outline" size="sm" disabled>
-          Anterior
-        </Button>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="bg-[#f6f6f6]">
-            1
-          </Button>
-          <Button variant="outline" size="sm">
-            Próximo
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }

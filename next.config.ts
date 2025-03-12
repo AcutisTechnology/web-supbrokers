@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
       "hebbkx1anhila5yf.public.blob.vercel-storage.com",
       "supbrokers.s3.us-east-2.amazonaws.com",
     ],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+    ],
   },
 };
 

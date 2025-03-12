@@ -3,6 +3,7 @@ import { Figtree } from "next/font/google";
 
 import "./globals.css";
 import { AppProviders } from "@/shared/contexts/providers";
+import { Toaster } from "@/components/ui/toaster";
 
 const figtreeSans = Figtree({
   variable: "--font-figtree-sans",
@@ -28,6 +29,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${figtreeSans.variable} ${figtreeMono.variable}`}>
         <AppProviders>{children}</AppProviders>
+        <Toaster />
       </body>
     </html>
   );
