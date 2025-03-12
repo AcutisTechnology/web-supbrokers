@@ -78,9 +78,11 @@ export function PropertyCard({ property }: PropertyCardProps) {
           </div>
         )}
         <div className="flex gap-2 mt-3">
-          <Button variant="outline" size="sm" className="flex-1">
-            Editar
-          </Button>
+          <Link href={`/dashboard/imoveis/${property.slug}/editar`} className="flex-1">
+            <Button variant="outline" size="sm" className="w-full">
+              Editar
+            </Button>
+          </Link>
           <Link href={`/dashboard/imoveis/${property.slug}`} className="flex-1">
             <Button size="sm" className="w-full">
               Ver detalhes

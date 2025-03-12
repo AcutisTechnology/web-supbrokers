@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
       "www.cimentoitambe.com.br",
       "uploads.polemicaparaiba.com.br",
       "hebbkx1anhila5yf.public.blob.vercel-storage.com",
+      "supbrokers.s3.us-east-2.amazonaws.com",
     ],
   },
 };

@@ -30,19 +30,26 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { FileUpload } from "@/components/ui/file-upload";
 import { PropertyPreview } from "./property-preview";
-import { useCreateProperty } from "../../services/property-service";
+import { useCreateProperty, useUpdateProperty } from "../../services/property-service";
 import { PropertyFormValues, defaultValues, propertySchema } from "../schemas/property-schema";
 import { formatCurrency } from "@/lib/utils";
 import { CurrencyInput } from "@/components/ui/currency-input";
 
-export function PropertyForm() {
+interface PropertyFormProps {
+  initialValues?: Partial<PropertyFormValues>;
+  isEditing?: boolean;
+  propertySlug?: string;
+}
+
+export function PropertyForm({ initialValues, isEditing = false, propertySlug }: PropertyFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const createPropertyMutation = useCreateProperty();
+  const updatePropertyMutation = useUpdateProperty();
 
   const form = useForm<PropertyFormValues>({
     resolver: zodResolver(propertySchema),
-    defaultValues,
+    defaultValues: initialValues || defaultValues,
   });
 
   const watchedValues = form.watch();
@@ -91,30 +98,52 @@ export function PropertyForm() {
         data.sale = 1;
       }
       
-      // Enviar dados para a API
-      await createPropertyMutation.mutateAsync(data, {
-        onSuccess: () => {
-          toast({
-            title: "Imóvel criado com sucesso!",
-            description: "O imóvel foi publicado e já está disponível.",
-          });
-          
-          router.push("/dashboard/imoveis");
-        },
-        onError: (error) => {
-          console.error("Erro ao criar imóvel:", error);
-          toast({
-            title: "Erro ao criar imóvel",
-            description: "Ocorreu um erro ao criar o imóvel. Tente novamente.",
-            variant: "destructive",
-          });
-        }
-      });
+      if (isEditing && propertySlug) {
+        // Atualizar imóvel existente
+        await updatePropertyMutation.mutateAsync({ slug: propertySlug, data }, {
+          onSuccess: () => {
+            toast({
+              title: "Imóvel atualizado com sucesso!",
+              description: "As alterações foram salvas.",
+            });
+            
+            router.push(`/dashboard/imoveis/${propertySlug}`);
+          },
+          onError: (error) => {
+            console.error("Erro ao atualizar imóvel:", error);
+            toast({
+              title: "Erro ao atualizar imóvel",
+              description: "Ocorreu um erro ao atualizar o imóvel. Tente novamente.",
+              variant: "destructive",
+            });
+          }
+        });
+      } else {
+        // Criar novo imóvel
+        await createPropertyMutation.mutateAsync(data, {
+          onSuccess: () => {
+            toast({
+              title: "Imóvel criado com sucesso!",
+              description: "O imóvel foi publicado e já está disponível.",
+            });
+            
+            router.push("/dashboard/imoveis");
+          },
+          onError: (error) => {
+            console.error("Erro ao criar imóvel:", error);
+            toast({
+              title: "Erro ao criar imóvel",
+              description: "Ocorreu um erro ao criar o imóvel. Tente novamente.",
+              variant: "destructive",
+            });
+          }
+        });
+      }
     } catch (error) {
-      console.error("Erro ao criar imóvel:", error);
+      console.error("Erro ao processar imóvel:", error);
       toast({
-        title: "Erro ao criar imóvel",
-        description: "Ocorreu um erro ao criar o imóvel. Tente novamente.",
+        title: `Erro ao ${isEditing ? 'atualizar' : 'criar'} imóvel`,
+        description: `Ocorreu um erro ao ${isEditing ? 'atualizar' : 'criar'} o imóvel. Tente novamente.`,
         variant: "destructive",
       });
     }
@@ -125,9 +154,14 @@ export function PropertyForm() {
       <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
         <div className="space-y-6">
           <div>
-            <h1 className="mb-1 text-xl font-semibold">Dados do imóvel</h1>
+            <h1 className="mb-1 text-xl font-semibold">
+              {isEditing ? 'Editar imóvel' : 'Dados do imóvel'}
+            </h1>
             <p className="text-sm text-muted-foreground">
-              Preencha os dados do seu imóvel, capriche :)
+              {isEditing 
+                ? 'Atualize os dados do seu imóvel'
+                : 'Preencha os dados do seu imóvel, capriche :)'
+              }
             </p>
           </div>
           <Card className="border-l-4 border-l-yellow-500 bg-yellow-50/50 p-4">
@@ -442,26 +476,28 @@ export function PropertyForm() {
                 />
               </div>
               
-              <div className="mt-8 flex items-center justify-end gap-4 border-t pt-8">
+              <div className="flex justify-end gap-4">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => router.push("/dashboard/imoveis")}
+                  onClick={() => isEditing && propertySlug 
+                    ? router.push(`/dashboard/imoveis/${propertySlug}`)
+                    : router.push("/dashboard/imoveis")
+                  }
                 >
                   Cancelar
                 </Button>
-                <Button
+                <Button 
                   type="submit"
-                  className="bg-[#219653] hover:bg-[#219653]/90"
-                  disabled={createPropertyMutation.isPending}
+                  disabled={createPropertyMutation.isPending || updatePropertyMutation.isPending}
                 >
-                  {createPropertyMutation.isPending ? (
+                  {(createPropertyMutation.isPending || updatePropertyMutation.isPending) ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Salvando...
+                      {isEditing ? 'Salvando...' : 'Criando...'}
                     </>
                   ) : (
-                    "Salvar e publicar imóvel"
+                    isEditing ? 'Salvar alterações' : 'Criar imóvel'
                   )}
                 </Button>
               </div>
