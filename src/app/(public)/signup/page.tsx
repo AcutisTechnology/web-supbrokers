@@ -17,6 +17,7 @@ export default function SignUpForm() {
     register,
   } = useForm({
     defaultValues: {
+      name: "",
       email: "",
       password: "",
       password_confirmation: "",
@@ -25,6 +26,7 @@ export default function SignUpForm() {
   });
 
   async function handleSignup(data: {
+    name: string;
     email: string;
     password: string;
     password_confirmation: string;
@@ -55,6 +57,18 @@ export default function SignUpForm() {
 
         {/* Form */}
         <form onSubmit={handleSubmit(handleSignup)} className="space-y-4">
+        <div className="space-y-1.5">
+            <label htmlFor="name" className="text-[#141414] text-sm">
+                Nome
+            </label>
+            <Input
+              {...register("name")}
+              id="name"
+              type="text"
+              placeholder="Seu nome"
+              className="border-[#D8D8D8]"
+            />
+          </div>
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-[#141414] text-sm">
               E-mail

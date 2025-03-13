@@ -8,19 +8,28 @@ interface TopNavProps {
 
 export function TopNav({ title_secondary }: TopNavProps) {
   return (
-    <div className="h-16 border-[1px] border-border rounded-2xl bg-white px-8 mb-7 flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <Link href="#" className="text-[#777777] hover:text-[#141414]">
-          Home
-        </Link>
-        <ChevronRight className="h-4 w-4 text-[#777777]" />
-        <span className="text-[#141414]">{title_secondary}</span>
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between bg-gradient-to-r from-[#9747FF]/10 to-white p-6 rounded-xl mb-7">
+      <div>
+        <h1 className="text-2xl font-bold text-[#141414]">{title_secondary}</h1>
+        <div className="flex items-center gap-2 text-sm text-[#777777] mt-1">
+          <Link href="/dashboard" className="hover:text-[#9747FF] transition-colors">
+            Home
+          </Link>
+          <ChevronRight className="h-3 w-3" />
+          <span className="text-[#9747FF]">{title_secondary}</span>
+        </div>
       </div>
 
-      <Avatar>
-        <AvatarImage src="https://github.com/shadcn.png" />
-        <AvatarFallback>CN</AvatarFallback>
-      </Avatar>
+      <div className="mt-4 md:mt-0 flex items-center gap-3">
+        <div className="text-right hidden md:block">
+          <p className="text-sm font-medium">Bem-vindo(a)</p>
+          <p className="text-xs text-[#777777]">Corretor Imobiliário</p>
+        </div>
+        <Avatar className="h-10 w-10 border-2 border-[#9747FF]/20">
+          <AvatarImage src="https://github.com/shadcn.png" />
+          <AvatarFallback className="bg-[#9747FF]/10 text-[#9747FF]">CN</AvatarFallback>
+        </Avatar>
+      </div>
     </div>
   );
 }

@@ -22,15 +22,26 @@ export function FileUpload({
   const [previews, setPreviews] = useState<string[]>([]);
 
   React.useEffect(() => {
-    // Criar URLs de preview para os arquivos existentes
-    const urls = value.map((file) => URL.createObjectURL(file));
-    setPreviews(urls);
+    // Limpar URLs anteriores para evitar vazamentos de memória
+    previews.forEach((url) => URL.revokeObjectURL(url));
+    
+    // Criar URLs de preview apenas para novos arquivos
+    if (value.length > 0) {
+      // Verificar se os arquivos já têm previews
+      if (value.length !== previews.length) {
+        const urls = value.map((file) => URL.createObjectURL(file));
+        setPreviews(urls);
+      }
+    } else {
+      // Se não há arquivos, limpar previews
+      setPreviews([]);
+    }
 
     // Limpar URLs ao desmontar
     return () => {
-      urls.forEach((url) => URL.revokeObjectURL(url));
+      previews.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [value]);
+  }, [value.length]); // Dependência apenas do comprimento do array de arquivos
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;

@@ -11,6 +11,7 @@ interface ApiError {
 }
 
 export default async function authenticateUser(credentials: {
+  name: string;
   email: string;
   password: string;
   password_confirmation: string;
@@ -20,6 +21,7 @@ export default async function authenticateUser(credentials: {
     return await api
       .post("register", {
         json: {
+          name: credentials.name,
           email: credentials.email,
           password: credentials.password,
           password_confirmation: credentials.password_confirmation,

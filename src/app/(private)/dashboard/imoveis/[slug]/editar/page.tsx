@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { TopNav } from "@/features/dashboard/imoveis/top-nav";
 import { PropertyForm } from "@/features/dashboard/imoveis/novo/components/property-form";
 import { useProperty } from "@/features/dashboard/imoveis/services/property-service";
 import { LoadingState } from "@/components/ui/loading-state";
 import { PropertyFormValues } from "@/features/dashboard/imoveis/novo/schemas/property-schema";
-import React from "react";
+import React, { useMemo } from "react";
 
 // Componente cliente que recebe o slug como propriedade
 function EditPropertyClient({ slug }: { slug: string }) {
@@ -25,12 +24,12 @@ function EditPropertyClient({ slug }: { slug: string }) {
   // Extrair os dados do imóvel da resposta
   const property = propertyResponse?.data;
 
-  // Preparar os dados para o formulário
-  const prepareFormData = (): Partial<PropertyFormValues> => {
+  // Preparar os dados para o formulário usando useMemo para evitar recálculos desnecessários
+  const formValues = useMemo((): Partial<PropertyFormValues> => {
     if (!property) return {};
 
     // Determinar o propósito (aluguel ou venda)
-    const purpose = property.rent ? "rent" : "sell";
+    const purpose = property.rent ? "rent" : "sell" as const;
 
     // Função para converter valores monetários formatados para número
     const parseMoneyValue = (value: string | undefined): number => {
@@ -57,7 +56,7 @@ function EditPropertyClient({ slug }: { slug: string }) {
       characteristics: property.characteristics?.map(c => c.text) || [],
       purpose,
     };
-  };
+  }, [property]); // Dependência apenas do property
 
   return (
     <>
@@ -72,15 +71,10 @@ function EditPropertyClient({ slug }: { slug: string }) {
       />
       
       {!isLoading && !isError && property && (
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-[#141414]">Editar imóvel</h1>
-            <p className="text-[#777777]">Atualize as informações do seu imóvel</p>
-          </div>
-          
+        <div className="space-y-6">          
           {/* Formulário de edição */}
           <PropertyForm 
-            initialValues={prepareFormData()} 
+            initialValues={formValues} 
             isEditing={true}
             propertySlug={slug}
           />
@@ -91,9 +85,8 @@ function EditPropertyClient({ slug }: { slug: string }) {
 }
 
 // Componente de página principal (servidor)
-export default async function EditPropertyPage({ params }: { params: Promise<{ slug: string }> }) {
-  // Extrair o slug usando await
-  const { slug } = await params;
+export default function EditPropertyPage({ params }: { params: { slug: string } }) {
+  const { slug } = params;
   
   // Renderizar o componente cliente com o slug
   return <EditPropertyClient slug={slug} />;

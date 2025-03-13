@@ -13,6 +13,7 @@ interface AuthContextProps {
   isAuthenticated: boolean;
   signin: (values: { email: string; password: string }) => Promise<void>;
   signup: (values: {
+    name: string;
     email: string;
     password: string;
     password_confirmation: string;
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signup = async (values: {
+    name: string;
     email: string;
     password: string;
     password_confirmation: string;
