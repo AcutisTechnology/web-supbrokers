@@ -85,8 +85,8 @@ function EditPropertyClient({ slug }: { slug: string }) {
 }
 
 // Componente de página principal (servidor)
-export default function EditPropertyPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default async function EditPropertyPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   
   // Renderizar o componente cliente com o slug
   return <EditPropertyClient slug={slug} />;
