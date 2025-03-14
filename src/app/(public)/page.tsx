@@ -107,7 +107,7 @@ export default function Home() {
           <div className="relative">
             <div className="relative z-10 rounded-lg shadow-xl overflow-hidden">
               <Image
-                src="/images/landing/dashboard-preview.png"
+                src="/images/landing/dashboard.png"
                 alt="Dashboard Supbrokers"
                 width={600}
                 height={400}
@@ -201,7 +201,7 @@ export default function Home() {
             <div className="order-1 md:order-2 relative">
               <div className="relative z-10 rounded-lg shadow-xl overflow-hidden">
                 <Image
-                  src="/images/landing/dashboard-features.png"
+                  src="/images/landing/dashboard-imoveis.png"
                   alt="Dashboard Features"
                   width={600}
                   height={400}
