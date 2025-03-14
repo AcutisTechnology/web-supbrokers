@@ -1,11 +1,32 @@
-const SearchForm = () => {
+import { useState } from "react";
+
+interface SearchFormProps {
+  onFilterChange?: (filter: 'sale' | 'rent') => void;
+}
+
+const SearchForm = ({ onFilterChange }: SearchFormProps) => {
+  const [activeFilter, setActiveFilter] = useState<'sale' | 'rent'>('sale');
+
+  const handleFilterChange = (filter: 'sale' | 'rent') => {
+    setActiveFilter(filter);
+    if (onFilterChange) {
+      onFilterChange(filter);
+    }
+  };
+
   return (
     <div className="w-full md:w-1/2 bg-white p-3 md:rounded-full rounded-3xl mt-8 flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
       <div className="flex items-center space-x-4">
-        <button className="bg-primary p-4 rounded-full h-12 flex justify-center items-center text-white px-7">
+        <button 
+          onClick={() => handleFilterChange('sale')}
+          className={`${activeFilter === 'sale' ? 'bg-primary text-white' : 'bg-secondary text-text-primary'} p-4 rounded-full h-12 flex justify-center items-center px-7 transition-colors`}
+        >
           Comprar
         </button>
-        <button className="bg-secondary p-4 rounded-full h-12 flex justify-center items-center text-text-primary px-7 font-medium">
+        <button 
+          onClick={() => handleFilterChange('rent')}
+          className={`${activeFilter === 'rent' ? 'bg-primary text-white' : 'bg-secondary text-text-primary'} p-4 rounded-full h-12 flex justify-center items-center px-7 font-medium transition-colors`}
+        >
           Alugar
         </button>
       </div>

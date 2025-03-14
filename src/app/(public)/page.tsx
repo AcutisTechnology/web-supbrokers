@@ -7,6 +7,14 @@ import { ArrowRight, CheckCircle, Building, Users, Calendar, BarChart } from "lu
 export default function Home() {
   const router = useRouter();
 
+  // Função para abrir o WhatsApp com a mensagem
+  const openWhatsApp = () => {
+    const phoneNumber = "+5583993293512";
+    const message = "Quero conhecer a plataforma";
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   // Recursos principais da plataforma
   const features = [
     {
@@ -97,7 +105,7 @@ export default function Home() {
                 Começar agora <ArrowRight className="ml-2 h-5 w-5" />
               </button>
               <button
-                onClick={() => router.push("/contato")}
+                onClick={openWhatsApp}
                 className="bg-white border border-[#9747FF] text-[#9747FF] px-6 py-3 rounded-md hover:bg-[#9747FF]/5 transition-colors"
               >
                 Agendar demonstração
@@ -282,7 +290,7 @@ export default function Home() {
               Criar minha conta agora
             </button>
             <button
-              onClick={() => router.push("/contato")}
+              onClick={openWhatsApp}
               className="bg-transparent border border-white text-white px-6 py-3 rounded-md hover:bg-white/10 transition-colors"
             >
               Falar com nossa equipe

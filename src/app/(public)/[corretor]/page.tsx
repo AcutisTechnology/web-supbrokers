@@ -1,14 +1,59 @@
 "use client";
 
-import { FilterSection } from "@/features/landing/components/filters-section";
 import { NewsCard } from "@/features/landing/components/news-card";
 import { PropertyCard } from "@/features/landing/components/property-card";
 import { SearchForm } from "@/features/landing/components/search-section";
+import { useBrokerProperties } from "@/features/landing/services/broker-service";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { use, useState } from "react";
 
-export default function Home() {
+export default function Home({ params }: { params: Promise<{ corretor: string }> }) {
   const router = useRouter();
+  const { corretor } = use(params);
+  const { data: properties, isLoading, error } = useBrokerProperties(corretor);
+  const [showAllProperties, setShowAllProperties] = useState(false);
+  const [propertyFilter, setPropertyFilter] = useState<'all' | 'sale' | 'rent'>('all');
+
+  // Função para abrir o WhatsApp com a mensagem
+  const openWhatsApp = () => {
+    if (!properties) return;
+    
+    const phoneNumber = properties.data.user.phone.replace(/\D/g, '');
+    const message = "Olá, gostaria de mais informações sobre os imóveis";
+    const whatsappUrl = `https://wa.me/55${phoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  // Função para lidar com a mudança de filtro do SearchForm
+  const handleSearchFilterChange = (filter: 'sale' | 'rent') => {
+    setPropertyFilter(filter);
+    setShowAllProperties(false); // Reset para mostrar apenas 3 imóveis quando mudar o filtro
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-xl">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (error || !properties) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-xl">Não foi possível carregar os imóveis.</p>
+      </div>
+    );
+  }
+
+  // Filtrar os imóveis com base no filtro selecionado
+  const filteredProperties = properties.data.all.filter(property => {
+    if (propertyFilter === 'all') return true;
+    if (propertyFilter === 'sale') return property.sale;
+    if (propertyFilter === 'rent') return property.rent;
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-white">
@@ -28,7 +73,10 @@ export default function Home() {
             >
               Área do Corretor
             </button>
-            <button className="rounded-full bg-white px-4 py-2 md:p-4 h-10 md:h-11 flex items-center justify-center text-black text-sm md:text-base">
+            <button 
+              onClick={openWhatsApp}
+              className="rounded-full bg-white px-4 py-2 md:p-4 h-10 md:h-11 flex items-center justify-center text-black text-sm md:text-base"
+            >
               Falar com o Corretor
             </button>
           </div>
@@ -43,60 +91,100 @@ export default function Home() {
         </p>
 
         {/* Localizar imóvel */}
-        <SearchForm />
+        <SearchForm onFilterChange={handleSearchFilterChange} />
       </div>
 
-      <FilterSection />
+      {/* Lançamentos */}
+      {properties.data.releases.length > 0 && (
+        <section className="py-12">
+          <div className="container mx-auto px-4">
+            <h2 className="text-2xl font-medium mb-2">Lançamentos para você</h2>
+            <p className="text-[#777777] mb-6">
+              Confira os meus imóveis em destaque
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {properties.data.releases.slice(0, 3).map((property, i) => (
+                <PropertyCard
+                  key={i}
+                  title={property.title}
+                  location={`${property.neighborhood}, João Pessoa`}
+                  price={property.sale ? property.value.split(',')[0] : property.value}
+                  type={property.sale ? "sale" : "rent"}
+                  details={{
+                    area: `${property.size}m²`,
+                    bedrooms: `${property.bedrooms} quartos`,
+                    hasElevator: property.characteristics.some(c => c.text.toLowerCase().includes('elevador')),
+                  }}
+                  imageUrl={property.images[0]?.url || "https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg"}
+                  slug={property.slug}
+                  propertyData={property}
+                  userData={properties.data.user}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-medium mb-2">Lançamentos para você</h2>
-          <p className="text-[#777777] mb-6">
-            Confira os meus imóveis em destaque
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <PropertyCard
-                key={i}
-                title="Olimpico Residence"
-                location="Bessa, João Pessoa"
-                price="245"
-                type="sale"
-                imageUrl="https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg"
-              />
-            ))}
+      {/* Todos os imóveis */}
+      {filteredProperties.length > 0 && (
+        <section className="py-12">
+          <div className="container mx-auto px-4">
+            <h2 className="text-2xl font-medium mb-2">
+              {propertyFilter === 'all' && 'Meus imóveis disponíveis'}
+              {propertyFilter === 'sale' && 'Imóveis à venda'}
+              {propertyFilter === 'rent' && 'Imóveis para alugar'}
+            </h2>
+            <p className="text-[#777777] mb-6">
+              {propertyFilter === 'all' && 'Confira os meus imóveis'}
+              {propertyFilter === 'sale' && 'Confira os imóveis disponíveis para compra'}
+              {propertyFilter === 'rent' && 'Confira os imóveis disponíveis para locação'}
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {filteredProperties
+                .slice(0, showAllProperties ? filteredProperties.length : 3)
+                .map((property, i) => (
+                  <PropertyCard
+                    key={i}
+                    title={property.title}
+                    location={`${property.neighborhood}, João Pessoa`}
+                    price={property.sale ? property.value.split(',')[0] : property.value}
+                    type={property.sale ? "sale" : "rent"}
+                    details={{
+                      area: `${property.size}m²`,
+                      bedrooms: `${property.bedrooms} quartos`,
+                      hasElevator: property.characteristics.some(c => c.text.toLowerCase().includes('elevador')),
+                    }}
+                    imageUrl={property.images[0]?.url || "https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg"}
+                    slug={property.slug}
+                    propertyData={property}
+                    userData={properties.data.user}
+                  />
+                ))}
+            </div>
+            {!showAllProperties && filteredProperties.length > 3 && (
+              <div className="text-center mt-8">
+                <button 
+                  onClick={() => setShowAllProperties(true)}
+                  className="rounded-full bg-primary text-white px-6 py-3 hover:bg-primary/90 transition-colors"
+                >
+                  Ver mais imóveis
+                </button>
+              </div>
+            )}
+            {showAllProperties && filteredProperties.length > 3 && (
+              <div className="text-center mt-8">
+                <button 
+                  onClick={() => setShowAllProperties(false)}
+                  className="rounded-full bg-gray-200 text-gray-700 px-6 py-3 hover:bg-gray-300 transition-colors"
+                >
+                  Ver menos imóveis
+                </button>
+              </div>
+            )}
           </div>
-        </div>
-      </section>
-
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-medium mb-2">
-            Meus imóveis disponíveis
-          </h2>
-          <p className="text-[#777777] mb-6">Confira os meus imóveis</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <PropertyCard
-                key={i}
-                title="Apartamento para alugar"
-                location="Bessa, João Pessoa"
-                price="2.560"
-                type="rent"
-                details={{
-                  area: "55m²",
-                  bedrooms: "2 quartos",
-                  hasElevator: true,
-                }}
-                imageUrl="https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg"
-              />
-            ))}
-          </div>
-          <div className="text-center mt-8">
-            <button className="rounded-full">Ver mais imóveis</button>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="py-12">
         <div className="container mx-auto px-4">
@@ -117,7 +205,7 @@ export default function Home() {
             ))}
           </div>
           <div className="text-center mt-8">
-            <button className="rounded-full">Ver mais notícias</button>
+            <button className="rounded-full bg-primary text-white px-6 py-3 hover:bg-primary/90 transition-colors">Ver mais notícias</button>
           </div>
         </div>
       </section>
