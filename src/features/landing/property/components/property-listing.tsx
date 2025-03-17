@@ -7,6 +7,10 @@ import { PropertyGallery } from "./property-gallery";
 import { PropertySpecs } from "./property-specs";
 import { SimilarProperties } from "./similar-properties";
 import { Property, User } from "@/features/landing/services/broker-service";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { api } from "@/shared/configs/api";
 
 interface PropertyListingProps {
   propertyData: Property;
@@ -15,12 +19,29 @@ interface PropertyListingProps {
   corretor: string;
 }
 
+// Definir interface para o formulário de interesse
+interface InterestFormData {
+  name: string;
+  email: string;
+  phone: string;
+  interested_property_slug: string;
+}
+
 export function PropertyListing({ propertyData, userData, allProperties = [], corretor }: PropertyListingProps) {
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: ""
+  
+  // Configuração do React Hook Form
+  const { 
+    register, 
+    handleSubmit, 
+    reset,
+    formState: { errors } 
+  } = useForm<Omit<InterestFormData, 'interested_property_slug'>>({
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: ''
+    }
   });
 
   // Função para abrir o WhatsApp com a mensagem
@@ -31,20 +52,32 @@ export function PropertyListing({ propertyData, userData, allProperties = [], co
     window.open(whatsappUrl, '_blank');
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  // Configurar a mutação do React Query
+  const { mutate: createInterest, isPending } = useMutation({
+    mutationFn: async (data: InterestFormData) => {
+      return await api.post('customers', { json: data }).json();
+    },
+    onSuccess: () => {
+      toast.success('Seu interesse foi registrado com sucesso! O corretor entrará em contato em breve.');
+      setShowModal(false);
+      reset(); // Limpa o formulário
+    },
+    onError: (error) => {
+      console.error('Erro ao registrar interesse:', error);
+      toast.error('Ocorreu um erro ao registrar seu interesse. Por favor, tente novamente.');
+    }
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Aqui você poderia enviar os dados para um backend
-    // Por enquanto, vamos apenas abrir o WhatsApp com os dados do formulário
-    const phoneNumber = userData.phone.replace(/\D/g, '');
-    const message = `Olá, me chamo ${formData.name} e gostaria de mais informações sobre o imóvel: ${propertyData.title}. Meu email é ${formData.email} e meu telefone é ${formData.phone}.`;
-    const whatsappUrl = `https://wa.me/55${phoneNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-    setShowModal(false);
+  // Handler de submissão do formulário
+  const onSubmit = (formData: Omit<InterestFormData, 'interested_property_slug'>) => {
+    // Criar o objeto de dados para a requisição
+    const interestData: InterestFormData = {
+      ...formData,
+      interested_property_slug: propertyData.slug || corretor
+    };
+    
+    // Chamar a mutação
+    createInterest(interestData);
   };
 
   return (
@@ -154,21 +187,22 @@ export function PropertyListing({ propertyData, userData, allProperties = [], co
             <h2 className="text-xl font-semibold mb-4">Tenho interesse neste imóvel</h2>
             <p className="text-gray-500 mb-4">Preencha seus dados para que o corretor entre em contato com você.</p>
             
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                   Nome completo
                 </label>
                 <input
-                  type="text"
                   id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  {...register("name", { 
+                    required: "Nome é obrigatório" 
+                  })}
+                  className={`w-full px-3 py-2 border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent`}
                   placeholder="Seu nome completo"
                 />
+                {errors.name && (
+                  <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>
+                )}
               </div>
               
               <div>
@@ -176,15 +210,21 @@ export function PropertyListing({ propertyData, userData, allProperties = [], co
                   E-mail
                 </label>
                 <input
-                  type="email"
                   id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  type="email"
+                  {...register("email", { 
+                    required: "E-mail é obrigatório",
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: "Formato de e-mail inválido"
+                    }
+                  })}
+                  className={`w-full px-3 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent`}
                   placeholder="seu@email.com"
                 />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+                )}
               </div>
               
               <div>
@@ -192,23 +232,30 @@ export function PropertyListing({ propertyData, userData, allProperties = [], co
                   Telefone
                 </label>
                 <input
-                  type="tel"
                   id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  type="tel"
+                  {...register("phone", { 
+                    required: "Telefone é obrigatório",
+                    pattern: {
+                      value: /^[0-9]{10,11}$/,
+                      message: "Formato de telefone inválido. Use apenas números (10-11 dígitos)"
+                    }
+                  })}
+                  className={`w-full px-3 py-2 border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent`}
                   placeholder="(00) 00000-0000"
                 />
+                {errors.phone && (
+                  <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
+                )}
               </div>
               
               <div className="pt-2">
                 <Button 
                   type="submit" 
                   className="w-full bg-primary hover:bg-primary/90"
+                  disabled={isPending}
                 >
-                  Enviar
+                  {isPending ? 'Enviando...' : 'Enviar'}
                 </Button>
               </div>
             </form>

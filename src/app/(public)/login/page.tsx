@@ -8,8 +8,8 @@ export default function LoginPage() {
       <div className="w-full max-w-[400px] bg-white rounded-2xl p-8 shadow-sm">
         <div className="flex justify-center mb-6">
           <Image
-            src="/images/logo-login.png"
-            alt="Supbrokers"
+            src="/logo-extendida.svg"
+            alt="iMoobile"
             width={143}
             height={23}
             priority
@@ -46,7 +46,7 @@ export default function LoginPage() {
             Política de privacidade
           </Link>
         </p>
-        <p>Copyright © Supbrokers. Todos os direitos reservados</p>
+        <p>Copyright © iMoobile. Todos os direitos reservados</p>
       </footer>
     </main>
   );

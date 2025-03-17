@@ -55,8 +55,8 @@ export default function Home() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center">
             <Image
-              src="/images/landing/logo-header.png"
-              alt="Supbrokers logo"
+              src="/logo-extendida.svg"
+              alt="iMoobile logo"
               width={155}
               height={27}
               className="h-8 w-auto"
@@ -95,7 +95,7 @@ export default function Home() {
               <span className="text-[#9747FF]">Automatize</span>, simplifique e <span className="text-[#9747FF]">venda mais</span>
             </h1>
             <p className="text-xl text-gray-600">
-              <span className="font-semibold">Supbrokers</span> é a plataforma completa onde corretores e imobiliárias tradicionais se transformam em negócios digitais de alto desempenho.
+              <span className="font-semibold">iMoobile</span> é a plataforma completa onde corretores e imobiliárias tradicionais se transformam em negócios digitais de alto desempenho.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <button
@@ -116,7 +116,7 @@ export default function Home() {
             <div className="relative z-10 rounded-lg shadow-xl overflow-hidden">
               <Image
                 src="/images/landing/dashboard.png"
-                alt="Dashboard Supbrokers"
+                alt="Dashboard iMoobile"
                 width={600}
                 height={400}
                 className="w-full h-auto"
@@ -228,7 +228,7 @@ export default function Home() {
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-[#362D3E] mb-4">O que dizem nossos clientes</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Histórias de sucesso de corretores e imobiliárias que transformaram seus negócios com o Supbrokers
+              Histórias de sucesso de corretores e imobiliárias que transformaram seus negócios com o iMoobile
             </p>
           </div>
           
@@ -242,7 +242,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="text-gray-600 italic">
-                &ldquo;Desde que comecei a usar o Supbrokers, minhas vendas aumentaram em 40%. A plataforma é intuitiva e me ajuda a organizar todo meu trabalho.&rdquo;
+                &ldquo;Desde que comecei a usar o iMoobile, minhas vendas aumentaram em 40%. A plataforma é intuitiva e me ajuda a organizar todo meu trabalho.&rdquo;
               </p>
             </div>
             <div className="bg-white p-8 rounded-lg shadow-md">
@@ -280,7 +280,7 @@ export default function Home() {
             Pronto para transformar seu negócio imobiliário?
           </h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto text-white/80">
-            Junte-se a milhares de corretores que já estão aumentando suas vendas com o Supbrokers.
+            Junte-se a milhares de corretores que já estão aumentando suas vendas com o iMoobile.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
@@ -305,8 +305,8 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <Image
-                src="/images/landing/logo-header.png"
-                alt="Supbrokers logo"
+                src="/logo-extendida.svg"
+                alt="iMoobile logo"
                 width={155}
                 height={27}
                 className="h-8 w-auto mb-4 brightness-0 invert"
@@ -329,8 +329,8 @@ export default function Home() {
             <div>
               <h4 className="font-bold mb-4">Contato</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>contato@supbrokers.com.br</li>
-                <li>(11) 9999-9999</li>
+                <li>contato@imoobile.com.br</li>
+                <li>83 99329-3512</li>
               </ul>
             </div>
             
@@ -360,7 +360,7 @@ export default function Home() {
           </div>
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
-            <p>&copy; {new Date().getFullYear()} Supbrokers. Todos os direitos reservados.</p>
+            <p>&copy; {new Date().getFullYear()} iMoobile. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>

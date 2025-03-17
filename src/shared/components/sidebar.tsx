@@ -12,8 +12,8 @@ export function Sidebar() {
     <aside className="w-[240px] bg-white flex flex-col border-r m-5 rounded-2xl border-[1px] border-border">
       <div className="p-6">
         <Image
-          src="/images/logo-login.png"
-          alt="Supbrokers"
+          src="/logo-extendida.svg"
+          alt="iMoobile"
           width={120}
           height={32}
           className="mb-8"
@@ -41,13 +41,13 @@ export function Sidebar() {
             <Users size={20} />
             Clientes
           </Link>
-          <Link
+          {/* <Link
             href="/dashboard/alugueis"
             className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-[#141414] rounded-lg hover:bg-gray-100"
           >
             <Files size={20} />
             Gestão de alugéis
-          </Link>
+          </Link> */}
         </nav>
 
         <div className="mt-8">

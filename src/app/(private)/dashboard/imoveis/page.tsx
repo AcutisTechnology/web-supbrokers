@@ -88,7 +88,7 @@ export default function PropertiesPage() {
       )}
 
       <div className="mt-8 text-center text-sm text-[#777777]">
-        Copyright © Supbrokers. Todos os direitos reservados
+        Copyright © iMoobile. Todos os direitos reservados
       </div>
     </>
   );

@@ -365,7 +365,7 @@ export default function DashboardPage() {
             <CardTitle className="text-lg font-medium">Novidades</CardTitle>
           </div>
           <CardDescription>
-            Fique por dentro das novidades do Supbrokers
+            Fique por dentro das novidades do iMoobile
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6 flex flex-col items-center text-center">
@@ -391,7 +391,7 @@ export default function DashboardPage() {
       </Card>
 
       <footer className="text-center text-sm text-[#969696] py-4">
-        Copyright © Supbrokers {new Date().getFullYear()}. Todos os direitos reservados
+        Copyright © iMoobile {new Date().getFullYear()}. Todos os direitos reservados
       </footer>
     </div>
   );

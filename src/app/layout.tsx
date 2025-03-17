@@ -16,7 +16,7 @@ const figtreeMono = Figtree({
 });
 
 export const metadata: Metadata = {
-  title: "Supbrokers",
+  title: "iMoobile",
   description: "Seu ecossistema imobiliário!",
 };
 

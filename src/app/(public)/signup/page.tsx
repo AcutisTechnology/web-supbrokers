@@ -40,8 +40,8 @@ export default function SignUpForm() {
         {/* Logo */}
         <div className="flex items-center gap-2 mb-6">
           <Image
-            src="/images/logo-login.png"
-            alt="Supbrokers Logo"
+            src="/logo-extendida.svg"
+            alt="iMoobile Logo"
             width={143}
             height={23}
           />
@@ -172,7 +172,7 @@ export default function SignUpForm() {
 
       {/* Footer */}
       <footer className="mt-8 text-sm text-[#989898]">
-        Copyright © Supbrokers. Todos os direitos reservados
+        Copyright © iMoobile. Todos os direitos reservados
       </footer>
     </div>
   );

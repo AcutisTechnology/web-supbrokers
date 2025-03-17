@@ -61,7 +61,7 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
         {/* Botões de ação */}
         <div className="flex flex-col md:flex-row justify-between items-center md:items-start space-y-4 md:space-y-0">
           <Image
-            src="/images/logo-sm.png"
+            src="/logo-extendida-roxo.svg"
             width={142}
             alt="logo pequena"
             height={42}
@@ -199,7 +199,7 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
               <NewsCard
                 key={i}
                 title="Arte e Cultura: João Pessoa oferece cursos gratuitos de música, dança, arte e circo."
-                author="Supbrokers"
+                author="iMoobile"
                 imageUrl="https://uploads.polemicaparaiba.com.br/2021/09/WhatsApp-Image-2021-09-09-at-09.28.51.jpeg"
               />
             ))}
@@ -214,14 +214,14 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
         <div className="flex flex-row items-center gap-2 justify-center">
           <p>Esse site foi feito na</p>
           <Image
-            src="/images/logo-footer.png"
+            src="/logo-extendida.svg"
             width={81}
             height={12}
             alt="logo pequena"
           />
         </div>
         <p className="mb-4">
-          Copyright © Supbrokers. Todos os direitos reservados
+          Copyright © iMoobile. Todos os direitos reservados
         </p>
         <div className="flex justify-center gap-4">
           <a href="#" className="hover:text-[#9747FF]">

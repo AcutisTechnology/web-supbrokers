@@ -84,7 +84,7 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
     
     if (navigator.share) {
       navigator.share({
-        title: property?.title || "Imóvel Supbrokers",
+        title: property?.title || "Imóvel iMoobile",
         text: `Confira este imóvel: ${property?.title}`,
         url: window.location.href,
       })
