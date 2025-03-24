@@ -186,7 +186,7 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
         </section>
       )}
 
-      <section className="py-12">
+      {/* <section className="py-12">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl font-medium mb-2">
             Confira as notícias do setor imobiliário
@@ -208,7 +208,7 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
             <button className="rounded-full bg-primary text-white px-6 py-3 hover:bg-primary/90 transition-colors">Ver mais notícias</button>
           </div>
         </div>
-      </section>
+      </section> */}
 
       <footer className="py-8 text-center text-sm text-[#777777]">
         <div className="flex flex-row items-center gap-2 justify-center">
