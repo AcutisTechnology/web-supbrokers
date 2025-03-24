@@ -46,11 +46,6 @@ export function LoadingState({
           </svg>
         </div>
         <p className="text-muted-foreground mb-4">{errorMessage}</p>
-        {error && (
-          <p className="text-sm text-red-500 mb-4">
-            {error.message || "Erro desconhecido"}
-          </p>
-        )}
         {onRetry && (
           <Button onClick={onRetry} variant="outline">
             Tentar novamente

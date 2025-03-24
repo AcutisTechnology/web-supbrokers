@@ -73,6 +73,11 @@ export default function DashboardPage() {
   const isError = isErrorProperties || isErrorCustomers;
   const error = errorProperties || errorCustomers;
 
+  // Personalizar mensagem de erro para 403
+  const errorMessage = error?.message?.includes('403')
+    ? "Você precisa ter uma assinatura ativa para visualizar os dados. Por favor, escolha um plano para continuar."
+    : "Ocorreu um erro ao carregar os dados. Por favor, tente novamente.";
+
   // Obter data atual formatada
   const currentDate = new Date().toLocaleDateString('pt-BR', {
     weekday: 'long',
@@ -108,7 +113,8 @@ export default function DashboardPage() {
       <LoadingState 
         isLoading={isLoading} 
         isError={isError} 
-        error={error as Error} 
+        error={error as Error}
+        errorMessage={errorMessage}
       />
 
       {!isLoading && !isError && isMounted && (

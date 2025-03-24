@@ -10,33 +10,51 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { CreditCard, Landmark, QrCode, ArrowRight, CheckCircle2 } from "lucide-react";
+import { CreditCard, Landmark, QrCode, ArrowRight, CheckCircle2, Copy } from "lucide-react";
 import { usePlan, useUpgradePlan, PaymentData } from "@/features/dashboard/planos/services/plans-service";
 import { formatCurrency } from "@/lib/utils";
 import Image from "next/image";
+import { useCreateSubscription, useCreatePixPayment } from '../services/subscription-service';
+import { BillingType, CycleType, PlanType } from '../types/subscription';
 
-// Schema de validação para o formulário de cartão de crédito
-const creditCardSchema = z.object({
-  card_number: z.string().min(16, "Número do cartão inválido").max(19, "Número do cartão inválido"),
-  card_holder_name: z.string().min(3, "Nome do titular inválido"),
-  card_expiry_month: z.string().min(2, "Mês inválido").max(2, "Mês inválido"),
-  card_expiry_year: z.string().min(2, "Ano inválido").max(2, "Ano inválido"),
-  card_cvv: z.string().min(3, "CVV inválido").max(4, "CVV inválido"),
+// Schema para informações do cliente (comum para todos os métodos de pagamento)
+const customerSchema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório'),
+  email: z.string().email('Email inválido'),
+  cpfCnpj: z.string().min(11, 'CPF/CNPJ inválido'),
+  phone: z.string().min(10, 'Telefone inválido').optional(),
 });
 
-type CreditCardFormValues = z.infer<typeof creditCardSchema>;
+// Schema para cartão de crédito
+const creditCardSchema = customerSchema.extend({
+  holderName: z.string().min(1, 'Nome é obrigatório'),
+  number: z.string().min(16, 'Número do cartão inválido'),
+  expiryMonth: z.string().min(1, 'Mês é obrigatório'),
+  expiryYear: z.string().min(4, 'Ano é obrigatório'),
+  ccv: z.string().min(3, 'CVV inválido'),
+  postalCode: z.string().min(8, 'CEP inválido'),
+  addressNumber: z.string().min(1, 'Número é obrigatório'),
+  phone: z.string().min(10, 'Telefone inválido'),
+  mobilePhone: z.string().min(10, 'Celular inválido'),
+});
+
+type CreditCardFormData = z.infer<typeof creditCardSchema>;
+type CustomerFormData = z.infer<typeof customerSchema>;
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   planId: number | null;
+  planType: PlanType;
+  cycle: CycleType;
 }
 
-export function PaymentModal({ isOpen, onClose, planId }: PaymentModalProps) {
+export function PaymentModal({ isOpen, onClose, planId, planType, cycle }: PaymentModalProps) {
   const { toast } = useToast();
-  const [paymentMethod, setPaymentMethod] = useState<"credit_card" | "pix" | "boleto">("credit_card");
+  const [paymentMethod, setPaymentMethod] = useState<BillingType>("credit_card");
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const [pixData, setPixData] = useState<{ qrCode: string; payload: string } | null>(null);
   
   // Buscar detalhes do plano selecionado
   const { 
@@ -48,53 +66,69 @@ export function PaymentModal({ isOpen, onClose, planId }: PaymentModalProps) {
   const upgradePlanMutation = useUpgradePlan();
   
   // Configurar o formulário de cartão de crédito
-  const form = useForm<CreditCardFormValues>({
+  const creditCardForm = useForm<CreditCardFormData>({
     resolver: zodResolver(creditCardSchema),
     defaultValues: {
-      card_number: "",
-      card_holder_name: "",
-      card_expiry_month: "",
-      card_expiry_year: "",
-      card_cvv: "",
+      holderName: '',
+      number: '',
+      expiryMonth: '',
+      expiryYear: '',
+      ccv: '',
+      name: '',
+      email: '',
+      cpfCnpj: '',
+      postalCode: '',
+      addressNumber: '',
+      phone: '',
+      mobilePhone: '',
     },
   });
   
+  const pixForm = useForm<CustomerFormData>({
+    resolver: zodResolver(customerSchema),
+  });
+  
+  const createSubscription = useCreateSubscription();
+  const createPixPayment = useCreatePixPayment();
+  
   // Função para processar o pagamento com cartão de crédito
-  const onSubmitCreditCard = async (values: CreditCardFormValues) => {
-    if (!planId) return;
-    
+  const onSubmitCreditCard = async (data: CreditCardFormData) => {
     try {
-      setPaymentStatus("processing");
-      
-      const paymentData: PaymentData = {
-        plan_id: planId,
-        payment_method: "credit_card",
-        ...values,
-      };
-      
-      const response = await upgradePlanMutation.mutateAsync(paymentData);
-      
-      if (response.success) {
-        setPaymentStatus("success");
-        toast({
-          title: "Pagamento processado com sucesso",
-          description: "Seu plano foi atualizado.",
-          variant: "default",
-        });
-      } else {
-        setPaymentStatus("error");
-        toast({
-          title: "Erro ao processar pagamento",
-          description: "Verifique os dados do cartão e tente novamente.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      setPaymentStatus("error");
+      await createSubscription.mutateAsync({
+        plan: planType,
+        billingType: 'credit_card',
+        cycle,
+        creditCard: {
+          holderName: data.holderName,
+          number: data.number,
+          expiryMonth: data.expiryMonth,
+          expiryYear: data.expiryYear,
+          ccv: data.ccv,
+        },
+        creditCardHolderInfo: {
+          name: data.name,
+          email: data.email,
+          cpfCnpj: data.cpfCnpj,
+          address: {
+            postalCode: data.postalCode,
+            number: data.addressNumber,
+          },
+          phone: data.phone,
+          mobilePhone: data.mobilePhone,
+        },
+      });
+
       toast({
-        title: "Erro ao processar pagamento",
-        description: "Ocorreu um erro ao processar o pagamento. Tente novamente.",
-        variant: "destructive",
+        title: 'Assinatura criada com sucesso!',
+        description: 'Você já pode começar a usar os recursos do seu plano.',
+      });
+      onClose();
+    } catch (error) {
+      console.log(error);
+      toast({
+        title: 'Erro ao criar assinatura',
+        description: 'Ocorreu um erro ao processar seu pagamento. Tente novamente.',
+        variant: 'destructive',
       });
     }
   };
@@ -139,11 +173,28 @@ export function PaymentModal({ isOpen, onClose, planId }: PaymentModalProps) {
     }
   };
   
+  const handleCopyPixCode = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      toast({
+        title: 'Código PIX copiado!',
+        description: 'Cole o código no seu aplicativo de pagamento.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro ao copiar código',
+        description: 'Tente copiar manualmente.',
+        variant: 'destructive',
+      });
+    }
+  };
+  
   // Função para fechar o modal e resetar o estado
   const handleClose = () => {
     setPaymentStatus("idle");
     setPaymentUrl(null);
-    form.reset();
+    creditCardForm.reset();
+    pixForm.reset();
     onClose();
   };
   
@@ -222,195 +273,364 @@ export function PaymentModal({ isOpen, onClose, planId }: PaymentModalProps) {
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="credit_card" className="mt-4" onValueChange={(value) => setPaymentMethod(value as "credit_card" | "pix" | "boleto")}>
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="credit_card" className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4" />
-              <span className="hidden sm:inline">Cartão</span>
+        <Tabs value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as BillingType)}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="credit_card">
+              <CreditCard className="w-4 h-4 mr-2" />
+              Cartão
             </TabsTrigger>
-            <TabsTrigger value="pix" className="flex items-center gap-2">
-              <QrCode className="w-4 h-4" />
-              <span className="hidden sm:inline">PIX</span>
-            </TabsTrigger>
-            <TabsTrigger value="boleto" className="flex items-center gap-2">
-              <Landmark className="w-4 h-4" />
-              <span className="hidden sm:inline">Boleto</span>
+            <TabsTrigger value="pix">
+              <QrCode className="w-4 h-4 mr-2" />
+              PIX
             </TabsTrigger>
           </TabsList>
           
           <TabsContent value="credit_card">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmitCreditCard)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="card_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Número do Cartão</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="0000 0000 0000 0000" 
-                          {...field} 
-                          maxLength={19}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="card_holder_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome no Cartão</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Nome como está no cartão" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="grid grid-cols-3 gap-4">
+            <Form {...creditCardForm}>
+              <form onSubmit={creditCardForm.handleSubmit(onSubmitCreditCard)} className="space-y-6">
+                <div className="space-y-4">
                   <FormField
-                    control={form.control}
-                    name="card_expiry_month"
+                    control={creditCardForm.control}
+                    name="holderName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Mês</FormLabel>
+                        <FormLabel>Nome no Cartão</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="MM" 
-                            {...field} 
-                            maxLength={2}
-                          />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
-                    control={form.control}
-                    name="card_expiry_year"
+                    control={creditCardForm.control}
+                    name="number"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Ano</FormLabel>
+                        <FormLabel>Número do Cartão</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="AA" 
-                            {...field} 
-                            maxLength={2}
-                          />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField
+                      control={creditCardForm.control}
+                      name="expiryMonth"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mês</FormLabel>
+                          <FormControl>
+                            <Input {...field} maxLength={2} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={creditCardForm.control}
+                      name="expiryYear"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ano</FormLabel>
+                          <FormControl>
+                            <Input {...field} maxLength={4} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={creditCardForm.control}
+                      name="ccv"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CVV</FormLabel>
+                          <FormControl>
+                            <Input {...field} maxLength={4} type="password" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <FormField
-                    control={form.control}
-                    name="card_cvv"
+                    control={creditCardForm.control}
+                    name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>CVV</FormLabel>
+                        <FormLabel>Nome Completo</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="123" 
-                            {...field} 
-                            maxLength={4}
-                          />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
+                  <FormField
+                    control={creditCardForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="email" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={creditCardForm.control}
+                    name="cpfCnpj"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CPF/CNPJ</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={creditCardForm.control}
+                      name="postalCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CEP</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={creditCardForm.control}
+                      name="addressNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Número</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={creditCardForm.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Telefone</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={creditCardForm.control}
+                      name="mobilePhone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Celular</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
-                
-                <DialogFooter className="mt-6">
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-[#9747ff] hover:bg-[#9747ff]/90"
-                    disabled={paymentStatus === "processing" || upgradePlanMutation.isPending}
-                  >
-                    {paymentStatus === "processing" || upgradePlanMutation.isPending ? (
-                      "Processando..."
-                    ) : (
-                      <>
-                        Finalizar Pagamento
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </>
-                    )}
-                  </Button>
-                </DialogFooter>
+
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={createSubscription.isPending}
+                >
+                  {createSubscription.isPending ? 'Processando...' : 'Finalizar Pagamento'}
+                </Button>
               </form>
             </Form>
           </TabsContent>
           
           <TabsContent value="pix">
-            <div className="text-center py-4">
-              <div className="w-16 h-16 mx-auto bg-[#32BCAD]/10 rounded-full flex items-center justify-center mb-4">
-                <QrCode className="w-8 h-8 text-[#32BCAD]" />
+            {!pixData ? (
+              <Form {...pixForm}>
+                <form onSubmit={pixForm.handleSubmit(onSubmitPix)} className="space-y-4">
+                  <FormField
+                    control={pixForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome Completo</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={pixForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="email" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={pixForm.control}
+                    name="cpfCnpj"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CPF/CNPJ</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={pixForm.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefone</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={createPixPayment.isPending}
+                  >
+                    {createPixPayment.isPending ? 'Gerando PIX...' : 'Gerar PIX'}
+                  </Button>
+                </form>
+              </Form>
+            ) : (
+              <div className="space-y-4 py-4">
+                <div className="flex justify-center">
+                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                    <Image
+                      src={`data:image/png;base64,${pixData.qrCode}`}
+                      alt="QR Code PIX"
+                      width={200}
+                      height={200}
+                      className="w-[200px] h-[200px]"
+                      priority
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-sm text-center text-muted-foreground">
+                    Escaneie o QR Code acima ou use o código PIX abaixo
+                  </p>
+
+                  <div className="flex flex-col gap-2 bg-muted p-3 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Código PIX</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCopyPixCode(pixData.payload)}
+                        className="h-8"
+                      >
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copiar
+                      </Button>
+                    </div>
+                    <code className="text-xs break-all bg-background p-2 rounded">{pixData.payload}</code>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Após o pagamento, seu plano será atualizado automaticamente
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setPixData(null)}
+                  >
+                    Gerar Novo PIX
+                  </Button>
+                </div>
               </div>
-              
-              <h3 className="text-lg font-medium mb-2">Pagamento via PIX</h3>
-              <p className="text-[#969696] mb-6">
-                Ao clicar em &quot;Gerar QR Code&quot;, você receberá um QR Code para pagamento.
-              </p>
-              
-              <Button 
-                onClick={() => handleAlternativePayment("pix")}
-                className="bg-[#32BCAD] hover:bg-[#32BCAD]/90"
-                disabled={paymentStatus === "processing" || upgradePlanMutation.isPending}
-              >
-                {paymentStatus === "processing" || upgradePlanMutation.isPending ? (
-                  "Gerando QR Code..."
-                ) : (
-                  <>
-                    Gerar QR Code PIX
-                    <QrCode className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </Button>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="boleto">
-            <div className="text-center py-4">
-              <div className="w-16 h-16 mx-auto bg-[#4A6FDC]/10 rounded-full flex items-center justify-center mb-4">
-                <Landmark className="w-8 h-8 text-[#4A6FDC]" />
-              </div>
-              
-              <h3 className="text-lg font-medium mb-2">Pagamento via Boleto</h3>
-              <p className="text-[#969696] mb-6">
-                Ao clicar em &quot;Gerar Boleto&quot;, você receberá um boleto para pagamento.
-                O prazo de compensação é de até 3 dias úteis.
-              </p>
-              
-              <Button 
-                onClick={() => handleAlternativePayment("boleto")}
-                className="bg-[#4A6FDC] hover:bg-[#4A6FDC]/90"
-                disabled={paymentStatus === "processing" || upgradePlanMutation.isPending}
-              >
-                {paymentStatus === "processing" || upgradePlanMutation.isPending ? (
-                  "Gerando Boleto..."
-                ) : (
-                  <>
-                    Gerar Boleto
-                    <Landmark className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </Button>
-            </div>
+            )}
           </TabsContent>
         </Tabs>
       </>
     );
+  };
+
+  const onSubmitPix = async (data: CustomerFormData) => {
+    try {
+      const response = await createPixPayment.mutateAsync({
+        plan: planType,
+        billingType: 'pix',
+        cycle,
+        customerInfo: {
+          name: data.name,
+          email: data.email,
+          cpfCnpj: data.cpfCnpj,
+          phone: data.phone,
+        },
+      });
+
+      setPixData({
+        qrCode: response.qrCode,
+        payload: response.payload,
+      });
+
+      toast({
+        title: 'PIX gerado com sucesso!',
+        description: 'Escaneie o QR Code ou copie o código para pagar.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro ao gerar PIX',
+        description: 'Ocorreu um erro ao gerar o pagamento. Tente novamente.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (

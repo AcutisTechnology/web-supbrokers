@@ -29,8 +29,6 @@ export function SiteHeader() {
           </span>
         </button>
 
-        <span className="text-sm md:text-lg">Supbroker Imobiliária</span>
-
         <div className="flex-1" />
 
         {/* Pesquisa (Oculta em telas muito pequenas) */}

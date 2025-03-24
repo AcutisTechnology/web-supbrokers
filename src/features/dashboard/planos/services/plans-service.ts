@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { api } from "@/shared/configs/api";
+import { PlanType } from "../types/subscription";
 
 // Interface para os recursos do plano
 export interface PlanFeature {
@@ -20,6 +21,7 @@ export interface Plan {
   is_current: boolean;
   properties_limit: number;
   highlight: boolean;
+  type: PlanType;
 }
 
 // Interface para a resposta da API de planos
@@ -66,6 +68,7 @@ const MOCK_PLANS: Plan[] = [
     is_current: true,
     properties_limit: 10,
     highlight: false,
+    type: "basic",
     features: [
       { id: 1, name: "Até 10 imóveis", description: "", included: true },
       { id: 2, name: "Página de imóveis", description: "", included: true },
@@ -89,6 +92,7 @@ const MOCK_PLANS: Plan[] = [
     is_current: false,
     properties_limit: 50,
     highlight: true,
+    type: "professional",
     features: [
       { id: 1, name: "Até 50 imóveis", description: "", included: true },
       { id: 2, name: "Página de imóveis", description: "", included: true },
@@ -117,6 +121,7 @@ const MOCK_PLANS: Plan[] = [
     is_current: false,
     properties_limit: 200,
     highlight: false,
+    type: "business",
     features: [
       { id: 1, name: "Até 200 imóveis", description: "", included: true },
       { id: 2, name: "Página de imóveis", description: "", included: true },
@@ -140,6 +145,7 @@ const MOCK_PLANS: Plan[] = [
     is_current: false,
     properties_limit: 10,
     highlight: false,
+    type: "basic",
     features: [
       { id: 1, name: "Até 10 imóveis", description: "", included: true },
       { id: 2, name: "Página de imóveis", description: "", included: true },
@@ -163,6 +169,7 @@ const MOCK_PLANS: Plan[] = [
     is_current: false,
     properties_limit: 50,
     highlight: true,
+    type: "professional",
     features: [
       { id: 1, name: "Até 50 imóveis", description: "", included: true },
       { id: 2, name: "Página de imóveis", description: "", included: true },
@@ -191,6 +198,7 @@ const MOCK_PLANS: Plan[] = [
     is_current: false,
     properties_limit: 200,
     highlight: false,
+    type: "business",
     features: [
       { id: 1, name: "Até 200 imóveis", description: "", included: true },
       { id: 2, name: "Página de imóveis", description: "", included: true },

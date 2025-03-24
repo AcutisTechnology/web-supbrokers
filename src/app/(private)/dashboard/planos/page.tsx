@@ -1,19 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { usePlans, useCurrentPlan } from "@/features/dashboard/planos/services/plans-service";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { usePlans, useCurrentPlan, Plan } from "@/features/dashboard/planos/services/plans-service";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoadingState } from "@/components/ui/loading-state";
 import { formatCurrency } from "@/lib/utils";
-import { Check, X, CreditCard, Zap, Building2, Star, Crown, ArrowRight } from "lucide-react";
+import { Check, X, CreditCard, Zap, Building2, Star, Crown, ArrowRight, Sparkles } from "lucide-react";
 import { PaymentModal } from "@/features/dashboard/planos/components/payment-modal";
-import { Plan } from "@/features/dashboard/planos/services/plans-service";
+import { PlanType } from '@/features/dashboard/planos/types/subscription';
 
-export default function PlanosPage() {
+function PlanosPageContent() {
+  const searchParams = useSearchParams();
+  const fromNoSubscription = searchParams.get('from') === 'no_subscription';
+  
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
+  const [selectedPlanType, setSelectedPlanType] = useState<PlanType | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("monthly");
   
@@ -44,22 +49,44 @@ export default function PlanosPage() {
   ) || [];
   
   // Função para abrir o modal de pagamento
-  const handleUpgrade = (planId: number) => {
+  const handleUpgrade = (planId: number, planType: PlanType) => {
     setSelectedPlanId(planId);
+    setSelectedPlanType(planType);
     setIsPaymentModalOpen(true);
   };
   
   // Função para verificar se um plano é o atual
   const isCurrentPlan = (plan: Plan) => {
+    if (fromNoSubscription) {
+      return false; // Se vier de NO_SUBSCRIPTION, nenhum plano é considerado atual
+    }
     return plan.is_current || (currentPlanData?.data?.id === plan.id);
   };
 
+  // Efeito para selecionar automaticamente o plano recomendado quando vier de no_subscription
+  useEffect(() => {
+    if (fromNoSubscription && plansData?.data) {
+      const recommendedPlan = plansData.data.find(plan => plan.highlight);
+      if (recommendedPlan) {
+        setSelectedPlanId(recommendedPlan.id);
+        setIsPaymentModalOpen(true);
+      }
+    }
+  }, [fromNoSubscription, plansData]);
+
   return (
     <div className="space-y-8">
+      {/* Cabeçalho com mensagem personalizada */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between bg-gradient-to-r from-[#9747ff]/10 to-white p-6 rounded-xl">
         <div>
-          <h1 className="text-3xl font-bold text-[#141414]">Planos e Assinaturas</h1>
-          <p className="text-[#969696] mt-1">Escolha o plano ideal para o seu negócio</p>
+          <h1 className="text-3xl font-bold text-[#141414]">
+            {fromNoSubscription ? 'Comece Agora Mesmo!' : 'Planos e Assinaturas'}
+          </h1>
+          <p className="text-[#969696] mt-1">
+            {fromNoSubscription 
+              ? 'Escolha o plano ideal e comece a cadastrar seus imóveis'
+              : 'Escolha o plano ideal para o seu negócio'}
+          </p>
         </div>
         
         {currentPlanData?.data && (
@@ -74,6 +101,15 @@ export default function PlanosPage() {
           </div>
         )}
       </div>
+
+      {fromNoSubscription && (
+        <div className="bg-purple-50 border border-purple-100 rounded-lg p-4 text-purple-800">
+          <p className="text-sm">
+            <strong>Dica:</strong> Recomendamos o plano Profissional para começar. 
+            Ele oferece o melhor custo-benefício e todos os recursos essenciais para seu negócio crescer.
+          </p>
+        </div>
+      )}
 
       {/* Estado de carregamento e erro */}
       <LoadingState 
@@ -104,13 +140,13 @@ export default function PlanosPage() {
             </Tabs>
           </div>
 
-          {/* Cards de planos */}
+          {/* Cards de planos com destaque especial quando vem de no_subscription */}
           <div className="grid gap-6 md:grid-cols-3">
             {filteredPlans.map((plan) => (
               <Card 
                 key={plan.id} 
                 className={`overflow-hidden transition-all ${
-                  plan.highlight ? 'border-[#9747ff] shadow-lg scale-105' : ''
+                  plan.highlight ? `border-[#9747ff] shadow-lg ${fromNoSubscription ? 'scale-105 ring-2 ring-purple-400 ring-opacity-50' : ''}` : ''
                 }`}
               >
                 {plan.highlight && (
@@ -175,9 +211,14 @@ export default function PlanosPage() {
                       className={`w-full ${
                         plan.highlight ? 'bg-[#9747ff] hover:bg-[#9747ff]/90' : ''
                       }`}
-                      onClick={() => handleUpgrade(plan.id)}
+                      onClick={() => handleUpgrade(plan.id, plan.type)}
                     >
-                      {plan.highlight ? (
+                      {fromNoSubscription && plan.is_current ? (
+                        <>
+                          <Zap className="w-4 h-4 mr-2" />
+                          Renovar Assinatura
+                        </>
+                      ) : plan.highlight ? (
                         <>
                           <Zap className="w-4 h-4 mr-2" />
                           Fazer Upgrade
@@ -231,7 +272,17 @@ export default function PlanosPage() {
         isOpen={isPaymentModalOpen} 
         onClose={() => setIsPaymentModalOpen(false)}
         planId={selectedPlanId}
+        planType={selectedPlanType as PlanType}
+        cycle={billingInterval === "monthly" ? "monthly" : "yearly"}
       />
     </div>
+  );
+}
+
+export default function PlanosPage() {
+  return (
+    <Suspense fallback={<LoadingState isLoading={true} isError={false} error={null} />}>
+      <PlanosPageContent />
+    </Suspense>
   );
 } 
