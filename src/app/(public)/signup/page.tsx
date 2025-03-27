@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/shared/hooks/auth/use-auth";
+import { MaskedInput } from "@/components/ui/masked-input";
 
 export default function SignUpForm() {
   const { signup, loading } = useAuth();
@@ -15,6 +16,8 @@ export default function SignUpForm() {
     handleSubmit,
     formState: { errors },
     register,
+    setValue,
+    watch,
   } = useForm({
     defaultValues: {
       name: "",
@@ -22,8 +25,12 @@ export default function SignUpForm() {
       password: "",
       password_confirmation: "",
       phone: "",
+      cpf: "",
     },
   });
+
+  const phone = watch('phone');
+  const cpf = watch('cpf');
 
   async function handleSignup(data: {
     name: string;
@@ -31,9 +38,16 @@ export default function SignUpForm() {
     password: string;
     password_confirmation: string;
     phone: string;
+    cpf: string;
   }) {
-    await signup(data);
+    const formattedData = {
+      ...data,
+      phone: data.phone.replace(/\D/g, ""),
+      cpf: data.cpf.replace(/\D/g, "")
+    };
+    await signup(formattedData);
   }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-[#F6F6F6]">
       <div className="w-full max-w-[460px] bg-white rounded-lg p-6 space-y-6 border-[1px] border-border">
@@ -57,9 +71,9 @@ export default function SignUpForm() {
 
         {/* Form */}
         <form onSubmit={handleSubmit(handleSignup)} className="space-y-4">
-        <div className="space-y-1.5">
+          <div className="space-y-1.5">
             <label htmlFor="name" className="text-[#141414] text-sm">
-                Nome
+              Nome
             </label>
             <Input
               {...register("name")}
@@ -69,6 +83,22 @@ export default function SignUpForm() {
               className="border-[#D8D8D8]"
             />
           </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="cpf" className="text-[#141414] text-sm">
+              CPF
+            </label>
+            <MaskedInput
+              id="cpf"
+              mask="###.###.###-##"
+              placeholder="000.000.000-00"
+              required
+              value={cpf}
+              className="border-[#D8D8D8]"
+              onChange={(value) => setValue('cpf', value)}
+            />
+          </div>
+
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-[#141414] text-sm">
               E-mail
@@ -86,12 +116,14 @@ export default function SignUpForm() {
             <label htmlFor="phone" className="text-[#141414] text-sm">
               Telefone
             </label>
-            <Input
-              {...register("phone")}
+            <MaskedInput
               id="phone"
-              type="tel"
-              placeholder="DDD + Telefone"
+              mask="(##) #####-####"
+              placeholder="(00) 00000-0000"
+              required
+              value={phone}
               className="border-[#D8D8D8]"
+              onChange={(value) => setValue('phone', value)}
             />
           </div>
 
@@ -143,7 +175,7 @@ export default function SignUpForm() {
             disabled={loading}
             className="w-full bg-[#9747FF] hover:bg-[#9747FF]/90 text-white"
           >
-            Criar conta gratuitamente
+            {loading ? "Criando conta..." : "Criar conta gratuitamente"}
           </Button>
 
           {/* Login Link */}

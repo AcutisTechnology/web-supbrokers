@@ -16,6 +16,7 @@ export default async function authenticateUser(credentials: {
   password: string;
   password_confirmation: string;
   phone: string;
+  cpf: string;
 }) {
   try {
     return await api
@@ -26,6 +27,7 @@ export default async function authenticateUser(credentials: {
           password: credentials.password,
           password_confirmation: credentials.password_confirmation,
           phone: credentials.phone,
+          cpfCnpj: credentials.cpf,
         },
       })
       .json();

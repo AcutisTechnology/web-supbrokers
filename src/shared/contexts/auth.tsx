@@ -18,6 +18,7 @@ interface AuthContextProps {
     password: string;
     password_confirmation: string;
     phone: string;
+    cpf: string;
   }) => Promise<void>;
   logout: () => void;
   loading: boolean;
@@ -80,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string;
     password_confirmation: string;
     phone: string;
+    cpf: string;
   }) => {
     setLoading(true);
 
