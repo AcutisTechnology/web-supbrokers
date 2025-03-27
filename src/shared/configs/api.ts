@@ -2,7 +2,7 @@ import ky from "ky";
 import { parseCookies } from "nookies";
 
 export const api = ky.create({
-  prefixUrl: `https://supbrokers.vfsystems.com.br/api/v1/`,
+  prefixUrl: `https://production.imoobile.com.br//api/v1/`,
   hooks: {
     beforeRequest: [
       (request) => {
