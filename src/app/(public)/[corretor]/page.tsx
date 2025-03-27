@@ -94,38 +94,6 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
         <SearchForm onFilterChange={handleSearchFilterChange} />
       </div>
 
-      {/* Lançamentos */}
-      {properties.data.releases.length > 0 && (
-        <section className="py-12">
-          <div className="container mx-auto px-4">
-            <h2 className="text-2xl font-medium mb-2">Lançamentos para você</h2>
-            <p className="text-[#777777] mb-6">
-              Confira os meus imóveis em destaque
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {properties.data.releases.slice(0, 3).map((property, i) => (
-                <PropertyCard
-                  key={i}
-                  title={property.title}
-                  location={`${property.neighborhood}, João Pessoa`}
-                  price={property.sale ? property.value.split(',')[0] : property.value}
-                  type={property.sale ? "sale" : "rent"}
-                  details={{
-                    area: `${property.size}m²`,
-                    bedrooms: `${property.bedrooms} quartos`,
-                    hasElevator: property.characteristics.some(c => c.text.toLowerCase().includes('elevador')),
-                  }}
-                  imageUrl={property.images[0]?.url || "https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg"}
-                  slug={property.slug}
-                  propertyData={property}
-                  userData={properties.data.user}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* Todos os imóveis */}
       {filteredProperties.length > 0 && (
         <section className="py-12">
@@ -186,7 +154,39 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
         </section>
       )}
 
-      <section className="py-12">
+      {/* Lançamentos */}
+      {properties.data.releases.length > 0 && (
+        <section className="py-12">
+          <div className="container mx-auto px-4">
+            <h2 className="text-2xl font-medium mb-2">Lançamentos para você</h2>
+            <p className="text-[#777777] mb-6">
+              Confira os meus imóveis em destaque
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {properties.data.releases.slice(0, 3).map((property, i) => (
+                <PropertyCard
+                  key={i}
+                  title={property.title}
+                  location={`${property.neighborhood}, João Pessoa`}
+                  price={property.sale ? property.value.split(',')[0] : property.value}
+                  type={property.sale ? "sale" : "rent"}
+                  details={{
+                    area: `${property.size}m²`,
+                    bedrooms: `${property.bedrooms} quartos`,
+                    hasElevator: property.characteristics.some(c => c.text.toLowerCase().includes('elevador')),
+                  }}
+                  imageUrl={property.images[0]?.url || "https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg"}
+                  slug={property.slug}
+                  propertyData={property}
+                  userData={properties.data.user}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* <section className="py-12">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl font-medium mb-2">
             Confira as notícias do setor imobiliário
@@ -208,7 +208,7 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
             <button className="rounded-full bg-primary text-white px-6 py-3 hover:bg-primary/90 transition-colors">Ver mais notícias</button>
           </div>
         </div>
-      </section>
+      </section> */}
 
       <footer className="py-8 text-center text-sm text-[#777777]">
         <div className="flex flex-row items-center gap-2 justify-center">

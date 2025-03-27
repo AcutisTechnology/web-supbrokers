@@ -11,7 +11,10 @@ import {
   Bell, 
   BarChart3, 
   Users, 
-  Mail
+  Mail,
+  Link as LinkIcon,
+  Copy,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -21,9 +24,45 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { LoadingState } from "@/components/ui/loading-state";
+import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/shared/hooks/auth/use-auth";
 
 export default function DashboardPage() {
   const [isMounted, setIsMounted] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  
+  const { user } = useAuth();
+  
+  // Mock do slug do corretor (substituir pelo valor real depois)
+  const brokerSlug = user?.user?.slug;
+  
+  // Obter o domínio dinamicamente
+  const getDomain = () => {
+    if (typeof window !== 'undefined') {
+      return window.location.hostname;
+    }
+    return 'imobile.com.br'; // fallback para SSR
+  };
+  
+  const publicUrl = `https://${getDomain()}/${brokerSlug}`;
+  
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      setIsCopied(true);
+      toast({
+        title: "Link copiado com sucesso!",
+        variant: "default",
+      });
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      toast({
+        title: "Erro ao copiar o link",
+        description: "Por favor, tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
   
   // Buscar imóveis e clientes
   const { 
@@ -108,6 +147,40 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      {/* Card do Link Público */}
+      <Card className="bg-gradient-to-r from-[#9747ff]/5 to-transparent">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-[#9747ff]/10 rounded-full flex items-center justify-center">
+                <LinkIcon className="w-6 h-6 text-[#9747ff]" />
+              </div>
+              <div>
+                <h3 className="font-medium text-lg">Seu Link Público</h3>
+                <p className="text-sm text-[#969696]">Compartilhe este link com seus clientes</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="bg-white px-4 py-2 rounded-lg border flex items-center gap-2 min-w-[200px]">
+                <span className="text-sm text-[#141414] truncate">{publicUrl}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopyLink}
+                  className="h-8 w-8 p-0 hover:bg-transparent"
+                >
+                  {isCopied ? (
+                    <Check className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-[#9747ff]" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Estado de carregamento e erro */}
       <LoadingState 
