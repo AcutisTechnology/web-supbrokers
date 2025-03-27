@@ -3,9 +3,31 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CheckCircle, Building, Users, Calendar, BarChart } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function Home() {
   const router = useRouter();
+
+  // Variantes de animação
+  const fadeInUp = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.5 }
+  };
+
+  const staggerContainer = {
+    animate: {
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const scaleIn = {
+    initial: { opacity: 0, scale: 0.9 },
+    animate: { opacity: 1, scale: 1 },
+    transition: { duration: 0.5 }
+  };
 
   // Função para abrir o WhatsApp com a mensagem
   const openWhatsApp = () => {
@@ -51,7 +73,12 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header/Navbar */}
-      <header className="sticky top-0 z-50 bg-white shadow-sm">
+      <motion.header 
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="sticky top-0 z-50 bg-white shadow-sm"
+      >
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center">
             <Image
@@ -85,12 +112,17 @@ export default function Home() {
             </button>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-[#9747FF]/10 to-white py-16 md:py-24">
         <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
+          <motion.div 
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+            className="space-y-6"
+          >
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#362D3E] leading-tight">
               <span className="text-[#9747FF]">Automatize</span>, simplifique e <span className="text-[#9747FF]">venda mais</span>
             </h1>
@@ -111,8 +143,13 @@ export default function Home() {
                 Agendar demonstração
               </button>
             </div>
-          </div>
-          <div className="relative">
+          </motion.div>
+          <motion.div 
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+            className="relative"
+          >
             <div className="relative z-10 rounded-lg shadow-xl overflow-hidden">
               <Image
                 src="/images/landing/dashboard.png"
@@ -124,70 +161,108 @@ export default function Home() {
             </div>
             <div className="absolute -bottom-6 -right-6 w-64 h-64 bg-[#9747FF]/10 rounded-full blur-3xl -z-10"></div>
             <div className="absolute -top-6 -left-6 w-64 h-64 bg-[#9747FF]/10 rounded-full blur-3xl -z-10"></div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Estatísticas */}
       <section className="py-12 bg-white">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div className="p-6">
-              <p className="text-4xl font-bold text-[#9747FF]">1500+</p>
-              <p className="text-gray-600">Corretores ativos</p>
-            </div>
-            <div className="p-6">
-              <p className="text-4xl font-bold text-[#9747FF]">25.000+</p>
-              <p className="text-gray-600">Imóveis cadastrados</p>
-            </div>
-            <div className="p-6">
-              <p className="text-4xl font-bold text-[#9747FF]">40%</p>
-              <p className="text-gray-600">Aumento em vendas</p>
-            </div>
-            <div className="p-6">
-              <p className="text-4xl font-bold text-[#9747FF]">98%</p>
-              <p className="text-gray-600">Satisfação dos clientes</p>
-            </div>
-          </div>
+          <motion.div 
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center"
+          >
+            {[1500, 25000, 40, 98].map((number, index) => (
+              <motion.div 
+                key={index}
+                variants={fadeInUp}
+                className="p-6"
+              >
+                <motion.p 
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="text-4xl font-bold text-[#9747FF]"
+                >
+                  {number}+
+                </motion.p>
+                <p className="text-gray-600">
+                  {index === 0 ? "Corretores ativos" : 
+                   index === 1 ? "Imóveis cadastrados" :
+                   index === 2 ? "Aumento em vendas" :
+                   "Satisfação dos clientes"}
+                </p>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
       {/* Recursos */}
       <section id="recursos" className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-[#362D3E] mb-4">Recursos Principais</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Tudo o que você precisa para gerenciar seu negócio imobiliário em um só lugar
             </p>
-          </div>
+          </motion.div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <motion.div 
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            className="grid md:grid-cols-2 lg:grid-cols-4 gap-8"
+          >
             {features.map((feature, index) => (
-              <div key={index} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+              <motion.div 
+                key={index}
+                variants={fadeInUp}
+                className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+              >
                 <div className="w-12 h-12 bg-[#9747FF]/10 rounded-full flex items-center justify-center mb-4">
                   {feature.icon}
                 </div>
                 <h3 className="text-xl font-bold text-[#362D3E] mb-2">{feature.title}</h3>
                 <p className="text-gray-600">{feature.description}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Dashboard Preview */}
       <section id="dashboard" className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-[#362D3E] mb-4">Dashboard Intuitivo</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Interface moderna e fácil de usar, projetada para maximizar sua produtividade
             </p>
-          </div>
+          </motion.div>
           
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="order-2 md:order-1">
+            <motion.div 
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="order-2 md:order-1"
+            >
               <div className="space-y-6">
                 <h3 className="text-2xl font-bold text-[#362D3E]">Tudo o que você precisa em um só lugar</h3>
                 <ul className="space-y-4">
@@ -205,8 +280,13 @@ export default function Home() {
                   Experimentar agora <ArrowRight className="ml-2 h-5 w-5" />
                 </button>
               </div>
-            </div>
-            <div className="order-1 md:order-2 relative">
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="order-1 md:order-2 relative"
+            >
               <div className="relative z-10 rounded-lg shadow-xl overflow-hidden">
                 <Image
                   src="/images/landing/dashboard-imoveis.png"
@@ -217,7 +297,7 @@ export default function Home() {
                 />
               </div>
               <div className="absolute -bottom-6 -left-6 w-64 h-64 bg-[#9747FF]/10 rounded-full blur-3xl -z-10"></div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -225,56 +305,55 @@ export default function Home() {
       {/* Depoimentos */}
       <section id="depoimentos" className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-[#362D3E] mb-4">O que dizem nossos clientes</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Histórias de sucesso de corretores e imobiliárias que transformaram seus negócios com o iMoobile
             </p>
-          </div>
+          </motion.div>
           
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-lg shadow-md">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-[#9747FF] rounded-full mr-4"></div>
-                <div>
-                  <h4 className="font-bold">Carlos Silva</h4>
-                  <p className="text-sm text-gray-500">Corretor há 8 anos</p>
+          <motion.div 
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            className="grid md:grid-cols-3 gap-8"
+          >
+            {[1, 2, 3].map((_, index) => (
+              <motion.div 
+                key={index}
+                variants={fadeInUp}
+                className="bg-white p-8 rounded-lg shadow-md"
+              >
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-[#9747FF] rounded-full mr-4"></div>
+                  <div>
+                    <h4 className="font-bold">Nome do Cliente</h4>
+                    <p className="text-sm text-gray-500">Cargo do Cliente</p>
+                  </div>
                 </div>
-              </div>
-              <p className="text-gray-600 italic">
-                &ldquo;Desde que comecei a usar o iMoobile, minhas vendas aumentaram em 40%. A plataforma é intuitiva e me ajuda a organizar todo meu trabalho.&rdquo;
-              </p>
-            </div>
-            <div className="bg-white p-8 rounded-lg shadow-md">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-[#9747FF] rounded-full mr-4"></div>
-                <div>
-                  <h4 className="font-bold">Ana Oliveira</h4>
-                  <p className="text-sm text-gray-500">Imobiliária Horizonte</p>
-                </div>
-              </div>
-              <p className="text-gray-600 italic">
-                &ldquo;A gestão de aluguéis ficou muito mais simples. Consigo controlar tudo em um só lugar e meus clientes adoram a experiência.&rdquo;
-              </p>
-            </div>
-            <div className="bg-white p-8 rounded-lg shadow-md">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-[#9747FF] rounded-full mr-4"></div>
-                <div>
-                  <h4 className="font-bold">Roberto Mendes</h4>
-                  <p className="text-sm text-gray-500">Corretor autônomo</p>
-                </div>
-              </div>
-              <p className="text-gray-600 italic">
-                &ldquo;O link personalizado foi um diferencial para meu marketing. Agora tenho uma presença online profissional sem precisar investir em um site próprio.&rdquo;
-              </p>
-            </div>
-          </div>
+                <p className="text-gray-600 italic">
+                  &ldquo;Texto do depoimento do cliente...&rdquo;
+                </p>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
       {/* CTA */}
-      <section id="contato" className="py-16 bg-[#9747FF]">
+      <motion.section 
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        id="contato" 
+        className="py-16 bg-[#9747FF]"
+      >
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             Pronto para transformar seu negócio imobiliário?
@@ -297,10 +376,15 @@ export default function Home() {
             </button>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <motion.footer 
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        className="bg-gray-900 text-white py-12"
+      >
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
@@ -363,7 +447,7 @@ export default function Home() {
             <p>&copy; {new Date().getFullYear()} iMoobile. Todos os direitos reservados.</p>
           </div>
         </div>
-      </footer>
+      </motion.footer>
     </div>
   );
 }
