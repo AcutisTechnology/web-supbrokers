@@ -14,7 +14,6 @@ export default function RootLayout({
   const { user } = useAuth();
 
   useEffect(() => {
-
     if (user?.user?.subscription?.status === "NO_SUBSCRIPTION") {
       setShowModal(true);
     }
@@ -23,7 +22,7 @@ export default function RootLayout({
   return (
     <div className="flex min-h-screen bg-[#f6f6f6]">
       <Sidebar />
-      <main className="flex-1 px-8 py-6">{children}</main>
+      <main className="flex-1 p-4 md:p-8 md:py-6 mt-16 md:mt-0">{children}</main>
       <SubscriptionModal 
         isOpen={showModal} 
         onClose={() => setShowModal(false)} 

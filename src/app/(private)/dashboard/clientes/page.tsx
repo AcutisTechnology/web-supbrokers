@@ -9,7 +9,6 @@ import { useCustomers, Customer, PaginatedResponse } from "@/features/dashboard/
 import { LoadingState } from "@/components/ui/loading-state";
 import { Pagination } from "@/components/ui/pagination";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 export default function ClientesPage() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,13 +33,13 @@ export default function ClientesPage() {
       <div className="flex-1">
         <TopNav title_secondary="Gestão de Leads (Clientes)" />
 
-        <main className="p-6">
-          <div className="flex items-center justify-between mb-4">
+        <main className="p-4 md:p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-2xl font-semibold text-[#1c1b1f] mb-1">
+              <h1 className="text-xl md:text-2xl font-semibold text-[#1c1b1f] mb-1">
                 Gestão de Leads (Clientes)
               </h1>
-              <p className="text-[#969696]">
+              <p className="text-sm md:text-base text-[#969696]">
                 Veja a lista dos seus clientes que visitaram seu site e se
                 interessaram por algum imóvel.
               </p>
@@ -58,34 +57,47 @@ export default function ClientesPage() {
           {!isLoading && !isError && (
             <>
               {/* Tabs para filtrar os clientes */}
-              <Tabs 
-                defaultValue="todos" 
-                className="bg-white rounded-lg shadow-sm"
-                onValueChange={(value) => setCurrentTab(value)}
-              >
-                <div className="border-b px-6 py-3">
-                  <TabsList className="flex gap-6 justify-start">
-                    <TabsTrigger value="todos">Todos</TabsTrigger>
-                    <TabsTrigger value="interessados">Interessados</TabsTrigger>
-                    <TabsTrigger value="sem-interesse">Sem interesse</TabsTrigger>
-                    <TabsTrigger value="em-analise">Em análise</TabsTrigger>
-                  </TabsList>
-                </div>
+              <div className="bg-white rounded-lg shadow-sm">
+                <Tabs 
+                  defaultValue="todos" 
+                  className="w-full"
+                  onValueChange={(value) => setCurrentTab(value)}
+                >
+                  <div className="border-b">
+                    <div className="px-2 md:px-6 py-3">
+                      <TabsList className="w-full h-auto flex flex-wrap md:flex-nowrap justify-start">
+                        <TabsTrigger value="todos" className="text-sm flex-1 md:flex-none px-2 md:px-4">
+                          Todos
+                        </TabsTrigger>
+                        <TabsTrigger value="interessados" className="text-sm flex-1 md:flex-none px-2 md:px-4">
+                          Interessados
+                        </TabsTrigger>
+                        <TabsTrigger value="sem-interesse" className="text-sm flex-1 md:flex-none px-2 md:px-4">
+                          Sem interesse
+                        </TabsTrigger>
+                        <TabsTrigger value="em-analise" className="text-sm flex-1 md:flex-none px-2 md:px-4">
+                          Em análise
+                        </TabsTrigger>
+                      </TabsList>
+                    </div>
+                  </div>
 
-                {/* Conteúdo das Tabs */}
-                <TabsContent value="todos">
-                  <ClientesTable data={data} />
-                </TabsContent>
-                <TabsContent value="interessados">
-                  <ClientesTable data={data} status="Interessado" />
-                </TabsContent>
-                <TabsContent value="sem-interesse">
-                  <ClientesTable data={data} status="Sem interesse" />
-                </TabsContent>
-                <TabsContent value="em-analise">
-                  <ClientesTable data={data} status="Em análise" />
-                </TabsContent>
-              </Tabs>
+                  <div className="p-0">
+                    <TabsContent value="todos" className="mt-0">
+                      <ClientesTable data={data} />
+                    </TabsContent>
+                    <TabsContent value="interessados" className="mt-0">
+                      <ClientesTable data={data} status="Interessado" />
+                    </TabsContent>
+                    <TabsContent value="sem-interesse" className="mt-0">
+                      <ClientesTable data={data} status="Sem interesse" />
+                    </TabsContent>
+                    <TabsContent value="em-analise" className="mt-0">
+                      <ClientesTable data={data} status="Em análise" />
+                    </TabsContent>
+                  </div>
+                </Tabs>
+              </div>
 
               {/* Paginação */}
               {data?.meta && data.meta.last_page > 1 && (
@@ -93,7 +105,7 @@ export default function ClientesPage() {
                   currentPage={currentPage}
                   totalPages={data.meta.last_page}
                   onPageChange={handlePageChange}
-                  className="mt-8"
+                  className="mt-6 md:mt-8"
                 />
               )}
             </>
@@ -114,16 +126,14 @@ function ClientesTable({
 }) {
   const router = useRouter();
   
-  // Se não houver dados, mostrar mensagem
   if (!data || !data.data || data.data.length === 0) {
     return (
-      <div className="p-6 text-center text-[#969696]">
+      <div className="p-4 md:p-6 text-center text-[#969696]">
         Nenhum cliente encontrado.
       </div>
     );
   }
 
-  // Função para determinar a situação do cliente com base nas propriedades de interesse
   const getSituacao = (cliente: Customer) => {
     if (cliente.interested_properties && cliente.interested_properties.length > 0) {
       return "Interessado";
@@ -131,7 +141,6 @@ function ClientesTable({
     return "Em análise";
   };
 
-  // Função para determinar a cor da situação
   const getCorSituacao = (situacao: string) => {
     switch (situacao) {
       case "Interessado":
@@ -144,95 +153,157 @@ function ClientesTable({
     }
   };
 
-  // Filtrando clientes conforme a aba selecionada
   const filteredClientes = status === "todos"
     ? data.data
     : data.data.filter((cliente) => getSituacao(cliente) === status);
 
   return (
-    <div>
-      <table className="w-full">
-        <thead>
-          <tr className="border-b">
-            <th className="text-left px-6 py-3 text-sm font-medium text-[#969696]">
-              CLIENTE
-            </th>
-            <th className="text-left px-6 py-3 text-sm font-medium text-[#969696]">
-              SITUAÇÃO
-            </th>
-            <th className="text-left px-6 py-3 text-sm font-medium text-[#969696]">
-              IMÓVEIS DE INTERESSE
-            </th>
-            <th className="w-8 px-6 py-3"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredClientes.length > 0 ? (
-            filteredClientes.map((cliente) => {
-              const situacao = getSituacao(cliente);
-              const corSituacao = getCorSituacao(situacao);
-              const imovelInteresse = cliente.interested_properties && cliente.interested_properties.length > 0
-                ? cliente.interested_properties[0]
-                : null;
+    <div className="w-full overflow-hidden">
+      {/* Tabela Desktop */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left px-6 py-3 text-sm font-medium text-[#969696]">
+                CLIENTE
+              </th>
+              <th className="text-left px-6 py-3 text-sm font-medium text-[#969696]">
+                SITUAÇÃO
+              </th>
+              <th className="text-left px-6 py-3 text-sm font-medium text-[#969696]">
+                IMÓVEIS DE INTERESSE
+              </th>
+              <th className="w-8 px-6 py-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredClientes.length > 0 ? (
+              filteredClientes.map((cliente) => {
+                const situacao = getSituacao(cliente);
+                const corSituacao = getCorSituacao(situacao);
+                const imovelInteresse = cliente.interested_properties && cliente.interested_properties.length > 0
+                  ? cliente.interested_properties[0]
+                  : null;
 
-              return (
-                <tr key={cliente.id} className="border-b last:border-0">
-                  <td className="px-6 py-4">
-                    <div>
-                      <div className="font-medium text-[#1c1b1f]">
-                        {cliente.name}
-                      </div>
-                      <div className="text-sm text-[#969696]">
-                        {cliente.email}
-                      </div>
-                      <div className="text-sm text-[#969696] mt-1">
-                        {cliente.phone}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: corSituacao }}
-                        />
-                        <span className="text-[#1c1b1f]">{situacao}</span>
-                      </div>
-                      <div className="text-sm text-[#969696]">
-                        {cliente.interested_properties.length} imóveis de interesse
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    {imovelInteresse ? (
+                return (
+                  <tr key={cliente.id} className="border-b last:border-0">
+                    <td className="px-6 py-4">
                       <div>
                         <div className="font-medium text-[#1c1b1f]">
-                          {imovelInteresse.title}
+                          {cliente.name}
                         </div>
                         <div className="text-sm text-[#969696]">
-                          {imovelInteresse.neighborhood}, {imovelInteresse.street}
+                          {cliente.email}
                         </div>
                         <div className="text-sm text-[#969696] mt-1">
-                          {imovelInteresse.rent ? "Aluguel" : "Venda"}: R$ {imovelInteresse.value}
+                          {cliente.phone}
                         </div>
                       </div>
-                    ) : (
-                      <span className="text-[#969696]">Nenhum imóvel de interesse</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })
-          ) : (
-            <tr>
-              <td colSpan={4} className="text-center py-6 text-[#969696]">
-                Nenhum cliente encontrado.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: corSituacao }}
+                          />
+                          <span className="text-[#1c1b1f]">{situacao}</span>
+                        </div>
+                        <div className="text-sm text-[#969696]">
+                          {cliente.interested_properties.length} imóveis de interesse
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {imovelInteresse ? (
+                        <div>
+                          <div className="font-medium text-[#1c1b1f]">
+                            {imovelInteresse.title}
+                          </div>
+                          <div className="text-sm text-[#969696]">
+                            {imovelInteresse.neighborhood}, {imovelInteresse.street}
+                          </div>
+                          <div className="text-sm text-[#969696] mt-1">
+                            {imovelInteresse.rent ? "Aluguel" : "Venda"}: R$ {imovelInteresse.value}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-[#969696]">Nenhum imóvel de interesse</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={4} className="text-center py-6 text-[#969696]">
+                  Nenhum cliente encontrado.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Lista Mobile */}
+      <div className="md:hidden space-y-4">
+        {filteredClientes.length > 0 ? (
+          filteredClientes.map((cliente) => {
+            const situacao = getSituacao(cliente);
+            const corSituacao = getCorSituacao(situacao);
+            const imovelInteresse = cliente.interested_properties && cliente.interested_properties.length > 0
+              ? cliente.interested_properties[0]
+              : null;
+
+            return (
+              <div key={cliente.id} className="bg-white rounded-lg border p-4">
+                <div>
+                  <div className="font-medium text-[#1c1b1f]">
+                    {cliente.name}
+                  </div>
+                  <div className="text-sm text-[#969696]">
+                    {cliente.email}
+                  </div>
+                  <div className="text-sm text-[#969696] mt-1">
+                    {cliente.phone}
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: corSituacao }}
+                    />
+                    <span className="text-[#1c1b1f]">{situacao}</span>
+                  </div>
+                  <div className="text-sm text-[#969696] mt-1">
+                    {cliente.interested_properties.length} imóveis de interesse
+                  </div>
+                </div>
+
+                {imovelInteresse && (
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="font-medium text-[#1c1b1f]">
+                      {imovelInteresse.title}
+                    </div>
+                    <div className="text-sm text-[#969696]">
+                      {imovelInteresse.neighborhood}, {imovelInteresse.street}
+                    </div>
+                    <div className="text-sm text-[#969696] mt-1">
+                      {imovelInteresse.rent ? "Aluguel" : "Venda"}: R$ {imovelInteresse.value}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center py-6 text-[#969696]">
+            Nenhum cliente encontrado.
+          </div>
+        )}
+      </div>
     </div>
   );
 }
