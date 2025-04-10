@@ -1,23 +1,26 @@
-import type { Metadata } from "next";
-import { Figtree } from "next/font/google";
+import type { Metadata } from 'next';
+import { Figtree } from 'next/font/google';
 
-import "./globals.css";
-import { AppProviders } from "@/shared/contexts/providers";
-import { Toaster } from "@/components/ui/toaster";
+import './globals.css';
+import { AppProviders } from '@/shared/contexts/providers';
+import { Toaster } from '@/components/ui/toaster';
 
 const figtreeSans = Figtree({
-  variable: "--font-figtree-sans",
-  subsets: ["latin"],
+  variable: '--font-figtree-sans',
+  subsets: ['latin'],
 });
 
 const figtreeMono = Figtree({
-  variable: "--font-figtree-mono",
-  subsets: ["latin"],
+  variable: '--font-figtree-mono',
+  subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
-  title: "iMoobile",
-  description: "Seu ecossistema imobiliário!",
+  title: 'Imoobile',
+  description: 'Seu ecossistema imobiliário!',
+  icons: {
+    icon: '/logo.svg',
+  },
 };
 
 export default function RootLayout({
