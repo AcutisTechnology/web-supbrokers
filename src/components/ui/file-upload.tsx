@@ -1,7 +1,7 @@
-import React, { useRef, useState } from "react";
-import { Button } from "./button";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
-import Image from "next/image";
+import React, { useRef, useState } from 'react';
+import { Button } from './button';
+import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import Image from 'next/image';
 
 interface FileUploadProps {
   value: File[];
@@ -15,7 +15,7 @@ export function FileUpload({
   value = [],
   onChange,
   multiple = true,
-  accept = "image/*",
+  accept = 'image/*',
   maxFiles = 10,
 }: FileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -23,13 +23,13 @@ export function FileUpload({
 
   React.useEffect(() => {
     // Limpar URLs anteriores para evitar vazamentos de memória
-    previews.forEach((url) => URL.revokeObjectURL(url));
-    
+    previews.forEach(url => URL.revokeObjectURL(url));
+
     // Criar URLs de preview apenas para novos arquivos
     if (value.length > 0) {
       // Verificar se os arquivos já têm previews
       if (value.length !== previews.length) {
-        const urls = value.map((file) => URL.createObjectURL(file));
+        const urls = value.map(file => URL.createObjectURL(file));
         setPreviews(urls);
       }
     } else {
@@ -39,7 +39,7 @@ export function FileUpload({
 
     // Limpar URLs ao desmontar
     return () => {
-      previews.forEach((url) => URL.revokeObjectURL(url));
+      previews.forEach(url => URL.revokeObjectURL(url));
     };
   }, [value.length]); // Dependência apenas do comprimento do array de arquivos
 
@@ -55,7 +55,7 @@ export function FileUpload({
 
     // Resetar o input para permitir selecionar o mesmo arquivo novamente
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
   };
 
@@ -69,10 +69,7 @@ export function FileUpload({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         {previews.map((preview, index) => (
-          <div
-            key={index}
-            className="group relative aspect-square rounded-md border bg-muted"
-          >
+          <div key={index} className="group relative aspect-square rounded-md border bg-muted">
             <Image
               src={preview}
               alt={`Preview ${index}`}
@@ -88,18 +85,11 @@ export function FileUpload({
             </button>
           </div>
         ))}
-        {value.length < maxFiles && (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="flex aspect-square items-center justify-center rounded-md border border-dashed bg-muted/50 transition-colors hover:bg-muted"
-          >
-            <div className="flex flex-col items-center gap-1 text-xs text-muted-foreground">
-              <ImageIcon className="h-8 w-8" />
-              <span>Adicionar</span>
-            </div>
-          </button>
-        )}
+
+        <div className="flex flex-col items-center gap-1 text-xs text-muted-foreground">
+          <ImageIcon className="h-8 w-8" />
+          <span>Adicionar</span>
+        </div>
       </div>
       <input
         ref={fileInputRef}
@@ -121,4 +111,4 @@ export function FileUpload({
       </Button>
     </div>
   );
-} 
+}

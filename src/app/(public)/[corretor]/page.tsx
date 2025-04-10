@@ -1,26 +1,37 @@
-"use client";
+'use client';
 
-import { NewsCard } from "@/features/landing/components/news-card";
-import { PropertyCard } from "@/features/landing/components/property-card";
-import { SearchForm } from "@/features/landing/components/search-section";
-import { useBrokerProperties } from "@/features/landing/services/broker-service";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { use, useState } from "react";
+import { NewsCard } from '@/features/landing/components/news-card';
+import { PropertyCard } from '@/features/landing/components/property-card';
+import { SearchForm } from '@/features/landing/components/search-section';
+import { useBrokerProperties } from '@/features/landing/services/broker-service';
+import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { use, useState, useEffect } from 'react';
 
 export default function Home({ params }: { params: Promise<{ corretor: string }> }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { corretor } = use(params);
+
+  // Get query params from URL
+  const initialFilter = searchParams.get('type') === 'rent' ? 'rent' : 'sale';
+  const initialNeighborhood = searchParams.get('neighborhood') || '';
+  const initialCode = searchParams.get('code') || '';
+
   const { data: properties, isLoading, error } = useBrokerProperties(corretor);
   const [showAllProperties, setShowAllProperties] = useState(false);
-  const [propertyFilter, setPropertyFilter] = useState<'all' | 'sale' | 'rent'>('all');
+  const [propertyFilter, setPropertyFilter] = useState<'all' | 'sale' | 'rent'>(
+    initialFilter === 'rent' ? 'rent' : 'sale'
+  );
+  const [neighborhood, setNeighborhood] = useState(initialNeighborhood);
+  const [code, setCode] = useState(initialCode);
 
   // Função para abrir o WhatsApp com a mensagem
   const openWhatsApp = () => {
     if (!properties) return;
-    
+
     const phoneNumber = properties.data.user.phone.replace(/\D/g, '');
-    const message = "Olá, gostaria de mais informações sobre os imóveis";
+    const message = 'Olá, gostaria de mais informações sobre os imóveis';
     const whatsappUrl = `https://wa.me/55${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -29,6 +40,25 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
   const handleSearchFilterChange = (filter: 'sale' | 'rent') => {
     setPropertyFilter(filter);
     setShowAllProperties(false); // Reset para mostrar apenas 3 imóveis quando mudar o filtro
+  };
+
+  // Função para lidar com a busca
+  const handleSearch = (params: {
+    type: 'sale' | 'rent';
+    neighborhood?: string;
+    code?: string;
+  }) => {
+    setPropertyFilter(params.type === 'rent' ? 'rent' : 'sale');
+    setNeighborhood(params.neighborhood || '');
+    setCode(params.code || '');
+
+    // Atualizar URL com os parâmetros
+    const queryParams = new URLSearchParams();
+    queryParams.set('type', params.type);
+    if (params.neighborhood) queryParams.set('neighborhood', params.neighborhood);
+    if (params.code) queryParams.set('code', params.code);
+
+    router.push(`/${corretor}?${queryParams.toString()}`);
   };
 
   if (isLoading) {
@@ -49,10 +79,24 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
 
   // Filtrar os imóveis com base no filtro selecionado
   const filteredProperties = properties.data.all.filter(property => {
-    if (propertyFilter === 'all') return true;
-    if (propertyFilter === 'sale') return property.sale;
-    if (propertyFilter === 'rent') return property.rent;
-    return true;
+    // Filtrar por tipo (venda/aluguel)
+    const typeMatch =
+      propertyFilter === 'all'
+        ? true
+        : propertyFilter === 'sale'
+          ? property.sale
+          : propertyFilter === 'rent'
+            ? property.rent
+            : true;
+
+    // Filtrar por bairro
+    const neighborhoodMatch =
+      !neighborhood || property.neighborhood.toLowerCase().includes(neighborhood.toLowerCase());
+
+    // Filtrar por código
+    const codeMatch = !code || property.slug.toLowerCase().includes(code.toLowerCase());
+
+    return typeMatch && neighborhoodMatch && codeMatch;
   });
 
   return (
@@ -60,20 +104,15 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
       <div className="bg-primary rounded-xl m-4 md:m-8 p-6 md:px-20 md:py-9">
         {/* Botões de ação */}
         <div className="flex flex-col md:flex-row justify-between items-center md:items-start space-y-4 md:space-y-0">
-          <Image
-            src="/logo-extendida-roxo.svg"
-            width={142}
-            alt="logo pequena"
-            height={42}
-          />
+          <Image src="/logo-extendida-roxo.svg" width={142} alt="logo pequena" height={42} />
           <div className="flex space-x-2 md:space-x-4">
             <button
-              onClick={() => router.push("/login")}
+              onClick={() => router.push('/login')}
               className="rounded-full border border-white px-4 py-2 md:p-4 h-10 md:h-11 flex items-center justify-center text-white text-sm md:text-base hover:bg-white hover:text-black"
             >
               Área do Corretor
             </button>
-            <button 
+            <button
               onClick={openWhatsApp}
               className="rounded-full bg-white px-4 py-2 md:p-4 h-10 md:h-11 flex items-center justify-center text-black text-sm md:text-base"
             >
@@ -91,7 +130,7 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
         </p>
 
         {/* Localizar imóvel */}
-        <SearchForm onFilterChange={handleSearchFilterChange} />
+        <SearchForm onFilterChange={handleSearchFilterChange} onSearch={handleSearch} />
       </div>
 
       {/* Todos os imóveis */}
@@ -117,13 +156,18 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
                     title={property.title}
                     location={`${property.neighborhood}, João Pessoa`}
                     price={property.sale ? property.value.split(',')[0] : property.value}
-                    type={property.sale ? "sale" : "rent"}
+                    type={property.sale ? 'sale' : 'rent'}
                     details={{
                       area: `${property.size}m²`,
                       bedrooms: `${property.bedrooms} quartos`,
-                      hasElevator: property.characteristics.some(c => c.text.toLowerCase().includes('elevador')),
+                      hasElevator: property.characteristics.some(c =>
+                        c.text.toLowerCase().includes('elevador')
+                      ),
                     }}
-                    imageUrl={property.images[0]?.url || "https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg"}
+                    imageUrl={
+                      property.images[0]?.url ||
+                      'https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg'
+                    }
                     slug={property.slug}
                     propertyData={property}
                     userData={properties.data.user}
@@ -132,7 +176,7 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
             </div>
             {!showAllProperties && filteredProperties.length > 3 && (
               <div className="text-center mt-8">
-                <button 
+                <button
                   onClick={() => setShowAllProperties(true)}
                   className="rounded-full bg-primary text-white px-6 py-3 hover:bg-primary/90 transition-colors"
                 >
@@ -142,7 +186,7 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
             )}
             {showAllProperties && filteredProperties.length > 3 && (
               <div className="text-center mt-8">
-                <button 
+                <button
                   onClick={() => setShowAllProperties(false)}
                   className="rounded-full bg-gray-200 text-gray-700 px-6 py-3 hover:bg-gray-300 transition-colors"
                 >
@@ -159,9 +203,7 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
         <section className="py-12">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl font-medium mb-2">Lançamentos para você</h2>
-            <p className="text-[#777777] mb-6">
-              Confira os meus imóveis em destaque
-            </p>
+            <p className="text-[#777777] mb-6">Confira os meus imóveis em destaque</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {properties.data.releases.slice(0, 3).map((property, i) => (
                 <PropertyCard
@@ -169,13 +211,18 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
                   title={property.title}
                   location={`${property.neighborhood}, João Pessoa`}
                   price={property.sale ? property.value.split(',')[0] : property.value}
-                  type={property.sale ? "sale" : "rent"}
+                  type={property.sale ? 'sale' : 'rent'}
                   details={{
                     area: `${property.size}m²`,
                     bedrooms: `${property.bedrooms} quartos`,
-                    hasElevator: property.characteristics.some(c => c.text.toLowerCase().includes('elevador')),
+                    hasElevator: property.characteristics.some(c =>
+                      c.text.toLowerCase().includes('elevador')
+                    ),
                   }}
-                  imageUrl={property.images[0]?.url || "https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg"}
+                  imageUrl={
+                    property.images[0]?.url ||
+                    'https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg'
+                  }
                   slug={property.slug}
                   propertyData={property}
                   userData={properties.data.user}
@@ -213,16 +260,9 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
       <footer className="py-8 text-center text-sm text-[#777777]">
         <div className="flex flex-row items-center gap-2 justify-center">
           <p>Esse site foi feito na</p>
-          <Image
-            src="/logo-extendida.svg"
-            width={81}
-            height={12}
-            alt="logo pequena"
-          />
+          <Image src="/logo-extendida.svg" width={81} height={12} alt="logo pequena" />
         </div>
-        <p className="mb-4">
-          Copyright © iMoobile. Todos os direitos reservados
-        </p>
+        <p className="mb-4">Copyright © iMoobile. Todos os direitos reservados</p>
         <div className="flex justify-center gap-4">
           <a href="#" className="hover:text-[#9747FF]">
             Política de privacidade
