@@ -1,6 +1,6 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { api } from "@/shared/configs/api";
-import { PlanType } from "../types/subscription";
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { api } from '@/shared/configs/api';
+import { PlanType } from '../types/subscription';
 
 // Interface para os recursos do plano
 export interface PlanFeature {
@@ -16,7 +16,7 @@ export interface Plan {
   name: string;
   description: string;
   price: number;
-  interval: "monthly" | "yearly";
+  interval: 'monthly' | 'yearly';
   features: PlanFeature[];
   is_current: boolean;
   properties_limit: number;
@@ -39,7 +39,7 @@ export interface PlanResponse {
 // Interface para os dados de pagamento
 export interface PaymentData {
   plan_id: number;
-  payment_method: "credit_card" | "pix" | "boleto";
+  payment_method: 'credit_card' | 'pix' | 'boleto';
   card_number?: string;
   card_holder_name?: string;
   card_expiry_month?: string;
@@ -51,7 +51,7 @@ export interface PaymentData {
 export interface PaymentResponse {
   data: {
     id: number;
-    status: "pending" | "approved" | "rejected";
+    status: 'pending' | 'approved' | 'rejected';
     payment_url?: string; // URL para pagamento via PIX ou boleto
   };
   success: boolean;
@@ -61,154 +61,154 @@ export interface PaymentResponse {
 const MOCK_PLANS: Plan[] = [
   {
     id: 1,
-    name: "Básico",
-    description: "Ideal para corretores iniciantes",
-    price: 49.9,
-    interval: "monthly",
+    name: 'Básico',
+    description: 'Ideal para corretores iniciantes',
+    price: 29.9,
+    interval: 'monthly',
     is_current: true,
-    properties_limit: 10,
+    properties_limit: 50,
     highlight: false,
-    type: "basic",
+    type: 'basic',
     features: [
-      { id: 1, name: "Até 10 imóveis", description: "", included: true },
-      { id: 2, name: "Página de imóveis", description: "", included: true },
-      { id: 3, name: "Captação de leads", description: "", included: true },
-      { id: 4, name: "Suporte por email", description: "", included: true },
-      { id: 5, name: "Relatórios avançados", description: "", included: false },
+      { id: 1, name: 'Até 50 imóveis', description: '', included: true },
+      { id: 2, name: 'Página de imóveis', description: '', included: true },
+      { id: 3, name: 'Captação de leads', description: '', included: true },
+      { id: 4, name: 'Suporte por email', description: '', included: true },
+      { id: 5, name: 'Relatórios avançados', description: '', included: false },
       {
         id: 6,
-        name: "Integração com portais",
-        description: "",
+        name: 'Integração com portais',
+        description: '',
         included: false,
       },
     ],
   },
   {
     id: 2,
-    name: "Profissional",
-    description: "Para corretores que querem crescer",
-    price: 99.9,
-    interval: "monthly",
+    name: 'Profissional',
+    description: 'Para corretores que querem crescer',
+    price: 69.9,
+    interval: 'monthly',
     is_current: false,
-    properties_limit: 50,
+    properties_limit: 200,
     highlight: true,
-    type: "professional",
+    type: 'professional',
     features: [
-      { id: 1, name: "Até 50 imóveis", description: "", included: true },
-      { id: 2, name: "Página de imóveis", description: "", included: true },
-      { id: 3, name: "Captação de leads", description: "", included: true },
+      { id: 1, name: 'Até 200 imóveis', description: '', included: true },
+      { id: 2, name: 'Página de imóveis', description: '', included: true },
+      { id: 3, name: 'Captação de leads', description: '', included: true },
       {
         id: 4,
-        name: "Suporte por email e chat",
-        description: "",
+        name: 'Suporte por email e chat',
+        description: '',
         included: true,
       },
-      { id: 5, name: "Relatórios avançados", description: "", included: true },
+      { id: 5, name: 'Relatórios avançados', description: '', included: true },
       {
         id: 6,
-        name: "Integração com portais",
-        description: "",
+        name: 'Integração com portais',
+        description: '',
         included: false,
       },
     ],
   },
   {
     id: 3,
-    name: "Empresarial",
-    description: "Para imobiliárias e equipes",
-    price: 199.9,
-    interval: "monthly",
+    name: 'Empresarial',
+    description: 'Para imobiliárias e equipes',
+    price: 99.9,
+    interval: 'monthly',
     is_current: false,
-    properties_limit: 200,
+    properties_limit: 500,
     highlight: false,
-    type: "business",
+    type: 'business',
     features: [
-      { id: 1, name: "Até 200 imóveis", description: "", included: true },
-      { id: 2, name: "Página de imóveis", description: "", included: true },
-      { id: 3, name: "Captação de leads", description: "", included: true },
-      { id: 4, name: "Suporte prioritário", description: "", included: true },
-      { id: 5, name: "Relatórios avançados", description: "", included: true },
+      { id: 1, name: 'Até 500 imóveis', description: '', included: true },
+      { id: 2, name: 'Página de imóveis', description: '', included: true },
+      { id: 3, name: 'Captação de leads', description: '', included: true },
+      { id: 4, name: 'Suporte prioritário', description: '', included: true },
+      { id: 5, name: 'Relatórios avançados', description: '', included: true },
       {
         id: 6,
-        name: "Integração com portais",
-        description: "",
+        name: 'Integração com portais',
+        description: '',
         included: true,
       },
     ],
   },
   {
     id: 4,
-    name: "Básico Anual",
-    description: "Ideal para corretores iniciantes",
-    price: 479.0,
-    interval: "yearly",
+    name: 'Básico Anual',
+    description: 'Ideal para corretores iniciantes',
+    price: 322.0,
+    interval: 'yearly',
     is_current: false,
-    properties_limit: 10,
+    properties_limit: 50,
     highlight: false,
-    type: "basic",
+    type: 'basic',
     features: [
-      { id: 1, name: "Até 10 imóveis", description: "", included: true },
-      { id: 2, name: "Página de imóveis", description: "", included: true },
-      { id: 3, name: "Captação de leads", description: "", included: true },
-      { id: 4, name: "Suporte por email", description: "", included: true },
-      { id: 5, name: "Relatórios avançados", description: "", included: false },
+      { id: 1, name: 'Até 50 imóveis', description: '', included: true },
+      { id: 2, name: 'Página de imóveis', description: '', included: true },
+      { id: 3, name: 'Captação de leads', description: '', included: true },
+      { id: 4, name: 'Suporte por email', description: '', included: true },
+      { id: 5, name: 'Relatórios avançados', description: '', included: false },
       {
         id: 6,
-        name: "Integração com portais",
-        description: "",
+        name: 'Integração com portais',
+        description: '',
         included: false,
       },
     ],
   },
   {
     id: 5,
-    name: "Profissional Anual",
-    description: "Para corretores que querem crescer",
-    price: 959.0,
-    interval: "yearly",
+    name: 'Profissional Anual',
+    description: 'Para corretores que querem crescer',
+    price: 755.0,
+    interval: 'yearly',
     is_current: false,
-    properties_limit: 50,
+    properties_limit: 200,
     highlight: true,
-    type: "professional",
+    type: 'professional',
     features: [
-      { id: 1, name: "Até 50 imóveis", description: "", included: true },
-      { id: 2, name: "Página de imóveis", description: "", included: true },
-      { id: 3, name: "Captação de leads", description: "", included: true },
+      { id: 1, name: 'Até 200 imóveis', description: '', included: true },
+      { id: 2, name: 'Página de imóveis', description: '', included: true },
+      { id: 3, name: 'Captação de leads', description: '', included: true },
       {
         id: 4,
-        name: "Suporte por email e chat",
-        description: "",
+        name: 'Suporte por email e chat',
+        description: '',
         included: true,
       },
-      { id: 5, name: "Relatórios avançados", description: "", included: true },
+      { id: 5, name: 'Relatórios avançados', description: '', included: true },
       {
         id: 6,
-        name: "Integração com portais",
-        description: "",
+        name: 'Integração com portais',
+        description: '',
         included: false,
       },
     ],
   },
   {
     id: 6,
-    name: "Empresarial Anual",
-    description: "Para imobiliárias e equipes",
-    price: 1919.0,
-    interval: "yearly",
+    name: 'Empresarial Anual',
+    description: 'Para imobiliárias e equipes',
+    price: 1078.0,
+    interval: 'yearly',
     is_current: false,
-    properties_limit: 200,
+    properties_limit: 500,
     highlight: false,
-    type: "business",
+    type: 'business',
     features: [
-      { id: 1, name: "Até 200 imóveis", description: "", included: true },
-      { id: 2, name: "Página de imóveis", description: "", included: true },
-      { id: 3, name: "Captação de leads", description: "", included: true },
-      { id: 4, name: "Suporte prioritário", description: "", included: true },
-      { id: 5, name: "Relatórios avançados", description: "", included: true },
+      { id: 1, name: 'Até 500 imóveis', description: '', included: true },
+      { id: 2, name: 'Página de imóveis', description: '', included: true },
+      { id: 3, name: 'Captação de leads', description: '', included: true },
+      { id: 4, name: 'Suporte prioritário', description: '', included: true },
+      { id: 5, name: 'Relatórios avançados', description: '', included: true },
       {
         id: 6,
-        name: "Integração com portais",
-        description: "",
+        name: 'Integração com portais',
+        description: '',
         included: true,
       },
     ],
@@ -218,10 +218,10 @@ const MOCK_PLANS: Plan[] = [
 // Hook para buscar todos os planos disponíveis (mockado)
 export function usePlans() {
   return useQuery({
-    queryKey: ["plans"],
+    queryKey: ['plans'],
     queryFn: async () => {
       // Simular um delay de rede
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       return {
         data: MOCK_PLANS,
@@ -234,15 +234,15 @@ export function usePlans() {
 // Hook para buscar um plano específico (mockado)
 export function usePlan(id: number) {
   return useQuery({
-    queryKey: ["plan", id],
+    queryKey: ['plan', id],
     queryFn: async () => {
       // Simular um delay de rede
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 300));
 
-      const plan = MOCK_PLANS.find((p) => p.id === id);
+      const plan = MOCK_PLANS.find(p => p.id === id);
 
       if (!plan) {
-        throw new Error("Plano não encontrado");
+        throw new Error('Plano não encontrado');
       }
 
       return {
@@ -257,15 +257,15 @@ export function usePlan(id: number) {
 // Hook para buscar o plano atual do usuário (mockado)
 export function useCurrentPlan() {
   return useQuery({
-    queryKey: ["current-plan"],
+    queryKey: ['current-plan'],
     queryFn: async () => {
       // Simular um delay de rede
-      await new Promise((resolve) => setTimeout(resolve, 400));
+      await new Promise(resolve => setTimeout(resolve, 400));
 
-      const currentPlan = MOCK_PLANS.find((p) => p.is_current);
+      const currentPlan = MOCK_PLANS.find(p => p.is_current);
 
       if (!currentPlan) {
-        throw new Error("Plano atual não encontrado");
+        throw new Error('Plano atual não encontrado');
       }
 
       return {
@@ -278,26 +278,26 @@ export function useCurrentPlan() {
 
 // Mock de URL de QR Code PIX
 const MOCK_PIX_QR_CODE =
-  "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=00020126580014BR.GOV.BCB.PIX0136a629532e-7693-4846-b028-f142a1dd1d5e5204000053039865802BR5913Supbrokers6008Sao Paulo62070503***6304E2CA";
+  'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=00020126580014BR.GOV.BCB.PIX0136a629532e-7693-4846-b028-f142a1dd1d5e5204000053039865802BR5913Supbrokers6008Sao Paulo62070503***6304E2CA';
 
 // Hook para processar o pagamento e upgrade do plano (mockado)
 export function useUpgradePlan() {
   return useMutation({
     mutationFn: async (data: PaymentData) => {
       // Simular um delay de rede
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Simular uma resposta de sucesso
       return {
         data: {
           id: Math.floor(Math.random() * 1000),
-          status: "approved",
+          status: 'approved',
           payment_url:
-            data.payment_method === "pix"
+            data.payment_method === 'pix'
               ? MOCK_PIX_QR_CODE
-              : data.payment_method === "boleto"
-              ? "https://exemplo.com/boleto/12345"
-              : undefined,
+              : data.payment_method === 'boleto'
+                ? 'https://exemplo.com/boleto/12345'
+                : undefined,
         },
         success: true,
       } as PaymentResponse;
