@@ -156,19 +156,6 @@ export default function SignUpForm() {
             />
           </div>
 
-          {/* Password Requirements */}
-          <Alert className="bg-[#FFF5E5] border-none text-[#453214]">
-            <AlertDescription>
-              <p className="font-medium mb-2">Sua senha deve conter</p>
-              <ul className="text-sm space-y-1">
-                <li>• 8 ou mais caracteres</li>
-                <li>• No mínimo uma letra minúscula (a-z)</li>
-                <li>• No mínimo uma letra maiúscula (A-Z)</li>
-                <li>• No mínimo um número (0-9)</li>
-              </ul>
-            </AlertDescription>
-          </Alert>
-
           {/* Submit Button */}
           <Button
             type="submit"

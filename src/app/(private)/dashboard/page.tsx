@@ -14,7 +14,8 @@ import {
   Mail,
   Link as LinkIcon,
   Copy,
-  Check
+  Check,
+  Navigation
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -62,6 +63,10 @@ export default function DashboardPage() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleNavigateToLink = () => {
+    window.open(publicUrl, '_blank');
   };
   
   // Buscar imóveis e clientes
@@ -176,6 +181,15 @@ export default function DashboardPage() {
                     <Copy className="w-4 h-4 text-[#9747ff]" />
                   )}
                 </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleNavigateToLink}
+                  className="h-8 p-0 hover:bg-transparent cursor-pointer"
+                >
+                  <Navigation className="w-4 h-4 text-[#9747ff]" />
+                </Button>
               </div>
             </div>
           </div>
@@ -250,7 +264,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs sm:text-sm font-medium text-[#969696]">Visitas Agendadas</p>
-                    <h3 className="text-xl sm:text-2xl font-bold mt-1">8</h3>
+                    <h3 className="text-xl sm:text-2xl font-bold mt-1">0</h3>
                   </div>
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#3b82f6]/10 rounded-full flex items-center justify-center">
                     <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-[#3b82f6]" />

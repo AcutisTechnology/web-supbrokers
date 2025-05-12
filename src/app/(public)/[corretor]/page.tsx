@@ -101,10 +101,15 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="bg-primary rounded-xl m-4 md:m-8 p-6 md:px-20 md:py-9">
+      <div className="rounded-xl m-4 md:m-8 p-6 md:px-20 md:py-9" style={{ backgroundColor: properties.data.user.page_settings?.primary_color || '#9747FF' }}>
         {/* Botões de ação */}
         <div className="flex flex-col md:flex-row justify-between items-center md:items-start space-y-4 md:space-y-0">
-          <Image src="/logo-extendida-roxo.svg" width={142} alt="logo pequena" height={42} />
+          <Image 
+            src={properties.data.user.page_settings?.brand_image || '/logo-extendida-roxo.svg'} 
+            width={142} 
+            alt="logo do corretor" 
+            height={42} 
+          />
           <div className="flex space-x-2 md:space-x-4">
             <button
               onClick={() => router.push('/login')}
@@ -123,14 +128,18 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
 
         {/* Título */}
         <p className="font-medium text-3xl md:text-5xl text-white mt-6 md:mt-8 leading-snug text-center md:text-left">
-          Encontre o<br />
-          imóvel perfeito
-          <br />
-          para você.
+          {properties.data.user.page_settings?.title || 'Encontre o imóvel perfeito para você.'}
+        </p>
+        <p className="text-white text-lg md:text-xl mt-2">
+          {properties.data.user.page_settings?.subtitle || 'Confira os melhores imóveis disponíveis para você.'}
         </p>
 
         {/* Localizar imóvel */}
-        <SearchForm onFilterChange={handleSearchFilterChange} onSearch={handleSearch} />
+        <SearchForm 
+          onFilterChange={handleSearchFilterChange} 
+          onSearch={handleSearch} 
+          primaryColor={properties.data.user.page_settings?.primary_color || '#9747FF'}
+        />
       </div>
 
       {/* Todos os imóveis */}

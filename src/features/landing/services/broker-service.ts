@@ -29,6 +29,12 @@ export interface Property {
 export interface User {
   name: string;
   phone: string;
+  page_settings?: {
+    primary_color: string;
+    title: string;
+    subtitle: string;
+    brand_image: string;
+  }
 }
 
 // Interface para os dados retornados pela API
@@ -101,6 +107,8 @@ export function useBrokerProperties(slug: string) {
       return response;
     },
     enabled: !!slug,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }
 
