@@ -2,7 +2,7 @@ import ky from "ky";
 import { parseCookies } from "nookies";
 
 export const api = ky.create({
-  prefixUrl: `https://api-imoobile-rxwcj.ondigitalocean.app/api/v1/`,
+  prefixUrl: `https://api-imoobile-4zq9p.ondigitalocean.app/api/v1/`,
   // prefixUrl: `http://localhost:8000/api/v1/`,
   hooks: {
     beforeRequest: [
