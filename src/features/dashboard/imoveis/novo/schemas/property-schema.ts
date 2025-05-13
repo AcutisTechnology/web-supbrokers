@@ -17,7 +17,7 @@ export const propertySchema = z.object({
   qr_code: z.string().optional(),
   active: z.coerce.number().default(1),
   characteristics: z.array(z.string()).default([]),
-  images: z.array(z.any()).max(5, "Máximo de 5 imagens permitidas").default([]),
+  attachments: z.array(z.any()).default([]),
   purpose: z.enum(["sell", "rent"]).default("sell"),
 });
 
@@ -40,6 +40,6 @@ export const defaultValues: Partial<PropertyFormValues> = {
   qr_code: "teste",
   active: 1,
   characteristics: [],
-  images: [],
+  attachments: [],
   purpose: "sell",
 };

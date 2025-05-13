@@ -88,9 +88,11 @@ export function useCreateProperty() {
         // Adicionar todos os campos de texto ao FormData
         Object.entries(data).forEach(([key, value]) => {
           if (
-            key !== "images" &&
+            key !== "attachments" &&
             key !== "characteristics" &&
-            key !== "purpose"
+            key !== "purpose" &&
+            value !== undefined &&
+            value !== null
           ) {
             formData.append(key, String(value));
           }
@@ -108,10 +110,11 @@ export function useCreateProperty() {
         }
 
         // Adicionar imagens (máximo 5)
-        if (data.images && data.images.length > 0) {
-          const limitedImages = data.images.slice(0, 5);
-          limitedImages.forEach((image) => {
-            formData.append("images[]", image);
+        if (data.attachments && Array.isArray(data.attachments) && data.attachments.length > 0) {
+          // Garantir o máximo de 5 arquivos
+          const limitedAttachments = data.attachments.slice(0, 5);
+          limitedAttachments.forEach((attachment) => {
+            formData.append("attachments[]", attachment);
           });
         }
 
@@ -153,9 +156,11 @@ export function useUpdateProperty() {
         // Adicionar todos os campos de texto ao FormData
         Object.entries(data).forEach(([key, value]) => {
           if (
-            key !== "images" &&
+            key !== "attachments" &&
             key !== "characteristics" &&
-            key !== "purpose"
+            key !== "purpose" &&
+            value !== undefined &&
+            value !== null
           ) {
             formData.append(key, String(value));
           }
@@ -172,10 +177,11 @@ export function useUpdateProperty() {
         }
 
         // Adicionar imagens (máximo 5)
-        if (data.images && data.images.length > 0) {
-          const limitedImages = data.images.slice(0, 5);
-          limitedImages.forEach((image) => {
-            formData.append("images[]", image);
+        if (data.attachments && Array.isArray(data.attachments) && data.attachments.length > 0) {
+          // Garantir o máximo de 5 arquivos
+          const limitedAttachments = data.attachments.slice(0, 5);
+          limitedAttachments.forEach((attachment) => {
+            formData.append("attachments[]", attachment);
           });
         }
 

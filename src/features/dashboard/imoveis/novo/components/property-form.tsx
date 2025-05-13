@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, RefreshCw, Film } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -87,6 +87,27 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
     return (form.getValues("characteristics") || []).includes(value);
   };
 
+  // Função para gerar código aleatório com 2 letras e 3 números
+  const generateRandomCode = () => {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    
+    let code = '';
+    
+    // Adicionar 2 letras
+    for (let i = 0; i < 2; i++) {
+      code += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+    
+    // Adicionar 3 números
+    for (let i = 0; i < 3; i++) {
+      code += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    }
+    
+    // Atualizar o campo do formulário
+    form.setValue('code', code);
+  };
+
   const onSubmit = async (data: PropertyFormValues) => {
     try {
       // Definir rent ou sale com base na seleção
@@ -98,6 +119,7 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
         data.sale = 1;
       }
       
+      // Já existe um processamento de FormData nas funções de mutação
       if (isEditing && propertySlug) {
         // Atualizar imóvel existente
         await updatePropertyMutation.mutateAsync({ slug: propertySlug, data }, {
@@ -286,11 +308,22 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                         Código do imóvel<span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          className="bg-white"
-                          placeholder="Código do imóvel"
-                          {...field}
-                        />
+                        <div className="flex gap-2">
+                          <Button 
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={generateRandomCode}
+                            title="Gerar código aleatório"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                          <Input
+                            className="bg-white"
+                            placeholder="Código do imóvel"
+                            {...field}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -459,7 +492,7 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                 <h2 className="mb-4 text-lg font-medium">Imagens do imóvel</h2>
                 <FormField
                   control={form.control}
-                  name="images"
+                  name="attachments"
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
@@ -467,7 +500,7 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                           value={field.value as File[]}
                           onChange={field.onChange}
                           multiple={true}
-                          accept="image/*"
+                          accept="*"
                         />
                       </FormControl>
                       <FormMessage />

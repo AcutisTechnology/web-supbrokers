@@ -9,8 +9,8 @@ interface PropertyPreviewProps {
 
 export function PropertyPreview({ data }: PropertyPreviewProps) {
   // Obter a primeira imagem para exibição, se disponível
-  const previewImage = data.images && data.images.length > 0
-    ? URL.createObjectURL(data.images[0] as File)
+  const previewImage = data.attachments && data.attachments.length > 0
+    ? URL.createObjectURL(data.attachments[0] as File)
     : "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Supbrokers__C_C3_B3pia_S_C3_A9rgio_-i5IjBZhamqbTXLQvYD1E6xOv8YJ5Vg.png";
 
   // Formatar o valor para exibição
