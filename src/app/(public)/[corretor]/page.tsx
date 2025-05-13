@@ -174,7 +174,7 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
                       ),
                     }}
                     imageUrl={
-                      property.images[0]?.url ||
+                      property.attachments[0]?.url ||
                       'https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg'
                     }
                     slug={property.slug}
@@ -229,7 +229,7 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
                     ),
                   }}
                   imageUrl={
-                    property.images[0]?.url ||
+                    property.attachments[0]?.url ||
                     'https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg'
                   }
                   slug={property.slug}

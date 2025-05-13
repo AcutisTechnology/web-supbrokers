@@ -21,7 +21,7 @@ export interface Property {
   active: boolean;
   highlighted: boolean;
   characteristics: { text: string }[];
-  images: { name: string; url: string }[];
+  attachments: { name: string; url: string }[];
   created_at: string;
 }
 
