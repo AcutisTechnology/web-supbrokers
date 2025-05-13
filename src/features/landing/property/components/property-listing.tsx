@@ -83,7 +83,7 @@ export function PropertyListing({ propertyData, userData, allProperties = [], co
   return (
     <div className="grid gap-8">
       <div className="grid gap-6">
-        <PropertyGallery images={propertyData.images} />
+        <PropertyGallery images={propertyData.attachments} />
         <div className="grid gap-6 lg:grid-cols-[1fr,300px]">
           <div className="space-y-6">
             <div>

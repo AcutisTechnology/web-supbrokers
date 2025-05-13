@@ -41,7 +41,7 @@ export function SimilarProperties({ properties = [], userData, currentPropertySl
           >
             <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
               <Image
-                src={property.images[0]?.url || "https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg"}
+                src={property.attachments[0]?.url || "https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg"}
                 alt={property.title}
                 className="object-cover transition-transform group-hover:scale-105"
                 fill
