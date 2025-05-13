@@ -11,8 +11,8 @@ interface PropertyCardProps {
 
 export function PropertyCard({ property }: PropertyCardProps) {
   // Obter a primeira imagem ou usar um placeholder
-  const imageUrl = property.images && property.images.length > 0
-    ? property.images[0].url
+  const imageUrl = property.attachments && property.attachments.length > 0
+    ? property.attachments[0].url
     : "/placeholder.svg";
 
   // Formatar o valor para exibição

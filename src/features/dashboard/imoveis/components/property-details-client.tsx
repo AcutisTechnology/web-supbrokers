@@ -309,21 +309,21 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Carrossel de imagens */}
             <div className="md:col-span-2 bg-white rounded-lg overflow-hidden border border-[#d9d9d9] shadow-sm">
-              {property.images && property.images.length > 0 ? (
+              {property.attachments && property.attachments.length > 0 ? (
                 <div className="relative">
                   <Carousel className="w-full">
                     <CarouselContent>
-                      {property.images.map((image, index) => (
+                      {property.attachments.map((attachment, index) => (
                         <CarouselItem key={index}>
                           <div className="relative h-[300px] md:h-[400px] w-full">
                             <Image
-                              src={image.url}
+                              src={attachment.url}
                               alt={`Imagem ${index + 1} de ${property.title}`}
                               fill
                               className="object-cover"
                             />
                             <div className="absolute bottom-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs">
-                              {index + 1} / {property.images.length}
+                              {index + 1} / {property.attachments.length}
                             </div>
                           </div>
                         </CarouselItem>
@@ -334,9 +334,9 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
                   </Carousel>
                   
                   {/* Miniaturas das imagens */}
-                  {property.images.length > 1 && (
+                  {property.attachments.length > 1 && (
                     <div className="flex overflow-x-auto gap-2 p-2 bg-gray-50">
-                      {property.images.map((image, index) => (
+                      {property.attachments.map((attachment, index) => (
                         <div 
                           key={index}
                           className="relative w-16 h-16 flex-shrink-0 cursor-pointer border-2 border-transparent hover:border-primary rounded overflow-hidden"
@@ -345,7 +345,7 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
                           }}
                         >
                           <Image
-                            src={image.url}
+                            src={attachment.url}
                             alt={`Miniatura ${index + 1}`}
                             fill
                             className="object-cover"

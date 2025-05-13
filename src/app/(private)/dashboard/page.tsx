@@ -305,9 +305,9 @@ export default function DashboardPage() {
                     <h3 className="font-medium text-xs sm:text-sm text-[#969696] mb-3">Imóvel mais recente</h3>
                     <div className="bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
                       <div className="h-32 sm:h-40 relative">
-                        {latestProperty.images && latestProperty.images.length > 0 ? (
+                        {latestProperty.attachments && latestProperty.attachments.length > 0 ? (
                           <Image
-                            src={latestProperty.images[0].url}
+                            src={latestProperty.attachments[0].url}
                             alt={latestProperty.title}
                             fill
                             className="object-cover"
