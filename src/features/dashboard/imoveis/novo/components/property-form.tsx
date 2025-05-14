@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Loader2, RefreshCw, Film } from "lucide-react";
-import { useState } from "react";
+import { useState, useLayoutEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -34,6 +34,7 @@ import { useCreateProperty, useUpdateProperty } from "../../services/property-se
 import { PropertyFormValues, defaultValues, propertySchema } from "../schemas/property-schema";
 import { formatCurrency } from "@/lib/utils";
 import { CurrencyInput } from "@/components/ui/currency-input";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface PropertyFormProps {
   initialValues?: Partial<PropertyFormValues>;
@@ -44,6 +45,7 @@ interface PropertyFormProps {
 export function PropertyForm({ initialValues, isEditing = false, propertySlug }: PropertyFormProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const createPropertyMutation = useCreateProperty();
   const updatePropertyMutation = useUpdateProperty();
 
@@ -53,6 +55,14 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
   });
 
   const watchedValues = form.watch();
+
+  // Invalidar consultas quando o componente for montado para garantir dados atualizados ao retornar
+  useLayoutEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["properties"] });
+    if (isEditing && propertySlug) {
+      queryClient.invalidateQueries({ queryKey: ["property", propertySlug] });
+    }
+  }, [queryClient, isEditing, propertySlug]);
 
   // Lista de características disponíveis
   const characteristicOptions = [
@@ -124,6 +134,10 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
         // Atualizar imóvel existente
         await updatePropertyMutation.mutateAsync({ slug: propertySlug, data }, {
           onSuccess: () => {
+            // Invalidar consultas para atualizar a lista de imóveis
+            queryClient.invalidateQueries({ queryKey: ["properties"] });
+            queryClient.invalidateQueries({ queryKey: ["property", propertySlug] });
+            
             toast({
               title: "Imóvel atualizado com sucesso!",
               description: "As alterações foram salvas.",
@@ -143,13 +157,21 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
       } else {
         // Criar novo imóvel
         await createPropertyMutation.mutateAsync(data, {
-          onSuccess: () => {
+          onSuccess: (response) => {
+            // Invalidar consultas para atualizar a lista de imóveis
+            queryClient.invalidateQueries({ queryKey: ["properties"] });
+            
             toast({
               title: "Imóvel criado com sucesso!",
               description: "O imóvel foi publicado e já está disponível.",
             });
             
-            router.push("/dashboard/imoveis");
+            // Se temos o slug do imóvel na resposta, redirecionar para a página de detalhes
+            if (response && response.data && response.data.slug) {
+              router.push(`/dashboard/imoveis/${response.data.slug}`);
+            } else {
+              router.push("/dashboard/imoveis");
+            }
           },
           onError: (error) => {
             console.error("Erro ao criar imóvel:", error);

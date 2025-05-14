@@ -25,6 +25,12 @@ export interface Property {
   created_at: string;
 }
 
+// Interface para a resposta da API ao criar um imóvel
+export interface PropertyResponse {
+  data: Property;
+  message?: string;
+}
+
 // Interface para a resposta paginada da API
 export interface PaginatedResponse<T> {
   data: T[];
@@ -79,7 +85,7 @@ export function useProperty(slug: string) {
 }
 
 export function useCreateProperty() {
-  return useMutation({
+  return useMutation<PropertyResponse, Error, PropertyFormValues>({
     mutationFn: async (data: PropertyFormValues) => {
       try {
         // Criar um FormData para enviar arquivos
@@ -128,7 +134,7 @@ export function useCreateProperty() {
           .post("properties", {
             body: formData,
           })
-          .json();
+          .json<PropertyResponse>();
 
         return response;
       } catch (error) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { TopNav } from "@/features/dashboard/imoveis/top-nav";
@@ -50,6 +50,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import React from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function PropertyDetailsClient({ slug }: { slug: string }) {
   const router = useRouter();
@@ -57,6 +58,7 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [publicLink, setPublicLink] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const queryClient = useQueryClient();
   
   // Buscar dados do imóvel
   const { 
@@ -74,7 +76,7 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
   const deletePropertyMutation = useDeleteProperty();
 
   // Efeito para marcar quando o componente está montado no cliente
-  useEffect(() => {
+  useLayoutEffect(() => {
     setIsMounted(true);
   }, []);
 
@@ -111,13 +113,18 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
       setIsDeleting(true);
       
       // Chamar a API para excluir o imóvel
-      await deletePropertyMutation.mutateAsync(slug);
-      
-      toast({
-        title: "Imóvel excluído com sucesso!",
+      await deletePropertyMutation.mutateAsync(slug, {
+        onSuccess: () => {
+          // Invalidar a consulta para atualizar a lista de imóveis
+          queryClient.invalidateQueries({ queryKey: ["properties"] });
+          
+          toast({
+            title: "Imóvel excluído com sucesso!",
+          });
+          
+          router.push("/dashboard/imoveis");
+        }
       });
-      
-      router.push("/dashboard/imoveis");
     } catch (error) {
       console.error("Erro ao excluir imóvel:", error);
       toast({

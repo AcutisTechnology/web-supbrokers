@@ -1,15 +1,30 @@
-import { Users, Bath, Home, MapPin, Tag } from "lucide-react";
+import { Users, Bath, Home, MapPin, Tag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { Property } from "./services/property-service";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useState } from "react";
 
 interface PropertyCardProps {
   property: Property;
+  onDelete?: (slug: string) => void;
 }
 
-export function PropertyCard({ property }: PropertyCardProps) {
+export function PropertyCard({ property, onDelete }: PropertyCardProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
+  
   // Obter a primeira imagem ou usar um placeholder
   const imageUrl = property.attachments && property.attachments.length > 0
     ? property.attachments[0].url
@@ -22,6 +37,18 @@ export function PropertyCard({ property }: PropertyCardProps) {
 
   // Determinar se é aluguel ou venda
   const propertyType = property.rent ? "Aluguel" : "Venda";
+
+  // Função para lidar com a exclusão do imóvel
+  const handleDelete = async () => {
+    if (onDelete) {
+      setIsDeleting(true);
+      try {
+        await onDelete(property.slug);
+      } finally {
+        setIsDeleting(false);
+      }
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg overflow-hidden border border-[#d9d9d9] shadow-sm hover:shadow-md transition-shadow">
@@ -89,6 +116,37 @@ export function PropertyCard({ property }: PropertyCardProps) {
             </Button>
           </Link>
         </div>
+        {onDelete && (
+          <div className="mt-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  className="w-full"
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {isDeleting ? 'Excluindo...' : 'Excluir'}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir imóvel</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tem certeza que deseja excluir este imóvel? Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
       </div>
     </div>
   );
