@@ -60,6 +60,7 @@ export function PropertyListing({ propertyData, userData, allProperties = [], co
     onSuccess: () => {
       toast.success('Seu interesse foi registrado com sucesso! O corretor entrará em contato em breve.');
       setShowModal(false);
+      handleContact()
       reset(); // Limpa o formulário
     },
     onError: (error) => {

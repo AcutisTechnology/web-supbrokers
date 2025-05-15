@@ -1,6 +1,7 @@
 import { PropertyFormValues } from "../novo/schemas/property-schema";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@/shared/configs/api";
+import { useToast } from "@/hooks/use-toast"
 
 // Interface para os dados de um imóvel
 export interface Property {
@@ -85,6 +86,8 @@ export function useProperty(slug: string) {
 }
 
 export function useCreateProperty() {
+  const { toast } = useToast();
+
   return useMutation<PropertyResponse, Error, PropertyFormValues>({
     mutationFn: async (data: PropertyFormValues) => {
       try {
@@ -124,12 +127,6 @@ export function useCreateProperty() {
           });
         }
 
-        // Para debug - mostrar o conteúdo do FormData
-        console.log("FormData enviado:");
-        for (const pair of formData.entries()) {
-          console.log(pair[0], pair[1]);
-        }
-
         const response = await api
           .post("properties", {
             body: formData,
@@ -139,6 +136,11 @@ export function useCreateProperty() {
         return response;
       } catch (error) {
         console.error("Erro ao criar imóvel:", error);
+        toast({
+          title: "Erro ao criar imóvel",
+          description: "Ocorreu um erro ao criar o imóvel. Tente novamente.",
+          variant: "destructive",
+        })
         throw error;
       }
     },
