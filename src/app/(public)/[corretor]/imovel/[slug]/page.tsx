@@ -52,6 +52,7 @@ export default function PropertyDetails({ params }: { params: Promise<{ corretor
           userData={property.data.user} 
           allProperties={brokerData.data.all}
           corretor={corretor}
+          primary_color={property.data.user.page_settings?.primary_color}
         />
       </main>
     </div>

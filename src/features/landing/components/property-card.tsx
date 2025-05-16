@@ -19,6 +19,7 @@ interface PropertyCardProps {
   slug?: string;
   propertyData?: Property;
   userData?: User;
+  primary_color?: string;
 }
 
 export function PropertyCard({
@@ -31,6 +32,7 @@ export function PropertyCard({
   slug,
   propertyData,
   userData,
+  primary_color
 }: PropertyCardProps) {
   const router = useRouter();
   const params = useParams();
@@ -53,7 +55,10 @@ export function PropertyCard({
     >
       <div className="relative h-64">
         <Image src={imageUrl} alt={title} fill className="object-cover" />
-        <div className="absolute top-2 right-2 bg-primary text-white text-xs px-2 py-1 rounded-full">
+        <div
+          style={{  backgroundColor: primary_color }}
+          className="absolute top-2 right-2 text-white text-xs px-2 py-1 rounded-full bg-primary"
+        >
           {type === 'rent' ? 'Aluguel' : 'Venda'}
         </div>
       </div>
@@ -61,7 +66,7 @@ export function PropertyCard({
         <h3 className="font-medium text-lg mb-1 line-clamp-1">{title}</h3>
         <p className="text-[#777777] text-sm mb-2">{location}</p>
         <div className="flex justify-between items-center">
-          <p className="font-bold text-primary">
+          <p className="font-bold text-primary" style={{ color: primary_color }}>
             {type === 'rent' ? `R$ ${price}/mês` : `R$ ${price}`}
           </p>
         </div>

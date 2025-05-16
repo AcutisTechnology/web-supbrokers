@@ -162,6 +162,7 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
                 .map((property, i) => (
                   <PropertyCard
                     key={i}
+                    primary_color={properties.data.user.page_settings?.primary_color}
                     title={property.title}
                     location={`${property.neighborhood}, João Pessoa`}
                     price={property.sale ? property.value.split(',')[0] : property.value}
@@ -187,7 +188,8 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
               <div className="text-center mt-8">
                 <button
                   onClick={() => setShowAllProperties(true)}
-                  className="rounded-full bg-primary text-white px-6 py-3 hover:bg-primary/90 transition-colors"
+                  style={{ backgroundColor: properties.data.user.page_settings?.primary_color }}
+                  className="rounded-full text-white px-6 py-3 hover:bg-primary/90 transition-colors bg-primary"
                 >
                   Ver mais imóveis
                 </button>
@@ -197,7 +199,8 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
               <div className="text-center mt-8">
                 <button
                   onClick={() => setShowAllProperties(false)}
-                  className="rounded-full bg-gray-200 text-gray-700 px-6 py-3 hover:bg-gray-300 transition-colors"
+                  style={{ backgroundColor: properties.data.user.page_settings?.primary_color }}
+                  className="rounded-full  text-gray-700 px-6 py-3 hover:bg-gray-300 transition-colors bg-gray-200"
                 >
                   Ver menos imóveis
                 </button>
@@ -217,6 +220,7 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
               {properties.data.releases.slice(0, 3).map((property, i) => (
                 <PropertyCard
                   key={i}
+                  primary_color={properties.data.user.page_settings?.primary_color}
                   title={property.title}
                   location={`${property.neighborhood}, João Pessoa`}
                   price={property.sale ? property.value.split(',')[0] : property.value}

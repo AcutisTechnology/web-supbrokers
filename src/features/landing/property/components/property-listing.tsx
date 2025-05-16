@@ -17,6 +17,7 @@ interface PropertyListingProps {
   userData: User;
   allProperties?: Property[];
   corretor: string;
+  primary_color?: string;
 }
 
 // Definir interface para o formulário de interesse
@@ -27,7 +28,7 @@ interface InterestFormData {
   interested_property_slug: string;
 }
 
-export function PropertyListing({ propertyData, userData, allProperties = [], corretor }: PropertyListingProps) {
+export function PropertyListing({ propertyData, userData, primary_color, allProperties = [], corretor }: PropertyListingProps) {
   const [showModal, setShowModal] = useState(false);
   
   // Configuração do React Hook Form
@@ -111,7 +112,7 @@ export function PropertyListing({ propertyData, userData, allProperties = [], co
                 <div className="grid gap-2 sm:grid-cols-2">
                   {propertyData.characteristics.map((characteristic, index) => (
                     <div key={index} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-primary" />
+                      <Check style={{ color: primary_color }} className="h-4 w-4 text-primary" />
                       <span className="text-muted-foreground">{characteristic.text}</span>
                     </div>
                   ))}
@@ -126,13 +127,14 @@ export function PropertyListing({ propertyData, userData, allProperties = [], co
                   <div className="text-sm text-gray-500">
                     {propertyData.sale ? 'Valor à vista' : 'Valor do aluguel'}
                   </div>
-                  <div className="text-2xl font-semibold text-primary">
+                  <div className="text-2xl font-semibold text-primary" style={{ color: primary_color }}>
                     R$ {propertyData.value}
                     {!propertyData.sale && <span className="text-sm font-normal">/mês</span>}
                   </div>
                 </div>
-                <Button 
-                  className="w-full bg-primary hover:bg-primary/90" 
+                <Button
+                  style={{ backgroundColor: primary_color }}
+                  className="w-full bg-primary hover:bg-primary/90"
                   size="lg" 
                   onClick={() => setShowModal(true)}
                 >
@@ -235,7 +237,7 @@ export function PropertyListing({ propertyData, userData, allProperties = [], co
                 <input
                   id="phone"
                   type="tel"
-                  {...register("phone", { 
+                  {...register("phone", {
                     required: "Telefone é obrigatório",
                     pattern: {
                       value: /^[0-9]{10,11}$/,
@@ -252,7 +254,8 @@ export function PropertyListing({ propertyData, userData, allProperties = [], co
               
               <div className="pt-2">
                 <Button 
-                  type="submit" 
+                  type="submit"
+                  style={{ backgroundColor: primary_color }}
                   className="w-full bg-primary hover:bg-primary/90"
                   disabled={isPending}
                 >
