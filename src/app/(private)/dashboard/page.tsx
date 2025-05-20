@@ -142,14 +142,14 @@ export default function DashboardPage() {
           <p className="text-[#969696] mt-1 text-sm sm:text-base">{formattedDate}</p>
         </div>
         <div className="mt-4 sm:mt-0 flex items-center gap-2 sm:gap-3">
-          <Button variant="outline" size="sm" className="gap-2">
+          {/* <Button variant="outline" size="sm" className="gap-2">
             <Bell className="w-4 h-4" />
             <span className="hidden sm:inline">Notificações</span>
           </Button>
           <Button className="bg-[#9747ff] hover:bg-[#9747ff]/90 gap-2">
             <TrendingUp className="w-4 h-4" />
             <span className="hidden sm:inline">Relatório</span>
-          </Button>
+          </Button> */}
         </div>
       </div>
 
