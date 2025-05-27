@@ -141,8 +141,13 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
   const handleGeneratePublicLink = () => {
     if (!isMounted) return;
     
+    const userData = localStorage.getItem('@SupBrokers:user');
+    const user = userData ? JSON.parse(userData).user : null;
+
+    console.log(user)
+    
     const baseUrl = window.location.origin;
-    const publicUrl = `${baseUrl}/imoveis/${slug}`;
+    const publicUrl = `${baseUrl}/${user?.slug}/imovel/${slug}`;
     setPublicLink(publicUrl);
     
     navigator.clipboard.writeText(publicUrl);

@@ -553,7 +553,7 @@ export function PaymentModal({ isOpen, onClose, planId, planType, cycle }: Payme
                       alt="QR Code PIX"
                       width={200}
                       height={200}
-                      className="w-[200px] h-[200px]"
+                      className="w-[150px] h-[150px] sm:w-[200px] sm:h-[200px]"
                       priority
                     />
                   </div>
@@ -635,7 +635,7 @@ export function PaymentModal({ isOpen, onClose, planId, planType, cycle }: Payme
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] w-[95%] max-h-[90vh] overflow-y-auto">
         {renderContent()}
       </DialogContent>
     </Dialog>
