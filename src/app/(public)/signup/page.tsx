@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/shared/hooks/auth/use-auth";
 import { MaskedInput } from "@/components/ui/masked-input";

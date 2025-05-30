@@ -24,7 +24,6 @@ export function LoginForm() {
   });
 
   async function handleSignin(data: { email: string; password: string }) {
-    console.log(data);
     await signin(data);
   }
 

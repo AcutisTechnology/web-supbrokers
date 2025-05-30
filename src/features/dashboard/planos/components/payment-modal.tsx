@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -153,7 +153,6 @@ export function PaymentModal({ isOpen, onClose, planId, planType, cycle }: Payme
         toast({
           title: method === "pix" ? "QR Code PIX gerado" : "Boleto gerado",
           description: method === "pix" ? "Escaneie o QR Code para concluir o pagamento." : "O boleto foi gerado com sucesso.",
-          variant: "default",
         });
       } else {
         setPaymentStatus("error");

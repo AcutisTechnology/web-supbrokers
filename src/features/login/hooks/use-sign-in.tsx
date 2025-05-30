@@ -40,7 +40,6 @@ function useSignInMutation() {
       toast({
         title: "Login realizado com sucesso",
         description: "Você foi autenticado com sucesso!",
-        variant: "default",
       });
     },
     onError: (error: Error) => {

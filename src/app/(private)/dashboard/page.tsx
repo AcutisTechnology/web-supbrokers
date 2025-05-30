@@ -25,14 +25,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { LoadingState } from "@/components/ui/loading-state";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/shared/hooks/auth/use-auth";
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [isMounted, setIsMounted] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
-  
-  const { user } = useAuth();
   
   // Mock do slug do corretor (substituir pelo valor real depois)
   const brokerSlug = user?.user?.slug;
@@ -53,7 +53,6 @@ export default function DashboardPage() {
       setIsCopied(true);
       toast({
         title: "Link copiado com sucesso!",
-        variant: "default",
       });
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {

@@ -84,22 +84,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     cpf: string;
   }) => {
     setLoading(true);
-
     try {
       await signUpMutate(values);
-      toast({
-        variant: "default",
-        title: "Cadastro realizado com sucesso!",
-        description: "Você será redirecionado para a página de login.",
-      });
       router.push("/login");
     } catch (error) {
-      console.error("Erro ao cadastrar:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao cadastrar",
-        description: "Verifique os dados e tente novamente.",
-      });
+      console.log(error)
+      setLoading(false);
     } finally {
       setLoading(false);
     }

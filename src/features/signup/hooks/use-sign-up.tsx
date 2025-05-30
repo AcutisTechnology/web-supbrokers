@@ -1,14 +1,6 @@
 import { api } from "@/shared/configs/api";
 import { useMutation } from "@tanstack/react-query";
-import { toast } from "@/hooks/use-toast";
-
-// Interface para o erro da API
-interface ApiError {
-  response?: {
-    status: number;
-  };
-  message?: string;
-}
+import { useToast } from "@/hooks/use-toast";
 
 export default async function authenticateUser(credentials: {
   name: string;
@@ -18,47 +10,37 @@ export default async function authenticateUser(credentials: {
   phone: string;
   cpf: string;
 }) {
-  try {
-    return await api
-      .post("register", {
-        json: {
-          name: credentials.name,
-          email: credentials.email,
-          password: credentials.password,
-          password_confirmation: credentials.password_confirmation,
-          phone: credentials.phone,
-          cpfCnpj: credentials.cpf,
-        },
-      })
-      .json();
-  } catch (error: unknown) {
-    // Captura erros de API
-    const apiError = error as ApiError;
-    if (apiError.response && apiError.response.status === 422) {
-      throw new Error("Dados inválidos. Verifique as informações fornecidas.");
-    }
-    throw error;
-  }
+  return await api
+    .post("register", {
+      json: {
+        name: credentials.name,
+        email: credentials.email,
+        password: credentials.password,
+        password_confirmation: credentials.password_confirmation,
+        phone: credentials.phone,
+        cpfCnpj: credentials.cpf,
+      },
+    })
+    .json()
 }
 
 function useSignUpMutation() {
+  const { toast } = useToast();
+  
   return useMutation({
     mutationFn: authenticateUser,
     onSuccess: () => {
       toast({
         title: "Cadastro realizado com sucesso",
         description: "Sua conta foi criada com sucesso!",
-        variant: "default",
       });
     },
-    onError: (error: Error) => {
+    onError: (error: unknown) => {
       toast({
-        title: "Erro ao realizar cadastro",
-        description: error.message || "Houve um erro ao realizar o cadastro, tente novamente.",
         variant: "destructive",
+        title: "Erro ao realizar cadastro",
+        description: "Talvez o CPF ou e-mail já estejam cadastrados.",
       });
-      
-      throw error;
     },
   });
 }

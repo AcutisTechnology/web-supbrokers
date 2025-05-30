@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingState } from "@/components/ui/loading-state";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { User, Mail, Phone, Lock, Save, Edit, AlertCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -94,9 +94,8 @@ export default function PerfilPage() {
       
       // Mostrar mensagem de sucesso
       toast({
-        title: "Perfil atualizado",
-        description: "Seus dados foram atualizados com sucesso.",
-        variant: "default",
+        title: "Perfil atualizado com sucesso!",
+        description: "Suas informações foram salvas.",
       });
       
       // Atualizar dados do perfil
