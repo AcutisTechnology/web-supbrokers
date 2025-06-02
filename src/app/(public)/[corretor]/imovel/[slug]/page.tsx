@@ -45,7 +45,7 @@ export default function PropertyDetails({ params }: { params: Promise<{ corretor
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteHeader />
+      <SiteHeader corretor={corretor} />
       <main className="px-8 md:container py-6 mx-auto">
         <PropertyListing 
           propertyData={property.data.property} 

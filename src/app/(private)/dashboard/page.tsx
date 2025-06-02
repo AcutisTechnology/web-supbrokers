@@ -103,7 +103,7 @@ export default function DashboardPage() {
     : null;
     
   // Calcular estatísticas
-  const totalCustomers = customersData?.meta?.total || 0;
+  const totalCustomers = customersData?.data?.length || 0;
   const interestedCustomers = customersData?.data?.filter(
     customer => customer.interested_properties && customer.interested_properties.length > 0
   ).length || 0;
