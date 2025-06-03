@@ -1,9 +1,13 @@
+"use client";
+
 import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TopNav } from "@/features/dashboard/imoveis/top-nav";
+import { useRouter } from "next/navigation";
 
 export default function AlugueisPage() {
+  const router = useRouter();
   return (
     <>
       <div className="flex-1">
@@ -20,7 +24,7 @@ export default function AlugueisPage() {
                 locação para gerenciar o aluguel de um imóvel.
               </p>
             </div>
-            <Button className="bg-[#2563eb] hover:bg-[#2563eb]/90">
+            <Button className="bg-[#9747ff] hover:bg-[#7c2ae8]" onClick={() => router.push('/dashboard/alugueis/novo')}>
               Nova locação
             </Button>
           </div>
@@ -58,6 +62,7 @@ export default function AlugueisPage() {
 
 // Componente da Tabela de Aluguéis
 function RentalTable({ status = "todos" }: { status?: string }) {
+  const router = useRouter();
   const rentals = [
     {
       id: 1,
@@ -146,7 +151,7 @@ function RentalTable({ status = "todos" }: { status?: string }) {
                 </td>
                 <td className="px-6 py-4 text-[#1c1b1f]">{rental.valor}</td>
                 <td className="px-6 py-4">
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" onClick={() => router.push(`/dashboard/alugueis/${rental.id}`)}>
                     <ChevronRight className="w-4 h-4" />
                   </Button>
                 </td>
