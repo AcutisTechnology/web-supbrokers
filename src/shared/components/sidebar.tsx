@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Home, Building2, Users, Settings, LogOut, Files, Menu, X, User, CreditCard, HelpCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Home, Building2, Users, Settings, LogOut, Files, Menu, X, User, CreditCard, HelpCircle, ChevronLeft, ChevronRight, Building } from "lucide-react";
 import { useAuth } from "../hooks/auth/use-auth";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -116,7 +116,7 @@ export function Sidebar() {
               onClick={() => setIsOpen(false)}
               title={isCollapsed ? "Home" : ""}
             >
-              <Home size={isCollapsed ? 32 : 20} className="text-gray-600 group-hover:text-blue-600 transition-colors" />
+              <Home size={isCollapsed ? 32 : 20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
               {!isCollapsed && <span>Home</span>}
             </Link>
             <Link
@@ -125,8 +125,17 @@ export function Sidebar() {
               onClick={() => setIsOpen(false)}
               title={isCollapsed ? "Imóveis" : ""}
             >
-              <Building2 size={isCollapsed ? 32 : 20} className="text-gray-600 group-hover:text-blue-600 transition-colors" />
+              <Building2 size={isCollapsed ? 32 : 20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
               {!isCollapsed && <span>Imóveis</span>}
+            </Link>
+            <Link
+              href="/dashboard/alugueis"
+              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-4' : 'px-3 py-3'}`}
+              onClick={() => setIsOpen(false)}
+              title={isCollapsed ? "Alugueis" : ""}
+            >
+              <Building size={isCollapsed ? 32 : 20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+              {!isCollapsed && <span>Alugueis</span>}
             </Link>
             <Link
               href="/dashboard/clientes"
@@ -134,7 +143,7 @@ export function Sidebar() {
               onClick={() => setIsOpen(false)}
               title={isCollapsed ? "Clientes" : ""}
             >
-              <Users size={isCollapsed ? 32 : 20} className="text-gray-600 group-hover:text-blue-600 transition-colors" />
+              <Users size={isCollapsed ? 32 : 20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
               {!isCollapsed && <span>Clientes</span>}
             </Link>
           </nav>
@@ -150,7 +159,7 @@ export function Sidebar() {
                   className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group"
                   onClick={() => setIsOpen(false)}
                 >
-                  <User size={20} className="text-gray-600 group-hover:text-blue-600 transition-colors" />
+                  <User size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
                   Meu perfil
                 </Link>
                 <Link
@@ -158,7 +167,7 @@ export function Sidebar() {
                   className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group"
                   onClick={() => setIsOpen(false)}
                 >
-                  <Settings size={20} className="text-gray-600 group-hover:text-blue-600 transition-colors" />
+                  <Settings size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
                   Configurações
                 </Link>
                 <Link
@@ -166,7 +175,7 @@ export function Sidebar() {
                   className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group"
                   onClick={() => setIsOpen(false)}
                 >
-                  <HelpCircle size={20} className="text-gray-600 group-hover:text-blue-600 transition-colors" />
+                  <HelpCircle size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
                   Suporte
                 </Link>
               </nav>
@@ -181,7 +190,7 @@ export function Sidebar() {
                 onClick={() => setIsOpen(false)}
                 title="Meu perfil"
               >
-                <User size={32} className="text-gray-600 group-hover:text-blue-600 transition-colors" />
+                <User size={32} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
               </Link>
               <Link
                 href="/dashboard/configuracoes"
@@ -189,7 +198,7 @@ export function Sidebar() {
                 onClick={() => setIsOpen(false)}
                 title="Configurações"
               >
-                <Settings size={32} className="text-gray-600 group-hover:text-blue-600 transition-colors" />
+                <Settings size={32} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
               </Link>
               <Link
                 href="#"
@@ -197,7 +206,7 @@ export function Sidebar() {
                 onClick={() => setIsOpen(false)}
                 title="Suporte"
               >
-                <HelpCircle size={32} className="text-gray-600 group-hover:text-blue-600 transition-colors" />
+                <HelpCircle size={32} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
               </Link>
             </div>
           )}
