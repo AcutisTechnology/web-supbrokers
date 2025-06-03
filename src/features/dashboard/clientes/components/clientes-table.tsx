@@ -43,7 +43,9 @@ export function ClientesTable({ data, status = "todos" }: ClientesTableProps) {
               <th className="text-left px-6 py-3 text-sm font-medium text-[#969696]">
                 IMÓVEIS DE INTERESSE
               </th>
-              <th className="w-8 px-6 py-3"></th>
+              <th className="text-left px-6 py-3 text-sm font-medium text-[#969696]">
+                AÇÕES
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -53,7 +55,7 @@ export function ClientesTable({ data, status = "todos" }: ClientesTableProps) {
               ))
             ) : (
               <tr>
-                <td colSpan={4} className="text-center py-6 text-[#969696]">
+                <td colSpan={5} className="text-center py-6 text-[#969696]">
                   Nenhum cliente encontrado.
                 </td>
               </tr>

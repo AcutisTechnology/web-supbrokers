@@ -5,4 +5,10 @@ export * from "./components";
 export * from "./services/customer-service";
 
 // Utilitários
-export * from "./utils/cliente-utils"; 
+export * from "./utils/cliente-utils";
+
+// Tipos
+export * from "./types/timeline";
+
+// Hooks
+export * from "./hooks/use-cliente-timeline"; 
