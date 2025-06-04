@@ -13,14 +13,14 @@ type FinanceiroGrafico = {
   IPTU: number;
 };
 
-interface Financeiro {
+export type Financeiro = {
   pagamentosEmDia: number;
   pagamentosAtraso: number;
   custoReparos: number;
   custoCondominio: number;
   custoIptu: number;
   grafico: FinanceiroGrafico[];
-}
+};
 
 export function AluguelDetalheFinanceiro({ financeiro }: { financeiro: Financeiro }) {
   return (
