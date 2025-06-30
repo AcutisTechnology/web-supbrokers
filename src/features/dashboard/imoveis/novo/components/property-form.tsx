@@ -64,37 +64,55 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
     }
   }, [queryClient, isEditing, propertySlug]);
 
-  // Lista de características disponíveis
-  const characteristicOptions = [
-    { id: "serviceArea", label: "Área de serviço" },
-    { id: "bedroomCloset", label: "Armários no quarto" },
-    { id: "kitchenCabinets", label: "Armários na cozinha" },
-    { id: "furnished", label: "Mobiliado" },
-    { id: "airConditioning", label: "Ar condicionado" },
-    { id: "bbq", label: "Churrasqueira" },
-    { id: "balcony", label: "Varanda" },
-    { id: "gym", label: "Academia" },
-    { id: "pool", label: "Piscina" },
-    { id: "serviceRoom", label: "Quarto de serviço" },
+  // Lista de características disponíveis - Detalhes do imóvel
+  const propertyCharacteristics = [
+    { id: "aquecimento", label: "Aquecimento" },
+    { id: "arCondicionado", label: "Ar condicionado" },
+    { id: "areaServico", label: "Área de serviço" },
+    { id: "armariosCozinha", label: "Armários na cozinha" },
+    { id: "armariosQuarto", label: "Armários no quarto" },
+    { id: "banheiroQuarto", label: "Banheiro no quarto" },
+    { id: "churrasqueira", label: "Churrasqueira" },
+    { id: "internet", label: "Internet" },
+    { id: "mobiliado", label: "Mobiliado" },
+    { id: "piscina", label: "Piscina" },
+    { id: "porteiro24h", label: "Porteiro 24h" },
+    { id: "quartoServico", label: "Quarto de serviço" },
+    { id: "tvCabo", label: "Tv a cabo" },
+    { id: "varanda", label: "Varanda" },
+  ];
+
+  // Lista de características disponíveis - Detalhes do condomínio
+  const condominiumCharacteristics = [
+    { id: "academiaCondominio", label: "Academia" },
+    { id: "areaMurada", label: "Área murada" },
+    { id: "condominioFechado", label: "Condomínio fechado" },
+    { id: "elevador", label: "Elevador" },
+    { id: "permitidoAnimais", label: "Permitido animais" },
+    { id: "piscinaCondominio", label: "Piscina" },
+    { id: "portaoEletronico", label: "Portão eletrônico" },
+    { id: "portaria", label: "Portaria" },
+    { id: "salaoFestasCondominio", label: "Salão de festas" },
+    { id: "seguranca24h", label: "Segurança 24h" },
   ];
 
   // Função para lidar com a seleção de características
-  const handleCharacteristicChange = (checked: boolean, value: string) => {
+  const handleCharacteristicChange = (checked: boolean, id: string) => {
     const currentCharacteristics = form.getValues("characteristics") || [];
     
     if (checked) {
-      form.setValue("characteristics", [...currentCharacteristics, value]);
+      form.setValue("characteristics", [...currentCharacteristics, id]);
     } else {
       form.setValue(
         "characteristics",
-        currentCharacteristics.filter((item) => item !== value)
+        currentCharacteristics.filter((item) => item !== id)
       );
     }
   };
 
   // Função para verificar se uma característica está selecionada
-  const isCharacteristicSelected = (value: string) => {
-    return (form.getValues("characteristics") || []).includes(value);
+  const isCharacteristicSelected = (id: string) => {
+    return (form.getValues("characteristics") || []).includes(id);
   };
 
   // Função para gerar código aleatório com 2 letras e 3 números
@@ -487,26 +505,53 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                 />
               </div>
               
-              <div>
-                <h2 className="mb-4 text-lg font-medium">Características do imóvel</h2>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {characteristicOptions.map((option) => (
-                    <div key={option.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={option.id}
-                        checked={isCharacteristicSelected(option.label)}
-                        onCheckedChange={(checked) => 
-                          handleCharacteristicChange(checked as boolean, option.label)
-                        }
-                      />
-                      <label
-                        htmlFor={option.id}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {option.label}
-                      </label>
-                    </div>
-                  ))}
+              <div className="space-y-6">
+                {/* Detalhes do imóvel */}
+                <div>
+                  <h2 className="mb-4 text-lg font-medium">Detalhes do imóvel</h2>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {propertyCharacteristics.map((option) => (
+                      <div key={option.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={option.id}
+                          checked={isCharacteristicSelected(option.id)}
+                          onCheckedChange={(checked) => 
+                            handleCharacteristicChange(checked as boolean, option.id)
+                          }
+                        />
+                        <label
+                          htmlFor={option.id}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {option.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Detalhes do condomínio */}
+                <div>
+                  <h2 className="mb-4 text-lg font-medium">Detalhes do condomínio</h2>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {condominiumCharacteristics.map((option) => (
+                      <div key={option.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={option.id}
+                          checked={isCharacteristicSelected(option.id)}
+                          onCheckedChange={(checked) => 
+                            handleCharacteristicChange(checked as boolean, option.id)
+                          }
+                        />
+                        <label
+                          htmlFor={option.id}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {option.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
               
