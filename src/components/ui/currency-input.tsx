@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 interface CurrencyInputProps extends Omit<NumericFormatProps, "value" | "onChange"> {
   value: number;
-  onChange: (value: number) => void;
+  onChange: (value: number, values: { floatValue?: number }) => void;
   className?: string;
 }
 
@@ -50,7 +50,7 @@ export function CurrencyInput({
       fixedDecimalScale
       value={value === 0 ? "" : value} // Usar string vazia em vez de 0 para evitar mostrar R$ 0,00
       onValueChange={(values) => {
-        onChange(values.floatValue || 0);
+        onChange(values.floatValue || 0, values);
       }}
       className={cn("bg-white", className)}
       allowNegative={false}
