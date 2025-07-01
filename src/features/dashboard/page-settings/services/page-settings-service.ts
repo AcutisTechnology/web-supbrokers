@@ -8,41 +8,39 @@ export interface PageSettings {
 }
 
 export async function updatePageSettings(settings: PageSettings): Promise<PageSettings> {
-  const response = await api.post('users/save-page-settings', { 
-    json: {
-      settings: JSON.stringify(settings)
-    } 
-  }).json<{ data: PageSettings }>();
+  const response = await api
+    .post('users/save-page-settings', {
+      json: {
+        settings: JSON.stringify(settings),
+      },
+    })
+    .json<{ data: PageSettings }>();
   return response.data;
 }
 
 export async function uploadBrandImage(file: File): Promise<string> {
   try {
-    // Gerar um nome único para o arquivo
-    const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-    const fileType = file.type;
+    // Criar um FormData para enviar o arquivo diretamente para o backend
+    const formData = new FormData();
+    formData.append('file', file);
     
-    // Obter URL pré-assinada do S3 através da API
-    const presignedResponse = await api.post('upload/presigned', { 
-      json: { fileName, fileType } 
-    }).json<{ 
-      presignedUrl: string;
-      fileUrl: string;
-    }>();
-    
-    // Fazer upload direto para o S3 usando a URL pré-assinada
-    await fetch(presignedResponse.presignedUrl, {
-      method: 'PUT',
-      body: file,
-      headers: {
-        'Content-Type': fileType,
-      },
-    });
+    // Enviar o arquivo diretamente para o backend, que cuidará do upload para o S3
+    const response = await api
+      .post('upload/brand-image', {
+        body: formData,
+        timeout: 30000, // Aumentar timeout para 30 segundos
+      })
+      .json<{ fileUrl: string }>();
     
     // Retornar a URL pública do arquivo
-    return presignedResponse.fileUrl;
+    return response.fileUrl;
   } catch (error) {
-    console.error('Erro ao fazer upload da imagem:', error);
-    throw new Error('Falha ao fazer upload da imagem');
+    // Verificar se é um erro de timeout
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      throw new Error('A requisição demorou muito para responder. Tente novamente mais tarde.');
+    }
+    
+    // Erro genérico
+    throw new Error('Falha ao fazer upload da imagem: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
   }
-} 
+}

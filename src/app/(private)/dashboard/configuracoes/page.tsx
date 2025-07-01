@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PageSettings } from '@/features/dashboard/page-settings/services/page-settings-service';
 import { PageSettingsForm } from '@/features/dashboard/page-settings/components/page-settings-form';
 import { usePageSettings } from '@/features/dashboard/page-settings/hooks/use-page-settings';
@@ -19,7 +19,6 @@ export default function PageSettingsPage() {
   const { updateSettings } = usePageSettings();
   const settings = properties?.data.user.page_settings;
   
-  // Valores padrão para quando os dados ainda não foram carregados
   const defaultSettings: PageSettings = {
     primary_color: '#9747FF',
     title: 'Encontre o imóvel perfeito para você',
@@ -27,10 +26,51 @@ export default function PageSettingsPage() {
     brand_image: '/logo-extendida-roxo.svg'
   };
 
+  const [previewSettings, setPreviewSettings] = useState<PageSettings>(() => settings || defaultSettings);
+  const [formSettings, setFormSettings] = useState<PageSettings | null>(null);
+
+  useEffect(() => {
+    if (settings && !isEditing) {
+      const currentSettingsStr = JSON.stringify(previewSettings);
+      const newSettingsStr = JSON.stringify(settings);
+      
+      if (currentSettingsStr !== newSettingsStr) {
+        setPreviewSettings(settings);
+      }
+    }
+  }, [settings, isEditing, previewSettings]);
+
+  useEffect(() => {
+    if (isEditing) {
+      setFormSettings(settings || defaultSettings);
+    }
+  }, [isEditing, settings, defaultSettings]);
+
+  const handleFormChange = useCallback((data: Partial<PageSettings>) => {
+    setFormSettings(prev => {
+      if (!prev) return settings || defaultSettings;
+      
+      const newSettings = {
+        ...prev,
+        ...data
+      };
+      
+      return newSettings;
+    });
+    
+    setPreviewSettings(prev => {
+      const newSettings = {
+        ...prev,
+        ...data
+      };
+      
+      return JSON.stringify(newSettings) !== JSON.stringify(prev) ? newSettings : prev;
+    });
+  }, [settings, defaultSettings]);
+
   const handleSubmit = async (data: PageSettings) => {
     try {
       await updateSettings(data);
-      // Recarregar os dados do broker para obter as configurações atualizadas
       await refetch();
       setIsEditing(false);
     } catch (error) {
@@ -40,34 +80,42 @@ export default function PageSettingsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Cabeçalho */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between bg-gradient-to-r from-[#9747ff]/10 to-white p-6 rounded-xl">
         <div>
           <h1 className="text-3xl font-bold text-[#141414]">Aparência da Página</h1>
           <p className="text-[#969696] mt-1">Personalize a aparência da sua página de imóveis</p>
         </div>
         <div className="mt-4 md:mt-0">
-          <Button 
-            variant={isEditing ? "outline" : "default"}
-            className={isEditing ? "" : "bg-[#9747ff] hover:bg-[#9747ff]/90"}
-            onClick={() => setIsEditing(!isEditing)}
-          >
-            {isEditing ? (
-              <>
-                <AlertCircle className="w-4 h-4 mr-2" />
-                Cancelar
-              </>
-            ) : (
-              <>
-                <Edit className="w-4 h-4 mr-2" />
-                Editar Aparência
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant={isEditing ? "outline" : "default"}
+              className={isEditing ? "" : "bg-[#9747ff] hover:bg-[#9747ff]/90"}
+              onClick={() => {
+                if (isEditing) {
+                  setIsEditing(false);
+                  setPreviewSettings(settings || defaultSettings);
+                  setFormSettings(null);
+                } else {
+                  setIsEditing(true);
+                }
+              }}
+            >
+              {isEditing ? (
+                <>
+                  <AlertCircle className="w-4 h-4 mr-2" />
+                  Cancelar
+                </>
+              ) : (
+                <>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Editar Aparência
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Estado de carregamento e erro */}
       <LoadingState 
         isLoading={isLoading} 
         isError={isError} 
@@ -77,7 +125,6 @@ export default function PageSettingsPage() {
 
       {!isLoading && !isError && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Formulário */}
           <div className="lg:col-span-7">
             <Card className="overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-[#9747ff]/5 to-transparent p-6">
@@ -93,8 +140,9 @@ export default function PageSettingsPage() {
               <CardContent className="p-6">
                 {isEditing ? (
                   <PageSettingsForm 
-                    initialData={settings || defaultSettings} 
-                    onSubmit={handleSubmit} 
+                    initialData={formSettings || settings || defaultSettings} 
+                    onSubmit={handleSubmit}
+                    onChange={handleFormChange}
                   />
                 ) : (
                   <div className="space-y-6">
@@ -150,7 +198,6 @@ export default function PageSettingsPage() {
             </Card>
           </div>
           
-          {/* Preview */}
           <div className="lg:col-span-5">
             <Card>
               <CardHeader className="bg-gradient-to-r from-[#9747ff]/5 to-transparent p-6">
@@ -160,7 +207,7 @@ export default function PageSettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-6">
-                <PageSettingsPreview settings={settings || defaultSettings} />
+                <PageSettingsPreview settings={previewSettings} />
               </CardContent>
             </Card>
           </div>
@@ -168,4 +215,4 @@ export default function PageSettingsPage() {
       )}
     </div>
   );
-} 
+}

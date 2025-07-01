@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,9 +24,10 @@ type PageSettingsFormData = z.infer<typeof pageSettingsSchema>;
 interface PageSettingsFormProps {
   initialData?: PageSettingsFormData;
   onSubmit: (data: PageSettingsFormData) => Promise<void>;
+  onChange?: (data: Partial<PageSettingsFormData>) => void;
 }
 
-export function PageSettingsForm({ initialData, onSubmit }: PageSettingsFormProps) {
+export function PageSettingsForm({ initialData, onSubmit, onChange }: PageSettingsFormProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<PageSettingsFormData>({
@@ -37,7 +38,25 @@ export function PageSettingsForm({ initialData, onSubmit }: PageSettingsFormProp
       subtitle: '',
       brand_image: '',
     },
+    mode: 'onChange',
   });
+
+  const watchAllFields = form.watch();
+  
+  useEffect(() => {
+    if (onChange && JSON.stringify(watchAllFields) !== JSON.stringify(form.formState.defaultValues)) {
+      const { brand_image, ...otherFields } = watchAllFields;
+      const { brand_image: defaultBrandImage, ...defaultOtherFields } = form.formState.defaultValues || {};
+      
+      if (JSON.stringify(otherFields) !== JSON.stringify(defaultOtherFields)) {
+        const timeoutId = setTimeout(() => {
+          onChange(watchAllFields);
+        }, 500);
+        
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [watchAllFields, onChange, form.formState.defaultValues]);
 
   const handleFormSubmit = async (data: PageSettingsFormData) => {
     try {
@@ -55,7 +74,6 @@ export function PageSettingsForm({ initialData, onSubmit }: PageSettingsFormProp
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
         <div className="space-y-6">
-          {/* Cor Primária */}
           <FormField
             control={form.control}
             name="primary_color"
@@ -76,7 +94,6 @@ export function PageSettingsForm({ initialData, onSubmit }: PageSettingsFormProp
             )}
           />
 
-          {/* Logo da Marca */}
           <FormField
             control={form.control}
             name="brand_image"
@@ -97,7 +114,6 @@ export function PageSettingsForm({ initialData, onSubmit }: PageSettingsFormProp
             )}
           />
 
-          {/* Título da Página */}
           <FormField
             control={form.control}
             name="title"
@@ -119,7 +135,6 @@ export function PageSettingsForm({ initialData, onSubmit }: PageSettingsFormProp
             )}
           />
 
-          {/* Subtítulo da Página */}
           <FormField
             control={form.control}
             name="subtitle"
@@ -165,4 +180,4 @@ export function PageSettingsForm({ initialData, onSubmit }: PageSettingsFormProp
       </form>
     </Form>
   );
-} 
+}
