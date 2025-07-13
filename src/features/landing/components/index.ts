@@ -1,0 +1,9 @@
+// Export all landing page components
+export { ModernHeader } from './modern-header';
+export { HeroSection } from './hero-section';
+export { StatsSection } from './stats-section';
+export { FeaturesSection } from './features-section';
+export { TestimonialsSection } from './testimonials-section';
+export { CTASection } from './cta-section';
+export { ModernFooter } from './modern-footer';
+export { LandingPage } from './landing-page';
