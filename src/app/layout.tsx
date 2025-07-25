@@ -16,7 +16,7 @@ const figtreeMono = Figtree({
 
 export const metadata: Metadata = {
   title: 'Imoobile',
-  description: 'Seu ecossistema imobiliário!',
+  description: 'Seu ecossistema imobiliário!!',
   icons: {
     icon: '/logo.svg',
   },
