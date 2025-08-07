@@ -450,6 +450,62 @@ export default function DashboardPage() {
         </>
       )}
 
+      {/* Seção Primeiros Passos */}
+      <Card className="bg-gradient-to-r from-[#9747ff]/5 to-transparent border-[#9747ff]/20">
+        <CardHeader className="p-4 sm:p-6">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-[#9747ff]/10 rounded-full flex items-center justify-center">
+              <span className="text-[#9747ff] font-bold text-sm">✨</span>
+            </div>
+            <div>
+              <CardTitle className="text-lg sm:text-xl font-display text-[#141414]">Primeiros passos</CardTitle>
+              <CardDescription className="text-xs sm:text-sm text-[#969696]">Configure sua conta e comece a usar a plataforma</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6 pt-0">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2">
+            {/* Cadastrar primeiro imóvel */}
+            <div className="bg-white p-4 sm:p-6 rounded-xl border border-gray-100 hover:border-[#9747ff]/30 transition-colors group">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-[#9747ff]/10 rounded-xl flex items-center justify-center group-hover:bg-[#9747ff]/20 transition-colors">
+                  <Building2 className="w-6 h-6 text-[#9747ff]" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-base text-[#141414] mb-2">Cadastre seu primeiro imóvel</h3>
+                  <p className="text-sm text-[#969696] mb-4">Anuncie seus imóveis e aumente suas chances de vendas com um anúncio profissional.</p>
+                  <Link href="/dashboard/imoveis/novo">
+                    <Button className="bg-[#9747ff] hover:bg-[#9747ff]/90 text-sm w-full sm:w-auto">
+                      <Building2 className="w-4 h-4 mr-2" />
+                      Cadastrar imóvel
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Associar-se com construtoras */}
+            <div className="bg-white p-4 sm:p-6 rounded-xl border border-gray-100 hover:border-[#9747ff]/30 transition-colors group">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-[#9747ff]/10 rounded-xl flex items-center justify-center group-hover:bg-[#9747ff]/20 transition-colors">
+                  <LinkIcon className="w-6 h-6 text-[#9747ff]" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-base text-[#141414] mb-2">Associe-se com construtoras</h3>
+                  <p className="text-sm text-[#969696] mb-4">Tenha acesso a diversos imóveis das maiores construtoras do mercado e aumente seu portfólio.</p>
+                  <Link href="/dashboard/construtoras">
+                    <Button variant="outline" className="border-[#9747ff] text-[#9747ff] hover:bg-[#9747ff]/10 text-sm w-full sm:w-auto">
+                      <LinkIcon className="w-4 h-4 mr-2" />
+                      Quero me associar
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-[#9747ff]/5 to-transparent p-4 sm:p-6">
           <div className="flex items-center gap-2">

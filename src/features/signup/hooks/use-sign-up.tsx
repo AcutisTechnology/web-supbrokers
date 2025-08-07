@@ -4,21 +4,27 @@ import { useToast } from "@/hooks/use-toast";
 
 export default async function authenticateUser(credentials: {
   name: string;
+  username: string;
   email: string;
   password: string;
   password_confirmation: string;
   phone: string;
   cpf: string;
+  discovery_source: string;
+  user_type: string;
 }) {
   return await api
     .post("register", {
       json: {
         name: credentials.name,
+        username: credentials.username,
         email: credentials.email,
         password: credentials.password,
         password_confirmation: credentials.password_confirmation,
         phone: credentials.phone,
         cpfCnpj: credentials.cpf,
+        discovery_source: credentials.discovery_source,
+        user_type: credentials.user_type,
       },
     })
     .json()

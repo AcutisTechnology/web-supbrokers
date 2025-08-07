@@ -14,11 +14,14 @@ interface AuthContextProps {
   signin: (values: { email: string; password: string }) => Promise<void>;
   signup: (values: {
     name: string;
+    username: string;
     email: string;
     password: string;
     password_confirmation: string;
     phone: string;
     cpf: string;
+    discovery_source: string;
+    user_type: string;
   }) => Promise<void>;
   logout: () => void;
   loading: boolean;
@@ -77,11 +80,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = async (values: {
     name: string;
+    username: string;
     email: string;
     password: string;
     password_confirmation: string;
     phone: string;
     cpf: string;
+    discovery_source: string;
+    user_type: string;
   }) => {
     setLoading(true);
     try {
@@ -90,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.log(error)
       setLoading(false);
+      throw error; // Re-throw the error so it can be caught in the component
     } finally {
       setLoading(false);
     }

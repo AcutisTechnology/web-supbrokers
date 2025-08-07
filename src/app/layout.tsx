@@ -1,17 +1,20 @@
 import type { Metadata } from 'next';
-import { Figtree } from 'next/font/google';
+import { Inter, Poppins } from 'next/font/google';
 
 import './globals.css';
 import { AppProviders } from '@/shared/contexts/providers';
 
-const figtreeSans = Figtree({
-  variable: '--font-figtree-sans',
+const inter = Inter({
+  variable: '--font-inter',
   subsets: ['latin'],
+  display: 'swap',
 });
 
-const figtreeMono = Figtree({
-  variable: '--font-figtree-mono',
+const poppins = Poppins({
+  variable: '--font-poppins',
   subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -29,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${figtreeSans.variable} ${figtreeMono.variable}`}>
+      <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

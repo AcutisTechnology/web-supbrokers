@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --font-figtree-sans: "Figtree", sans-serif;
-  --font-figtree-mono: "Figtree", monospace;
+  --font-inter: "Inter", system-ui, sans-serif;
+  --font-poppins: "Poppins", "Inter", system-ui, sans-serif;
 }
 
 body {
-  font-family: var(--font-figtree-sans);
+  font-family: var(--font-inter);
 }
 
 @layer base {
