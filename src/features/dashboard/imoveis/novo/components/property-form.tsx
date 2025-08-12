@@ -66,34 +66,34 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
 
   // Lista de características disponíveis - Detalhes do imóvel
   const propertyCharacteristics = [
-    { id: "aquecimento", label: "Aquecimento" },
-    { id: "arCondicionado", label: "Ar condicionado" },
-    { id: "areaServico", label: "Área de serviço" },
-    { id: "armariosCozinha", label: "Armários na cozinha" },
-    { id: "armariosQuarto", label: "Armários no quarto" },
-    { id: "banheiroQuarto", label: "Banheiro no quarto" },
-    { id: "churrasqueira", label: "Churrasqueira" },
-    { id: "internet", label: "Internet" },
-    { id: "mobiliado", label: "Mobiliado" },
-    { id: "piscina", label: "Piscina" },
-    { id: "porteiro24h", label: "Porteiro 24h" },
-    { id: "quartoServico", label: "Quarto de serviço" },
-    { id: "tvCabo", label: "Tv a cabo" },
-    { id: "varanda", label: "Varanda" },
+    { id: "aquecimentoForm", label: "Aquecimento" },
+    { id: "arCondicionadoForm", label: "Ar condicionado" },
+    { id: "areaServicoForm", label: "Área de serviço" },
+    { id: "armariosCozinhaForm", label: "Armários na cozinha" },
+    { id: "armariosQuartoForm", label: "Armários no quarto" },
+    { id: "banheiroQuartoForm", label: "Banheiro no quarto" },
+    { id: "churrasqueiraForm", label: "Churrasqueira" },
+    { id: "internetForm", label: "Internet" },
+    { id: "mobiliadoForm", label: "Mobiliado" },
+    { id: "piscinaForm", label: "Piscina" },
+    { id: "porteiro24hForm", label: "Porteiro 24h" },
+    { id: "quartoServicoForm", label: "Quarto de serviço" },
+    { id: "tvCaboForm", label: "Tv a cabo" },
+    { id: "varandaForm", label: "Varanda" },
   ];
 
   // Lista de características disponíveis - Detalhes do condomínio
   const condominiumCharacteristics = [
-    { id: "academiaCondominio", label: "Academia" },
-    { id: "areaMurada", label: "Área murada" },
-    { id: "condominioFechado", label: "Condomínio fechado" },
-    { id: "elevador", label: "Elevador" },
-    { id: "permitidoAnimais", label: "Permitido animais" },
-    { id: "piscinaCondominio", label: "Piscina" },
-    { id: "portaoEletronico", label: "Portão eletrônico" },
-    { id: "portaria", label: "Portaria" },
-    { id: "salaoFestasCondominio", label: "Salão de festas" },
-    { id: "seguranca24h", label: "Segurança 24h" },
+    { id: "academiaCondominioForm", label: "Academia" },
+    { id: "areaMuradaForm", label: "Área murada" },
+    { id: "condominioFechadoForm", label: "Condomínio fechado" },
+    { id: "elevadorForm", label: "Elevador" },
+    { id: "permitidoAnimaisForm", label: "Permitido animais" },
+    { id: "piscinaCondominioForm", label: "Piscina" },
+    { id: "portaoEletronicoForm", label: "Portão eletrônico" },
+    { id: "portariaForm", label: "Portaria" },
+    { id: "salaoFestasCondominioForm", label: "Salão de festas" },
+    { id: "seguranca24hForm", label: "Segurança 24h" },
   ];
 
   // Função para lidar com a seleção de características
