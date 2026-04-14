@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Calendar, Clock, Plus, Settings, Link as LinkIcon, CheckCircle, Bell } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Calendar, Clock, Plus, Settings, Bell, RefreshCw, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,6 +12,10 @@ import { ReminderList } from "@/features/dashboard/calendario/components/reminde
 import { GoogleIntegration } from "@/features/dashboard/calendario/components/google-integration";
 import { useToast } from "@/hooks/use-toast";
 import { Reminder, reminderService, CreateReminderData } from "@/features/dashboard/calendario/services/reminder-service";
+import { googleCalendarService, type GoogleCalendarEvent, type GoogleCalendarListItem, type GoogleCalendarStatus } from "@/features/dashboard/calendario/services/google-calendar-service";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 // Interface movida para o serviço
 
@@ -19,12 +23,31 @@ export default function CalendarioPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [hasGoogleIntegration, setHasGoogleIntegration] = useState(false);
+  const [googleStatus, setGoogleStatus] = useState<GoogleCalendarStatus | null>(null);
+  const [calendars, setCalendars] = useState<GoogleCalendarListItem[]>([]);
+  const [selectedCalendarId, setSelectedCalendarId] = useState<string>("");
+  const [events, setEvents] = useState<GoogleCalendarEvent[]>([]);
+  const [loadingCalendars, setLoadingCalendars] = useState(false);
+  const [loadingEvents, setLoadingEvents] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [editingReminder, setEditingReminder] = useState<Reminder | undefined>(undefined);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [activeTab, setActiveTab] = useState("reminders");
   const [loading, setLoading] = useState(true);
+
+  const loadGoogleStatus = async () => {
+    try {
+      const status = await googleCalendarService.getStatus();
+      setGoogleStatus(status);
+      setHasGoogleIntegration(Boolean(status.connected));
+      return status;
+    } catch {
+      setGoogleStatus({ connected: false });
+      setHasGoogleIntegration(false);
+      return { connected: false } as GoogleCalendarStatus;
+    }
+  };
 
   // Carregar lembretes da API
   const loadReminders = async () => {
@@ -50,10 +73,28 @@ export default function CalendarioPage() {
   useEffect(() => {
     setIsMounted(true);
     loadReminders();
-    
-    // Verificar se o usuário tem integração com Google Calendar
-    const googleIntegration = localStorage.getItem('google-calendar-integration');
-    setHasGoogleIntegration(googleIntegration === 'true');
+
+    const params = new URLSearchParams(window.location.search);
+    const googleParam = params.get("google");
+
+    loadGoogleStatus().then((status) => {
+      if (googleParam === "connected") {
+        toast({ title: "Conectado!", description: "Google Agenda conectado com sucesso." });
+        setActiveTab("calendar");
+      }
+      if (googleParam === "error") {
+        toast({ title: "Erro", description: "Não foi possível conectar ao Google Agenda.", variant: "destructive" });
+      }
+
+      if (googleParam) {
+        const nextUrl = window.location.pathname;
+        window.history.replaceState({}, "", nextUrl);
+      }
+
+      if (status.connected) {
+        setSelectedCalendarId(status.calendar_id || "");
+      }
+    });
   }, []);
 
   const handleSaveReminder = async (reminderData: CreateReminderData) => {
@@ -127,14 +168,93 @@ export default function CalendarioPage() {
   };
 
   const handleConnectGoogle = () => {
-    setHasGoogleIntegration(true);
-    localStorage.setItem('google-calendar-integration', 'true');
+    return;
   };
 
   const handleDisconnectGoogle = () => {
+    setGoogleStatus({ connected: false });
     setHasGoogleIntegration(false);
-    localStorage.setItem('google-calendar-integration', 'false');
+    setCalendars([]);
+    setSelectedCalendarId("");
+    setEvents([]);
   };
+
+  const loadCalendars = async () => {
+    setLoadingCalendars(true);
+    try {
+      const data = await googleCalendarService.listCalendars();
+      setCalendars(data);
+
+      const preferred =
+        selectedCalendarId ||
+        googleStatus?.calendar_id ||
+        data.find((c) => c.primary)?.id ||
+        data[0]?.id ||
+        "";
+
+      if (preferred && preferred !== selectedCalendarId) {
+        setSelectedCalendarId(preferred);
+        try {
+          await googleCalendarService.setDefaultCalendar(preferred);
+        } catch {}
+      }
+    } catch (error) {
+      setCalendars([]);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar seus calendários do Google.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingCalendars(false);
+    }
+  };
+
+  const loadEvents = async (calendarId: string) => {
+    if (!calendarId) return;
+    setLoadingEvents(true);
+    try {
+      const timeMin = new Date().toISOString();
+      const timeMax = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      const data = await googleCalendarService.listEvents({ calendarId, timeMin, timeMax });
+      setEvents(data);
+    } catch (error) {
+      setEvents([]);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar eventos do Google Agenda.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab !== "calendar") return;
+    if (!hasGoogleIntegration) return;
+    if (!calendars.length) {
+      loadCalendars();
+    }
+  }, [activeTab, hasGoogleIntegration]);
+
+  useEffect(() => {
+    if (activeTab !== "calendar") return;
+    if (!hasGoogleIntegration) return;
+    if (!selectedCalendarId) return;
+    loadEvents(selectedCalendarId);
+  }, [activeTab, hasGoogleIntegration, selectedCalendarId]);
+
+  const eventsGrouped = useMemo(() => {
+    const grouped: Record<string, GoogleCalendarEvent[]> = {};
+    for (const e of events) {
+      const start = e.start || "";
+      const dayKey = start ? start.substring(0, 10) : "Sem data";
+      grouped[dayKey] = grouped[dayKey] || [];
+      grouped[dayKey].push(e);
+    }
+    return grouped;
+  }, [events]);
 
   const openReminderModal = () => {
     setEditingReminder(undefined);
@@ -206,12 +326,130 @@ export default function CalendarioPage() {
             {hasGoogleIntegration ? (
               <Card>
                 <CardContent className="p-6">
-                  <div className="h-96 flex items-center justify-center bg-gray-50 rounded-lg">
-                    <div className="text-center space-y-2">
-                      <Calendar className="w-16 h-16 text-gray-400 mx-auto" />
-                      <p className="text-gray-500">Calendário integrado com Google Calendar</p>
-                      <p className="text-sm text-gray-400">Implementação do componente de calendário aqui</p>
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#141414]">Seus eventos do Google Agenda</h3>
+                        <p className="text-sm text-[#969696]">Próximos 30 dias</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => {
+                          if (selectedCalendarId) loadEvents(selectedCalendarId);
+                        }}
+                        disabled={loadingEvents}
+                      >
+                        <RefreshCw className={`w-4 h-4 ${loadingEvents ? "animate-spin" : ""}`} />
+                        Atualizar
+                      </Button>
                     </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="flex-1">
+                        <label className="text-xs uppercase text-gray-500 font-bold">Calendário</label>
+                        <Select
+                          value={selectedCalendarId}
+                          onValueChange={async (val) => {
+                            setSelectedCalendarId(val);
+                            try {
+                              await googleCalendarService.setDefaultCalendar(val);
+                            } catch {}
+                          }}
+                        >
+                          <SelectTrigger className="mt-1 bg-white border-[#E2E2E2]">
+                            <SelectValue placeholder={loadingCalendars ? "Carregando..." : "Selecione"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(calendars || []).map((c) => (
+                              <SelectItem key={c.id} value={c.id}>
+                                {c.summary}{c.primary ? " (principal)" : ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="sm:self-end">
+                        <Button
+                          variant="outline"
+                          className="gap-2 w-full sm:w-auto"
+                          onClick={() => window.open("https://calendar.google.com", "_blank")}
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          Abrir Google Agenda
+                        </Button>
+                      </div>
+                    </div>
+
+                    {loadingEvents ? (
+                      <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+                        <div className="text-center space-y-2">
+                          <Calendar className="w-10 h-10 text-gray-400 mx-auto" />
+                          <p className="text-gray-500">Carregando eventos...</p>
+                        </div>
+                      </div>
+                    ) : events.length === 0 ? (
+                      <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+                        <div className="text-center space-y-2">
+                          <Calendar className="w-10 h-10 text-gray-400 mx-auto" />
+                          <p className="text-gray-500">Nenhum evento encontrado.</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {Object.entries(eventsGrouped).map(([day, dayEvents]) => {
+                          const dateLabel =
+                            day !== "Sem data"
+                              ? format(parseISO(day), "dd 'de' MMMM", { locale: ptBR })
+                              : "Sem data";
+
+                          return (
+                            <div key={day} className="space-y-2">
+                              <div className="flex items-center gap-2 text-sm font-semibold text-[#4A316A]">
+                                <Calendar className="w-4 h-4" />
+                                {dateLabel}
+                              </div>
+                              <div className="space-y-3">
+                                {dayEvents.map((event) => {
+                                  const startText = event.start
+                                    ? format(parseISO(event.start), "HH:mm", { locale: ptBR })
+                                    : "--:--";
+                                  return (
+                                    <Card key={event.id} className="transition-all hover:shadow-md">
+                                      <CardContent className="p-4">
+                                        <div className="flex items-start justify-between gap-4">
+                                          <div className="space-y-1">
+                                            <div className="font-medium text-gray-900">{event.summary}</div>
+                                            <div className="text-sm text-gray-500 flex items-center gap-3">
+                                              <span className="flex items-center gap-1">
+                                                <Clock className="w-4 h-4" />
+                                                {startText}
+                                              </span>
+                                              {event.location && <span className="truncate">{event.location}</span>}
+                                            </div>
+                                          </div>
+                                          {event.htmlLink && (
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              className="gap-2"
+                                              onClick={() => window.open(event.htmlLink || "", "_blank")}
+                                            >
+                                              <ExternalLink className="w-4 h-4" />
+                                              Abrir
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -250,7 +488,7 @@ export default function CalendarioPage() {
               isConnected={hasGoogleIntegration}
               onConnect={handleConnectGoogle}
               onDisconnect={handleDisconnectGoogle}
-              userEmail={user?.user?.email}
+              userEmail={googleStatus?.email || user?.user?.email}
             />
           </TabsContent>
         </Tabs>

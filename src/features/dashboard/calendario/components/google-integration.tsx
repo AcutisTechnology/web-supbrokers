@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, CheckCircle, AlertCircle, ExternalLink, RefreshCw, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import Image from "next/image";
+import { googleCalendarService } from "../services/google-calendar-service";
 
 interface GoogleIntegrationProps {
   isConnected: boolean;
@@ -28,13 +28,9 @@ export function GoogleIntegration({
   const handleConnect = async () => {
     setIsLoading(true);
     try {
-      // Simular processo de conexão com Google
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const url = await googleCalendarService.getAuthUrl();
       onConnect();
-      toast({
-        title: "Conectado com sucesso!",
-        description: "Sua conta Google Calendar foi conectada."
-      });
+      window.location.href = url;
     } catch (error) {
       toast({
         title: "Erro na conexão",
@@ -49,8 +45,7 @@ export function GoogleIntegration({
   const handleDisconnect = async () => {
     setIsDisconnecting(true);
     try {
-      // Simular processo de desconexão
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await googleCalendarService.disconnect();
       onDisconnect();
       toast({
         title: "Desconectado",
@@ -70,7 +65,7 @@ export function GoogleIntegration({
   const handleSyncCalendar = () => {
     toast({
       title: "Sincronizando...",
-      description: "Seus eventos estão sendo sincronizados."
+      description: "Atualize a aba Calendário para ver os eventos."
     });
   };
 
@@ -161,21 +156,6 @@ export function GoogleIntegration({
       </CardHeader>
       
       <CardContent className="pt-0">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-          <div className="text-center p-3 bg-white rounded-lg border">
-            <div className="text-lg font-semibold text-gray-900">12</div>
-            <div className="text-xs text-gray-600">Eventos hoje</div>
-          </div>
-          <div className="text-center p-3 bg-white rounded-lg border">
-            <div className="text-lg font-semibold text-gray-900">45</div>
-            <div className="text-xs text-gray-600">Este mês</div>
-          </div>
-          <div className="text-center p-3 bg-white rounded-lg border">
-            <div className="text-lg font-semibold text-gray-900">3</div>
-            <div className="text-xs text-gray-600">Próximos</div>
-          </div>
-        </div>
-        
         <div className="flex flex-wrap gap-2">
           <Button 
             variant="outline" 
