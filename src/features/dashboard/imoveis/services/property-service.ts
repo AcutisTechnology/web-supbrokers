@@ -9,8 +9,12 @@ export interface Property {
   title: string;
   description: string;
   slug: string;
+  builder?: { id: number; name: string } | null;
   street: string;
+  city?: string | null;
+  city_ref?: { id: number; name: string } | null;
   neighborhood: string;
+  neighborhood_ref?: { id: number; name: string } | null;
   complement?: string;
   size: number;
   bedrooms: number;
@@ -102,12 +106,36 @@ export function useCreateProperty() {
             key !== "attachments" &&
             key !== "characteristics" &&
             key !== "purpose" &&
+            key !== "builder" &&
+            key !== "city" &&
+            key !== "neighborhood" &&
             value !== undefined &&
             value !== null
           ) {
             formData.append(key, String(value));
           }
         });
+
+        const builder = data.builder;
+        if (builder && builder.name?.trim()) {
+          if (builder.id) {
+            formData.append("builder_id", String(builder.id));
+          } else {
+            formData.append("builder_name", builder.name.trim());
+          }
+        }
+
+        const city = data.city;
+        formData.append("city", city?.name?.trim() || "");
+        if (city?.id) {
+          formData.append("city_id", String(city.id));
+        }
+
+        const neighborhood = data.neighborhood;
+        formData.append("neighborhood", neighborhood?.name?.trim() || "");
+        if (neighborhood?.id) {
+          formData.append("neighborhood_id", String(neighborhood.id));
+        }
 
         // Adicionar características no formato correto com o campo "text"
         if (data.characteristics && data.characteristics.length > 0) {
@@ -169,12 +197,36 @@ export function useUpdateProperty() {
             key !== "attachments" &&
             key !== "characteristics" &&
             key !== "purpose" &&
+            key !== "builder" &&
+            key !== "city" &&
+            key !== "neighborhood" &&
             value !== undefined &&
             value !== null
           ) {
             formData.append(key, String(value));
           }
         });
+
+        const builder = data.builder;
+        if (builder && builder.name?.trim()) {
+          if (builder.id) {
+            formData.append("builder_id", String(builder.id));
+          } else {
+            formData.append("builder_name", builder.name.trim());
+          }
+        }
+
+        const city = data.city;
+        formData.append("city", city?.name?.trim() || "");
+        if (city?.id) {
+          formData.append("city_id", String(city.id));
+        }
+
+        const neighborhood = data.neighborhood;
+        formData.append("neighborhood", neighborhood?.name?.trim() || "");
+        if (neighborhood?.id) {
+          formData.append("neighborhood_id", String(neighborhood.id));
+        }
 
         // Adicionar características no formato correto com o campo "text"
         if (data.characteristics && data.characteristics.length > 0) {

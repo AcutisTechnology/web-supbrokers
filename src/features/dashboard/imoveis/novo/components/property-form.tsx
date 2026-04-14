@@ -16,6 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { AutocompleteInput, AutocompleteOption, AutocompleteValue } from "@/components/ui/autocomplete-input";
 import {
   Select,
   SelectContent,
@@ -35,6 +36,7 @@ import { PropertyFormValues, defaultValues, propertySchema } from "../schemas/pr
 import { formatCurrency } from "@/lib/utils";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { useQueryClient } from "@tanstack/react-query";
+import { api } from "@/shared/configs/api";
 
 interface PropertyFormProps {
   initialValues?: Partial<PropertyFormValues>;
@@ -55,6 +57,30 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
   });
 
   const watchedValues = form.watch();
+
+  const searchBuilders = async (query: string): Promise<AutocompleteOption[]> => {
+    const response = await api
+      .get(`builders?search=${encodeURIComponent(query)}`)
+      .json<{ data: Array<{ id: number; name: string }> }>();
+
+    return (response.data || []).map((item) => ({ id: String(item.id), name: item.name }));
+  };
+
+  const searchCities = async (query: string): Promise<AutocompleteOption[]> => {
+    const response = await api
+      .get(`locations?type=cidade&search=${encodeURIComponent(query)}`)
+      .json<{ data: Array<{ id: number; name: string }> }>();
+
+    return (response.data || []).map((item) => ({ id: String(item.id), name: item.name }));
+  };
+
+  const searchNeighborhoods = async (query: string): Promise<AutocompleteOption[]> => {
+    const response = await api
+      .get(`locations?type=bairro&search=${encodeURIComponent(query)}`)
+      .json<{ data: Array<{ id: number; name: string }> }>();
+
+    return (response.data || []).map((item) => ({ id: String(item.id), name: item.name }));
+  };
 
   // Invalidar consultas quando o componente for montado para garantir dados atualizados ao retornar
   useLayoutEffect(() => {
@@ -271,12 +297,12 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                 )}
               />
               
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-3">
                 <FormField
                   control={form.control}
                   name="street"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="sm:col-span-2">
                       <FormLabel>
                         Endereço<span className="text-red-500">*</span>
                       </FormLabel>
@@ -293,17 +319,42 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                 />
                 <FormField
                   control={form.control}
-                  name="neighborhood"
+                  name="city"
                   render={({ field }) => (
                     <FormItem>
+                      <FormLabel>
+                        Cidade<span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <AutocompleteInput
+                          value={(field.value as AutocompleteValue) || { id: null, name: "" }}
+                          onChange={(next) => field.onChange(next)}
+                          onSearch={searchCities}
+                          placeholder="Cidade"
+                          inputClassName="bg-white"
+                          createLabel={(typed) => `Cadastrar novo: ${typed}`}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="neighborhood"
+                  render={({ field }) => (
+                    <FormItem className="sm:col-span-3">
                       <FormLabel>
                         Bairro<span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          className="bg-white"
+                        <AutocompleteInput
+                          value={(field.value as AutocompleteValue) || { id: null, name: "" }}
+                          onChange={(next) => field.onChange(next)}
+                          onSearch={searchNeighborhoods}
                           placeholder="Bairro"
-                          {...field}
+                          inputClassName="bg-white"
+                          createLabel={(typed) => `Cadastrar novo: ${typed}`}
                         />
                       </FormControl>
                       <FormMessage />
@@ -312,7 +363,7 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                 />
               </div>
               
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-3">
                 <FormField
                   control={form.control}
                   name="purpose"
@@ -335,6 +386,28 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                           <SelectItem value="rent">Alugar</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="builder"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Construtora
+                      </FormLabel>
+                      <FormControl>
+                        <AutocompleteInput
+                          value={(field.value as AutocompleteValue) || { id: null, name: "" }}
+                          onChange={(next) => field.onChange(next)}
+                          onSearch={searchBuilders}
+                          placeholder="Construtora"
+                          inputClassName="bg-white"
+                          createLabel={(typed) => `Cadastrar novo: ${typed}`}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

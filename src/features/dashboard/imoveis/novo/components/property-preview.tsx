@@ -42,7 +42,7 @@ export function PropertyPreview({ data }: PropertyPreviewProps) {
             {data.title || "Título do imóvel"}
           </div>
           <div className="font-medium">
-            {data.neighborhood || "Bairro"}
+            {[data.neighborhood?.name, data.city?.name].filter(Boolean).join(" • ") || "Bairro • Cidade"}
           </div>
           <div className="text-sm text-muted-foreground line-clamp-1">
             {data.street || "Endereço não informado"}

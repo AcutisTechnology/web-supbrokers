@@ -16,7 +16,7 @@ export function PublicProposalPage() {
   const { data, isLoading, refetch } = usePublicProposal(token as string);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (isLoading) return <LoadingState />;
+  if (isLoading) return <LoadingState isLoading={true} isError={false} />;
 
   if (!data) {
     return (

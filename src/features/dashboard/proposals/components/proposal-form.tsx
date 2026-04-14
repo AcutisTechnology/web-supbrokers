@@ -49,7 +49,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
   const createProposal = useCreateProposal();
   const updateProposal = useUpdateProposal((initialData as { id?: number } | undefined)?.id ?? 0);
 
-  const parseCurrencyToNumber = (value: string | number) => {
+  const parseCurrencyToNumber = (value: string | number | null | undefined) => {
     if (typeof value === "number") return value;
     if (!value) return 0;
     const cleanedValue = value.replace(/\./g, "").replace(",", ".");
@@ -199,7 +199,12 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
     try {
       console.log("Submetendo proposta:", values);
       if (isEditing) {
-        await updateProposal.mutateAsync(values);
+        const payload = {
+          ...values,
+          status: (values as { status?: unknown }).status as unknown,
+        } as unknown as import("../types/proposal").UpdateProposalDTO;
+
+        await updateProposal.mutateAsync(payload);
       } else {
         await createProposal.mutateAsync(values);
       }
@@ -317,7 +322,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs uppercase text-gray-500 font-bold">Telefone</FormLabel>
-                        <FormControl><MaskedInput {...field} mask="(##) #####-####" placeholder="Telefone" className="bg-gray-50" /></FormControl>
+                        <FormControl><MaskedInput {...field} value={field.value ?? ""} mask="(##) #####-####" placeholder="Telefone" className="bg-gray-50" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -328,7 +333,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs uppercase text-gray-500 font-bold">CPF</FormLabel>
-                        <FormControl><MaskedInput {...field} mask="###.###.###-##" placeholder="CPF" className="bg-gray-50" /></FormControl>
+                        <FormControl><MaskedInput {...field} value={field.value ?? ""} mask="###.###.###-##" placeholder="CPF" className="bg-gray-50" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -339,7 +344,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs uppercase text-gray-500 font-bold">Data de nascimento</FormLabel>
-                        <FormControl><Input {...field} type="date" className="bg-gray-50" /></FormControl>
+                        <FormControl><Input {...field} value={field.value ?? ""} type="date" className="bg-gray-50" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -350,7 +355,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs uppercase text-gray-500 font-bold">Nacionalidade</FormLabel>
-                        <FormControl><Input {...field} placeholder="Nacionalidade" className="bg-gray-50" /></FormControl>
+                        <FormControl><Input {...field} value={field.value ?? ""} placeholder="Nacionalidade" className="bg-gray-50" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -361,7 +366,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs uppercase text-gray-500 font-bold">Estado Civil</FormLabel>
-                        <FormControl><Input {...field} placeholder="Estado Civil" className="bg-gray-50" /></FormControl>
+                        <FormControl><Input {...field} value={field.value ?? ""} placeholder="Estado Civil" className="bg-gray-50" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -372,7 +377,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                     render={({ field }) => (
                       <FormItem className="md:col-span-2">
                         <FormLabel className="text-xs uppercase text-gray-500 font-bold">Profissão</FormLabel>
-                        <FormControl><Input {...field} placeholder="Profissão" className="bg-gray-50" /></FormControl>
+                        <FormControl><Input {...field} value={field.value ?? ""} placeholder="Profissão" className="bg-gray-50" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -383,7 +388,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                     render={({ field }) => (
                       <FormItem className="md:col-span-2">
                         <FormLabel className="text-xs uppercase text-gray-500 font-bold">RG</FormLabel>
-                        <FormControl><Input {...field} placeholder="RG" className="bg-gray-50" /></FormControl>
+                        <FormControl><Input {...field} value={field.value ?? ""} placeholder="RG" className="bg-gray-50" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -394,7 +399,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                     render={({ field }) => (
                       <FormItem className="md:col-span-2">
                         <FormLabel className="text-xs uppercase text-gray-500 font-bold">E-mail</FormLabel>
-                        <FormControl><Input {...field} type="email" placeholder="E-mail" className="bg-gray-50" /></FormControl>
+                        <FormControl><Input {...field} value={field.value ?? ""} type="email" placeholder="E-mail" className="bg-gray-50" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -405,7 +410,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                     render={({ field }) => (
                       <FormItem className="md:col-span-2">
                         <FormLabel className="text-xs uppercase text-gray-500 font-bold">Endereço</FormLabel>
-                        <FormControl><Input {...field} placeholder="Endereço" className="bg-gray-50" /></FormControl>
+                        <FormControl><Input {...field} value={field.value ?? ""} placeholder="Endereço" className="bg-gray-50" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -479,7 +484,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs uppercase text-gray-500 font-bold">Valor do Imóvel</FormLabel>
-                    <FormControl><CurrencyInput value={field.value} onChange={(val) => field.onChange(val)} className="bg-gray-50" /></FormControl>
+                    <FormControl><CurrencyInput value={field.value ?? 0} onChange={(val) => field.onChange(val)} className="bg-gray-50" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -538,7 +543,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                   render={({ field }) => (
                     <FormItem className="md:col-span-3">
                       <FormLabel className="text-xs uppercase text-gray-500 font-bold">Nome da Imobiliária / Corretor(a)</FormLabel>
-                      <FormControl><Input {...field} placeholder="Nome da Imobiliária / Corretor(a)" className="bg-gray-50" /></FormControl>
+                      <FormControl><Input {...field} value={field.value ?? ""} placeholder="Nome da Imobiliária / Corretor(a)" className="bg-gray-50" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -549,7 +554,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs uppercase text-gray-500 font-bold">CRECI</FormLabel>
-                      <FormControl><Input {...field} placeholder="CRECI" className="bg-gray-50" /></FormControl>
+                      <FormControl><Input {...field} value={field.value ?? ""} placeholder="CRECI" className="bg-gray-50" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -560,7 +565,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs uppercase text-gray-500 font-bold">Telefone</FormLabel>
-                      <FormControl><MaskedInput {...field} mask="(##) #####-####" placeholder="Telefone" className="bg-gray-50" /></FormControl>
+                      <FormControl><MaskedInput {...field} value={field.value ?? ""} mask="(##) #####-####" placeholder="Telefone" className="bg-gray-50" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -571,7 +576,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs uppercase text-gray-500 font-bold">CNPJ/CPF</FormLabel>
-                      <FormControl><Input {...field} placeholder="CNPJ/CPF" className="bg-gray-50" /></FormControl>
+                      <FormControl><Input {...field} value={field.value ?? ""} placeholder="CNPJ/CPF" className="bg-gray-50" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -582,7 +587,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs uppercase text-gray-500 font-bold">E-mail</FormLabel>
-                      <FormControl><Input {...field} type="email" placeholder="E-mail" className="bg-gray-50" /></FormControl>
+                      <FormControl><Input {...field} value={field.value ?? ""} type="email" placeholder="E-mail" className="bg-gray-50" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -593,7 +598,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs uppercase text-gray-500 font-bold">Endereço</FormLabel>
-                      <FormControl><Input {...field} placeholder="Endereço" className="bg-gray-50" /></FormControl>
+                      <FormControl><Input {...field} value={field.value ?? ""} placeholder="Endereço" className="bg-gray-50" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -676,7 +681,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
                           <Input {...form.register(`conditions.${index}.installments`)} type="number" className="h-9 text-xs" />
                         </td>
                         <td className="p-3">
-                          <Select onValueChange={(val) => form.setValue(`conditions.${index}.period`, val)} defaultValue={field.period}>
+                          <Select onValueChange={(val) => form.setValue(`conditions.${index}.period`, val)} defaultValue={field.period ?? undefined}>
                             <SelectTrigger className="h-9 text-xs uppercase"><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="UNICA">UNICA</SelectItem>
@@ -762,7 +767,7 @@ export function ProposalForm({ property, initialData, isEditing }: ProposalFormP
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs uppercase text-gray-500 font-bold">Observações</FormLabel>
-                  <FormControl><Textarea {...field} placeholder="Insira suas observações" className="bg-gray-50 min-h-[120px]" /></FormControl>
+                  <FormControl><Textarea {...field} value={field.value ?? ""} placeholder="Insira suas observações" className="bg-gray-50 min-h-[120px]" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}

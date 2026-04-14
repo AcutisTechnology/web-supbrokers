@@ -32,7 +32,7 @@ export function ProposalMobileCard({ proposal }: ProposalMobileCardProps) {
           <div className="flex flex-col">
             <span className="text-xs text-[#969696]">#{proposal.code}</span>
             <h3 className="font-semibold text-[#4A316A] line-clamp-1">
-              {proposal.property.title}
+              {proposal.property?.title || "-"}
             </h3>
           </div>
           <DropdownMenu>

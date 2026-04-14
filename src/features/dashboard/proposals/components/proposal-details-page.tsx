@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useProposal } from "../hooks/use-proposals";
 import { useParams, useRouter } from "next/navigation";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -24,7 +25,7 @@ export function ProposalDetailsPage() {
   const { toast } = useToast();
   const { data, isLoading } = useProposal(Number(id));
 
-  if (isLoading) return <LoadingState />;
+  if (isLoading) return <LoadingState isLoading={true} isError={false} />;
 
   if (!data) return null;
 
@@ -90,18 +91,24 @@ export function ProposalDetailsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-4 p-3 bg-gray-50 rounded-lg">
-                <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0">
-                  <img src={proposal.property.attachments?.[0]?.url || "/placeholder.svg"} className="w-full h-full object-cover" />
+                <div className="relative w-24 h-24 rounded-md overflow-hidden flex-shrink-0">
+                  <Image
+                    src={proposal.property?.attachments?.[0]?.url || "/placeholder.svg"}
+                    alt="Imagem do imóvel"
+                    fill
+                    sizes="96px"
+                    className="object-cover"
+                  />
                 </div>
                 <div>
-                  <h4 className="font-bold text-[#4A316A]">{proposal.property.title}</h4>
+                  <h4 className="font-bold text-[#4A316A]">{proposal.property?.title || "-"}</h4>
                   <div className="flex items-center gap-1 text-sm text-[#969696] mt-1">
                     <MapPin className="w-3 h-3" />
-                    <span>{proposal.property.street}, {proposal.property.neighborhood}</span>
+                    <span>{proposal.property ? `${proposal.property.street}, ${proposal.property.neighborhood}` : "-"}</span>
                   </div>
                   <div className="flex items-center gap-1 text-sm text-[#969696] mt-1">
                     <Calendar className="w-3 h-3" />
-                    <span>Cód: {proposal.property.code}</span>
+                    <span>Cód: {proposal.property?.code || "-"}</span>
                   </div>
                 </div>
               </div>
@@ -122,7 +129,7 @@ export function ProposalDetailsPage() {
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
                       <span className="font-bold text-[#4A316A]">{proponent.name}</span>
-                      {(proponent.type === "principal" || proponent.is_main) && <Badge className="bg-[#4A316A]">Principal</Badge>}
+                      {proponent.type === "principal" && <Badge className="bg-[#4A316A]">Principal</Badge>}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 mt-2 text-sm text-[#969696]">
                       <span>E-mail: {proponent.email}</span>

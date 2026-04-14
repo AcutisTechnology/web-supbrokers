@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AutocompleteInput, AutocompleteOption, AutocompleteValue } from "@/components/ui/autocomplete-input";
+import { api } from "@/shared/configs/api";
 import {
   Select,
   SelectContent,
@@ -26,6 +28,14 @@ interface BasicInfoStepProps {
 }
 
 export function BasicInfoStep({ form }: BasicInfoStepProps) {
+  const searchBuilders = async (query: string): Promise<AutocompleteOption[]> => {
+    const response = await api
+      .get(`builders?search=${encodeURIComponent(query)}`)
+      .json<{ data: Array<{ id: number; name: string }> }>();
+
+    return (response.data || []).map((item) => ({ id: String(item.id), name: item.name }));
+  };
+
   // Função para gerar código aleatório
   const generateRandomCode = () => {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -92,6 +102,29 @@ export function BasicInfoStep({ form }: BasicInfoStepProps) {
         />
 
         <div className="grid gap-6 md:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="builder"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-base font-medium">
+                  Construtora
+                </FormLabel>
+                <FormControl>
+                  <AutocompleteInput
+                    value={(field.value as AutocompleteValue) || { id: null, name: "" }}
+                    onChange={(next) => field.onChange(next)}
+                    onSearch={searchBuilders}
+                    placeholder="Ex: Urban Engenharia"
+                    inputClassName="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    createLabel={(typed) => `Cadastrar novo: ${typed}`}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <FormField
             control={form.control}
             name="purpose"

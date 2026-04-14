@@ -10,7 +10,7 @@ export function EditProposalPage() {
   const { id } = useParams();
   const { data, isLoading, error } = useProposal(Number(id));
 
-  if (isLoading) return <LoadingState />;
+  if (isLoading) return <LoadingState isLoading={true} isError={false} />;
 
   if (error || !data) {
     return (

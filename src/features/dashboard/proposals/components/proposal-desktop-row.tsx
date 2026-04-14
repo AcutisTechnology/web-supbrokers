@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  SelectItem,
   DropdownMenuTrigger,
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -56,10 +55,10 @@ export function ProposalDesktopRow({ proposal }: ProposalDesktopRowProps) {
       <td className="px-6 py-4">
         <div className="flex flex-col">
           <span className="font-medium text-[#4A316A] line-clamp-1">
-            {proposal.property.title}
+            {proposal.property?.title || "-"}
           </span>
           <span className="text-xs text-[#969696] line-clamp-1">
-            {proposal.property.street}, {proposal.property.neighborhood}
+            {proposal.property ? `${proposal.property.street}, ${proposal.property.neighborhood}` : "-"}
           </span>
         </div>
       </td>

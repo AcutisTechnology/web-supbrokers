@@ -101,6 +101,10 @@ export function ReviewStep({ form }: ReviewStepProps) {
                 <p className="font-medium">{formData.code || "Não informado"}</p>
               </div>
               <div>
+                <span className="text-sm font-medium text-gray-600">Construtora:</span>
+                <p className="font-medium">{formData.builder?.name?.trim() ? formData.builder.name : "Não informado"}</p>
+              </div>
+              <div>
                 <span className="text-sm font-medium text-gray-600">Finalidade:</span>
                 <Badge variant={isRent ? "secondary" : "default"} className="ml-2">
                   {isRent ? "Aluguel" : "Venda"}
@@ -131,8 +135,12 @@ export function ReviewStep({ form }: ReviewStepProps) {
                 <p className="font-medium text-lg">{formData.street || "Não informado"}</p>
               </div>
               <div>
+                <span className="text-sm font-medium text-gray-600">Cidade:</span>
+                <p className="font-medium">{formData.city?.name || "Não informado"}</p>
+              </div>
+              <div>
                 <span className="text-sm font-medium text-gray-600">Bairro:</span>
-                <p className="font-medium">{formData.neighborhood || "Não informado"}</p>
+                <p className="font-medium">{formData.neighborhood?.name || "Não informado"}</p>
               </div>
 
             </CardContent>
