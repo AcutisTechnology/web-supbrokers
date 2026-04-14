@@ -42,15 +42,7 @@ function EditPropertyClient({ slug }: { slug: string }) {
       title: property.title,
       description: property.description,
       street: property.street,
-      builder: property.builder
-        ? { id: String(property.builder.id), name: property.builder.name }
-        : { id: null, name: "" },
-      city: property.city_ref
-        ? { id: String(property.city_ref.id), name: property.city_ref.name }
-        : { id: null, name: property.city || "" },
-      neighborhood: property.neighborhood_ref
-        ? { id: String(property.neighborhood_ref.id), name: property.neighborhood_ref.name }
-        : { id: null, name: property.neighborhood || "" },
+      neighborhood: property.neighborhood,
       size: property.size,
       bedrooms: property.bedrooms,
       garages: property.garages,

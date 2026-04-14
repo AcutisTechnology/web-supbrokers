@@ -1,17 +1,10 @@
 import { z } from "zod";
 
-const selectionSchema = z.object({
-  id: z.string().nullable(),
-  name: z.string(),
-});
-
 export const propertySchema = z.object({
   title: z.string().min(1, "O título é obrigatório"),
   description: z.string().min(1, "A descrição é obrigatória"),
-  builder: selectionSchema.optional(),
   street: z.string().min(1, "O endereço é obrigatório"),
-  city: selectionSchema.refine((v) => v.name.trim().length > 0, "A cidade é obrigatória"),
-  neighborhood: selectionSchema.refine((v) => v.name.trim().length > 0, "O bairro é obrigatório"),
+  neighborhood: z.string().min(1, "O bairro é obrigatório"),
   size: z.coerce.number().min(1, "A área é obrigatória"),
   bedrooms: z.coerce.number().min(0, "Número de quartos inválido"),
   garages: z.coerce.number().min(0, "Número de vagas inválido"),
@@ -33,10 +26,8 @@ export type PropertyFormValues = z.infer<typeof propertySchema>;
 export const defaultValues: Partial<PropertyFormValues> = {
   title: "",
   description: "",
-  builder: { id: null, name: "" },
   street: "",
-  city: { id: null, name: "" },
-  neighborhood: { id: null, name: "" },
+  neighborhood: "",
   size: 0,
   bedrooms: 0,
   garages: 0,

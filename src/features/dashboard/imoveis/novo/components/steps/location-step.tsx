@@ -9,8 +9,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { AutocompleteInput, AutocompleteOption, AutocompleteValue } from "@/components/ui/autocomplete-input";
-import { api } from "@/shared/configs/api";
 import { MapPin } from "lucide-react";
 import { PropertyFormValues } from "../../schemas/property-schema";
 
@@ -19,22 +17,6 @@ interface LocationStepProps {
 }
 
 export function LocationStep({ form }: LocationStepProps) {
-  const searchCities = async (query: string): Promise<AutocompleteOption[]> => {
-    const response = await api
-      .get(`locations?type=cidade&search=${encodeURIComponent(query)}`)
-      .json<{ data: Array<{ id: number; name: string }> }>();
-
-    return (response.data || []).map((item) => ({ id: String(item.id), name: item.name }));
-  };
-
-  const searchNeighborhoods = async (query: string): Promise<AutocompleteOption[]> => {
-    const response = await api
-      .get(`locations?type=bairro&search=${encodeURIComponent(query)}`)
-      .json<{ data: Array<{ id: number; name: string }> }>();
-
-    return (response.data || []).map((item) => ({ id: String(item.id), name: item.name }));
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-4">
@@ -66,30 +48,6 @@ export function LocationStep({ form }: LocationStepProps) {
 
         <FormField
           control={form.control}
-          name="city"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-base font-medium">
-                Cidade
-                <span className="text-red-500 ml-1">*</span>
-              </FormLabel>
-              <FormControl>
-                <AutocompleteInput
-                  value={field.value as AutocompleteValue}
-                  onChange={(next) => field.onChange(next)}
-                  onSearch={searchCities}
-                  placeholder="Ex: João Pessoa, São Paulo"
-                  inputClassName="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  createLabel={(typed) => `Cadastrar novo: ${typed}`}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="neighborhood"
           render={({ field }) => (
             <FormItem>
@@ -98,13 +56,10 @@ export function LocationStep({ form }: LocationStepProps) {
                 <span className="text-red-500 ml-1">*</span>
               </FormLabel>
               <FormControl>
-                <AutocompleteInput
-                  value={field.value as AutocompleteValue}
-                  onChange={(next) => field.onChange(next)}
-                  onSearch={searchNeighborhoods}
+                <Input
+                  className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   placeholder="Ex: Centro, Copacabana, Vila Madalena"
-                  inputClassName="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  createLabel={(typed) => `Cadastrar novo: ${typed}`}
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
