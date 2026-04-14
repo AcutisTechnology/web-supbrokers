@@ -9,12 +9,16 @@ interface CurrencyInputProps extends Omit<NumericFormatProps, "value" | "onChang
   value: number;
   onChange: (value: number, values: { floatValue?: number }) => void;
   className?: string;
+  prefix?: string;
+  suffix?: string;
 }
 
 export function CurrencyInput({
   value,
   onChange,
   className,
+  prefix = "R$ ",
+  suffix,
   ...props
 }: CurrencyInputProps) {
   // Usar um estado local para evitar problemas de hidratação
@@ -45,7 +49,8 @@ export function CurrencyInput({
       customInput={Input}
       thousandSeparator="."
       decimalSeparator=","
-      prefix="R$ "
+      prefix={prefix}
+      suffix={suffix}
       decimalScale={2}
       fixedDecimalScale
       value={value === 0 ? "" : value} // Usar string vazia em vez de 0 para evitar mostrar R$ 0,00
@@ -54,7 +59,7 @@ export function CurrencyInput({
       }}
       className={cn("bg-white", className)}
       allowNegative={false}
-      placeholder="R$ 0,00"
+      placeholder={prefix === "R$ " ? "R$ 0,00" : "0,00%"}
       {...props}
     />
   );

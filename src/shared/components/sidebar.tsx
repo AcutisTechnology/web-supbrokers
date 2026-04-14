@@ -155,6 +155,15 @@ export function Sidebar() {
               <Calendar size={isCollapsed ? 32 : 20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
               {!isCollapsed && <span>Calendário</span>}
             </Link>
+            <Link
+              href="/dashboard/propostas"
+              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-4' : 'px-3 py-3'}`}
+              onClick={() => setIsOpen(false)}
+              title={isCollapsed ? "Propostas" : ""}
+            >
+              <Files size={isCollapsed ? 32 : 20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+              {!isCollapsed && <span>Propostas</span>}
+            </Link>
           </nav>
 
           {!isCollapsed && (

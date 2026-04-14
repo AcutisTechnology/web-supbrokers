@@ -37,7 +37,7 @@ export const defaultValues: Partial<PropertyFormValues> = {
   value: 0,
   iptu_value: 0,
   condo_value: 0,
-  qr_code: "teste",
+  qr_code: "",
   active: 1,
   characteristics: [],
   attachments: [],

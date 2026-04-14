@@ -5,11 +5,13 @@ import { useToast } from "@/hooks/use-toast"
 
 // Interface para os dados de um imóvel
 export interface Property {
+  id: number;
   title: string;
   description: string;
   slug: string;
   street: string;
   neighborhood: string;
+  complement?: string;
   size: number;
   bedrooms: number;
   garages: number;
