@@ -159,7 +159,7 @@ export function PageSettingsForm({ initialData, onSubmit, onChange }: PageSettin
 
         <Button 
           type="submit" 
-          className="w-full bg-[#9747FF] hover:bg-[#9747FF]/90" 
+          className="w-full bg-gradient-to-r from-[#9747FF] to-[#7C3AED] hover:from-[#9747FF]/90 hover:to-[#7C3AED]/90" 
           disabled={isLoading}
         >
           {isLoading ? (
@@ -173,7 +173,7 @@ export function PageSettingsForm({ initialData, onSubmit, onChange }: PageSettin
           ) : (
             <span className="flex items-center gap-2">
               <Save className="w-4 h-4" />
-              Salvar Configurações
+              Salvar alterações
             </span>
           )}
         </Button>
