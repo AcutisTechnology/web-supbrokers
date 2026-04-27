@@ -3,6 +3,7 @@ import { api } from "@/shared/configs/api";
 
 // Interface para as propriedades de interesse do cliente
 export interface InterestedProperty {
+  id: number;
   title: string;
   description: string;
   slug: string;
