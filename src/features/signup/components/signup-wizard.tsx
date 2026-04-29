@@ -103,7 +103,13 @@ export function SignupWizard() {
       case 2:
         return data.name && data.username && data.phone && data.cpf;
       case 3:
-        return data.email && data.password && data.password_confirmation && data.password === data.password_confirmation;
+        return (
+          !!data.email &&
+          !!data.password &&
+          !!data.password_confirmation &&
+          data.password.length >= 8 &&
+          data.password === data.password_confirmation
+        );
       case 4:
         return data.discoverySource !== '';
       case 5:
