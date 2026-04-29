@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Home, Building2, Users, Settings, LogOut, Files, Menu, X, User, HelpCircle, ChevronLeft, ChevronRight, Building, Calendar, Calculator, ClipboardList, Crown, MessageCircle, ListTodo, Send, Link2, Bot, Megaphone, Filter } from "lucide-react";
+import { Home, Building2, Users, Settings, LogOut, Files, Menu, X, HelpCircle, ChevronLeft, ChevronRight, Building, Calendar, Calculator, ClipboardList, Crown, MessageCircle, ListTodo, Send, Link2, Bot, Megaphone, Filter } from "lucide-react";
 import { useAuth } from "../hooks/auth/use-auth";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -295,14 +295,6 @@ export function Sidebar() {
               </p>
               <nav className="space-y-2">
                 <Link
-                  href="/dashboard/perfil"
-                  className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <User size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-                  Meu perfil
-                </Link>
-                <Link
                   href="/dashboard/configuracoes"
                   className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group"
                   onClick={() => setIsOpen(false)}
@@ -324,14 +316,6 @@ export function Sidebar() {
 
           {isCollapsed && (
             <div className="mt-8 space-y-2 transition-all duration-300">
-              <Link
-                href="/dashboard/perfil"
-                className="flex items-center justify-center px-2 py-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group"
-                onClick={() => setIsOpen(false)}
-                title="Meu perfil"
-              >
-                <User size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              </Link>
               <Link
                 href="/dashboard/configuracoes"
                 className="flex items-center justify-center px-2 py-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group"
