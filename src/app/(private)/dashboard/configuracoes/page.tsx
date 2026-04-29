@@ -21,6 +21,8 @@ import { PageSettingsPreview } from "@/features/dashboard/page-settings/componen
 import { useBrokerProperties } from "@/features/landing/services/broker-service";
 import { usePageSettings } from "@/features/dashboard/page-settings/hooks/use-page-settings";
 import type { PageSettings } from "@/features/dashboard/page-settings/services/page-settings-service";
+import { useSettings } from "@/features/dashboard/settings/hooks/use-settings";
+import type { TeamMemberSetting, UserSettingsData } from "@/features/dashboard/settings/services/settings-service";
 import { cn } from "@/lib/utils";
 import { Building2, Calendar, CreditCard, PlugZap, Settings2, Shield, Users, UserCircle2 } from "lucide-react";
 
@@ -84,6 +86,54 @@ const getSubscriptionLabel = (status?: "NO_SUBSCRIPTION" | "FREE_TRIAL" | "ACTIV
   if (status === "FREE_TRIAL") return "Teste grátis";
   return "Sem plano";
 };
+
+const createEmptyCompanyDraft = () => ({
+  trade_name: "",
+  legal_name: "",
+  document: "",
+  creci: "",
+  email: "",
+  phone: "",
+  website: "",
+  description: "",
+  address: {
+    street: "",
+    number: "",
+    neighborhood: "",
+    city: "",
+    state: "",
+    zip_code: "",
+  },
+  financial: {
+    receiving_account: "",
+    escrow_account: "",
+    pix_key: "",
+  },
+});
+
+const normalizeCompanyDraft = (company?: UserSettingsData["company"]) => ({
+  trade_name: company?.trade_name ?? "",
+  legal_name: company?.legal_name ?? "",
+  document: company?.document ?? "",
+  creci: company?.creci ?? "",
+  email: company?.email ?? "",
+  phone: company?.phone ?? "",
+  website: company?.website ?? "",
+  description: company?.description ?? "",
+  address: {
+    street: company?.address.street ?? "",
+    number: company?.address.number ?? "",
+    neighborhood: company?.address.neighborhood ?? "",
+    city: company?.address.city ?? "",
+    state: company?.address.state ?? "",
+    zip_code: company?.address.zip_code ?? "",
+  },
+  financial: {
+    receiving_account: company?.financial.receiving_account ?? "",
+    escrow_account: company?.financial.escrow_account ?? "",
+    pix_key: company?.financial.pix_key ?? "",
+  },
+});
 
 export default function ConfiguracoesPage() {
   return (
@@ -266,8 +316,18 @@ function ProfileSection() {
   const { user } = useAuth();
   const { data, isLoading, isError, error, refetch } = useProfile();
   const updateProfile = useUpdateProfile();
+  const {
+    data: settingsResponse,
+    isLoading: isSettingsLoading,
+    isError: isSettingsError,
+    error: settingsError,
+    refetch: refetchSettings,
+    updateSettings,
+    isUpdating: isUpdatingSettings,
+  } = useSettings();
 
   const profile = data?.data;
+  const settings = settingsResponse?.data;
 
   const [draft, setDraft] = useState({
     name: user?.user?.name ?? "",
@@ -280,15 +340,16 @@ function ProfileSection() {
   const [twoFaEnabled, setTwoFaEnabled] = useState(false);
 
   useEffect(() => {
-    if (!profile || didInit) return;
+    if (didInit || (!profile && !settings)) return;
     setDraft({
-      name: profile.name ?? user?.user?.name ?? "",
-      role: "Corretor",
-      email: profile.email ?? user?.user?.email ?? "",
-      phone: profile.phone ?? "",
+      name: profile?.name ?? user?.user?.name ?? "",
+      role: settings?.profile.job_title ?? "Corretor",
+      email: profile?.email ?? user?.user?.email ?? "",
+      phone: profile?.phone ?? "",
     });
+    setTwoFaEnabled(settings?.security.two_factor_enabled ?? false);
     setDidInit(true);
-  }, [didInit, profile, user?.user?.email, user?.user?.name]);
+  }, [didInit, profile, settings, user?.user?.email, user?.user?.name]);
 
   const onSave = async () => {
     try {
@@ -297,8 +358,14 @@ function ProfileSection() {
         email: draft.email.trim(),
         phone: draft.phone.trim(),
       });
-      toast({ title: "Perfil salvo", description: "Seus dados foram atualizados." });
-      refetch();
+
+      await updateSettings({
+        profile: {
+          job_title: draft.role.trim(),
+        },
+      });
+
+      await Promise.all([refetch(), refetchSettings()]);
     } catch {
       toast({
         title: "Erro ao salvar perfil",
@@ -307,6 +374,22 @@ function ProfileSection() {
       });
     }
   };
+
+  const onSaveSecurity = async () => {
+    try {
+      await updateSettings({
+        security: {
+          two_factor_enabled: twoFaEnabled,
+        },
+      });
+      await refetchSettings();
+    } catch {
+      // Toast handled by the hook.
+    }
+  };
+
+  const isSectionLoading = isLoading || isSettingsLoading;
+  const sectionError = (error as Error) || (settingsError as Error);
 
   return (
     <div className="space-y-6">
@@ -317,16 +400,24 @@ function ProfileSection() {
           <Button
             className="bg-gradient-to-r from-[#9747FF] to-[#7C3AED] hover:from-[#9747FF]/90 hover:to-[#7C3AED]/90"
             onClick={onSave}
-            disabled={updateProfile.isPending}
+            disabled={updateProfile.isPending || isUpdatingSettings}
           >
             Salvar
           </Button>
         }
       />
 
-      <LoadingState isLoading={isLoading} isError={isError} error={error as Error} onRetry={() => refetch()} />
+      <LoadingState
+        isLoading={isSectionLoading}
+        isError={isError || isSettingsError}
+        error={sectionError}
+        onRetry={() => {
+          refetch();
+          refetchSettings();
+        }}
+      />
 
-      {!isLoading && !isError && (
+      {!isSectionLoading && !isError && !isSettingsError && (
         <>
           <SettingsCard
             title="Perfil"
@@ -395,7 +486,8 @@ function ProfileSection() {
             <div className="flex items-center justify-end gap-3 mt-6">
               <Button
                 variant="outline"
-                onClick={() => toast({ title: "Em breve", description: "Configurações avançadas de segurança serão adicionadas." })}
+                onClick={onSaveSecurity}
+                disabled={isUpdatingSettings}
               >
                 Salvar segurança
               </Button>
@@ -408,13 +500,46 @@ function ProfileSection() {
 }
 
 function CompanySection() {
-  const { toast } = useToast();
+  const { data, isLoading, isError, error, refetch, updateSettings, isUpdating } = useSettings();
+  const company = data?.data.company;
+  const [draft, setDraft] = useState(createEmptyCompanyDraft);
+  const [didInit, setDidInit] = useState(false);
 
-  const save = () => {
-    toast({
-      title: "Em breve",
-      description: "Persistência das configurações da imobiliária será conectada na próxima etapa.",
-    });
+  useEffect(() => {
+    if (!company || didInit) return;
+    setDraft(normalizeCompanyDraft(company));
+    setDidInit(true);
+  }, [company, didInit]);
+
+  const save = async () => {
+    try {
+      await updateSettings({
+        company: draft,
+      });
+      await refetch();
+    } catch {
+      // Toast handled by the hook.
+    }
+  };
+
+  const updateAddress = (field: keyof ReturnType<typeof createEmptyCompanyDraft>["address"], value: string) => {
+    setDraft((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        [field]: value,
+      },
+    }));
+  };
+
+  const updateFinancial = (field: keyof ReturnType<typeof createEmptyCompanyDraft>["financial"], value: string) => {
+    setDraft((prev) => ({
+      ...prev,
+      financial: {
+        ...prev.financial,
+        [field]: value,
+      },
+    }));
   };
 
   return (
@@ -423,30 +548,36 @@ function CompanySection() {
         title="Imobiliária"
         description="Organize os dados da empresa e personalize sua presença."
         action={
-          <Button className="bg-gradient-to-r from-[#9747FF] to-[#7C3AED] hover:from-[#9747FF]/90 hover:to-[#7C3AED]/90" onClick={save}>
+          <Button
+            className="bg-gradient-to-r from-[#9747FF] to-[#7C3AED] hover:from-[#9747FF]/90 hover:to-[#7C3AED]/90"
+            onClick={save}
+            disabled={isUpdating}
+          >
             Salvar
           </Button>
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <LoadingState isLoading={isLoading} isError={isError} error={error as Error} onRetry={() => refetch()} />
+
+      {!isLoading && !isError && <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <SettingsCard title="Dados da empresa" description="Informações principais da imobiliária.">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Nome fantasia</Label>
-              <Input placeholder="Ex: Imobiliária Exemplo" />
+              <Input value={draft.trade_name} onChange={(e) => setDraft((prev) => ({ ...prev, trade_name: e.target.value }))} placeholder="Ex: Imobiliária Exemplo" />
             </div>
             <div className="space-y-2">
               <Label>Razão social</Label>
-              <Input placeholder="Ex: Exemplo LTDA" />
+              <Input value={draft.legal_name} onChange={(e) => setDraft((prev) => ({ ...prev, legal_name: e.target.value }))} placeholder="Ex: Exemplo LTDA" />
             </div>
             <div className="space-y-2">
               <Label>CNPJ</Label>
-              <Input placeholder="00.000.000/0000-00" />
+              <Input value={draft.document} onChange={(e) => setDraft((prev) => ({ ...prev, document: e.target.value }))} placeholder="00.000.000/0000-00" />
             </div>
             <div className="space-y-2">
               <Label>CRECI</Label>
-              <Input placeholder="00000-J" />
+              <Input value={draft.creci} onChange={(e) => setDraft((prev) => ({ ...prev, creci: e.target.value }))} placeholder="00000-J" />
             </div>
           </div>
         </SettingsCard>
@@ -455,15 +586,15 @@ function CompanySection() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input placeholder="contato@imobiliaria.com" />
+              <Input value={draft.email} onChange={(e) => setDraft((prev) => ({ ...prev, email: e.target.value }))} placeholder="contato@imobiliaria.com" />
             </div>
             <div className="space-y-2">
               <Label>Telefone</Label>
-              <Input placeholder="(00) 00000-0000" />
+              <Input value={draft.phone} onChange={(e) => setDraft((prev) => ({ ...prev, phone: e.target.value }))} placeholder="(00) 00000-0000" />
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label>Website</Label>
-              <Input placeholder="https://seusite.com.br" />
+              <Input value={draft.website} onChange={(e) => setDraft((prev) => ({ ...prev, website: e.target.value }))} placeholder="https://seusite.com.br" />
             </div>
           </div>
         </SettingsCard>
@@ -471,7 +602,12 @@ function CompanySection() {
         <SettingsCard title="Área de atuação" description="Descreva regiões e perfis de imóveis que você atende.">
           <div className="space-y-2">
             <Label>Descrição</Label>
-            <Textarea placeholder="Ex: Atendemos João Pessoa e região metropolitana, com foco em imóveis residenciais e lançamentos." className="min-h-[140px]" />
+            <Textarea
+              value={draft.description}
+              onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
+              placeholder="Ex: Atendemos João Pessoa e região metropolitana, com foco em imóveis residenciais e lançamentos."
+              className="min-h-[140px]"
+            />
           </div>
         </SettingsCard>
 
@@ -479,27 +615,27 @@ function CompanySection() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2 md:col-span-2">
               <Label>Logradouro</Label>
-              <Input placeholder="Rua/Av..." />
+              <Input value={draft.address.street} onChange={(e) => updateAddress("street", e.target.value)} placeholder="Rua/Av..." />
             </div>
             <div className="space-y-2">
               <Label>Número</Label>
-              <Input placeholder="000" />
+              <Input value={draft.address.number} onChange={(e) => updateAddress("number", e.target.value)} placeholder="000" />
             </div>
             <div className="space-y-2">
               <Label>Bairro</Label>
-              <Input placeholder="Centro" />
+              <Input value={draft.address.neighborhood} onChange={(e) => updateAddress("neighborhood", e.target.value)} placeholder="Centro" />
             </div>
             <div className="space-y-2">
               <Label>Cidade</Label>
-              <Input placeholder="João Pessoa" />
+              <Input value={draft.address.city} onChange={(e) => updateAddress("city", e.target.value)} placeholder="João Pessoa" />
             </div>
             <div className="space-y-2">
               <Label>Estado</Label>
-              <Input placeholder="PB" />
+              <Input value={draft.address.state} onChange={(e) => updateAddress("state", e.target.value)} placeholder="PB" />
             </div>
             <div className="space-y-2">
               <Label>CEP</Label>
-              <Input placeholder="00000-000" />
+              <Input value={draft.address.zip_code} onChange={(e) => updateAddress("zip_code", e.target.value)} placeholder="00000-000" />
             </div>
           </div>
         </SettingsCard>
@@ -508,15 +644,15 @@ function CompanySection() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Conta de recebimento</Label>
-              <Input placeholder="Banco / Agência / Conta" />
+              <Input value={draft.financial.receiving_account} onChange={(e) => updateFinancial("receiving_account", e.target.value)} placeholder="Banco / Agência / Conta" />
             </div>
             <div className="space-y-2">
               <Label>Conta de caução</Label>
-              <Input placeholder="Banco / Agência / Conta" />
+              <Input value={draft.financial.escrow_account} onChange={(e) => updateFinancial("escrow_account", e.target.value)} placeholder="Banco / Agência / Conta" />
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label>PIX</Label>
-              <Input placeholder="Chave PIX" />
+              <Input value={draft.financial.pix_key} onChange={(e) => updateFinancial("pix_key", e.target.value)} placeholder="Chave PIX" />
             </div>
           </div>
         </SettingsCard>
@@ -528,7 +664,7 @@ function CompanySection() {
             <div className="text-xs text-[#777777]">Este campo será conectado à área de uploads do sistema.</div>
           </div>
         </SettingsCard>
-      </div>
+      </div>}
 
       <AppearanceSettingsSection />
     </div>
@@ -598,26 +734,82 @@ function AppearanceSettingsSection() {
 function TeamAccessSection() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { data, isLoading, isError, error, refetch, updateSettings, isUpdating } = useSettings();
 
   const [invite, setInvite] = useState({ email: "", role: "corretor" });
+  const [members, setMembers] = useState<TeamMemberSetting[]>([]);
+  const [didInit, setDidInit] = useState(false);
 
-  const members = useMemo(
-    () => [
-      {
-        id: 1,
-        name: user?.user?.name ?? "Usuário",
-        email: user?.user?.email ?? "email@exemplo.com",
-        role: "Corretor",
-        status: "Ativo",
-      },
-    ],
-    [user?.user?.email, user?.user?.name]
+  useEffect(() => {
+    if (!data?.data.team.members || didInit) return;
+    setMembers(data.data.team.members);
+    setDidInit(true);
+  }, [data?.data.team.members, didInit]);
+
+  const ownerMember = useMemo(
+    () => ({
+      id: `owner-${user?.user?.id ?? "current"}`,
+      name: user?.user?.name ?? "Usuário",
+      email: user?.user?.email ?? "email@exemplo.com",
+      role: data?.data.profile.job_title ?? "Administrador",
+      status: "Ativo" as const,
+    }),
+    [data?.data.profile.job_title, user?.user?.email, user?.user?.id, user?.user?.name]
   );
+
+  const persistMembers = async (nextMembers: TeamMemberSetting[]) => {
+    setMembers(nextMembers);
+
+    try {
+      await updateSettings({
+        team: {
+          members: nextMembers,
+        },
+      });
+      await refetch();
+    } catch {
+      setMembers(members);
+    }
+  };
+
+  const handleInvite = async () => {
+    if (!invite.email.trim()) {
+      toast({
+        title: "Email obrigatório",
+        description: "Informe o email do membro que deseja convidar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const nextMembers = [
+      ...members,
+      {
+        id: `member-${Date.now()}`,
+        name: invite.email.split("@")[0] || "Novo membro",
+        email: invite.email.trim(),
+        role: invite.role.trim() || "corretor",
+        status: "Convite pendente" as const,
+      },
+    ];
+
+    await persistMembers(nextMembers);
+    setInvite({ email: "", role: "corretor" });
+  };
+
+  const handleRemove = async (memberId: string) => {
+    await persistMembers(members.filter((member) => member.id !== memberId));
+  };
+
+  const tableMembers = [ownerMember, ...members];
 
   return (
     <div className="space-y-6">
       <SettingsHeader title="Equipe & Acesso" description="Convide membros e gerencie permissões." />
 
+      <LoadingState isLoading={isLoading} isError={isError} error={error as Error} onRetry={() => refetch()} />
+
+      {!isLoading && !isError && <>
       <SettingsCard title="Convidar membro" description="Envie um convite por email para sua equipe.">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
           <div className="md:col-span-6 space-y-2">
@@ -631,7 +823,8 @@ function TeamAccessSection() {
           <div className="md:col-span-2 flex items-end">
             <Button
               className="w-full bg-gradient-to-r from-[#9747FF] to-[#7C3AED] hover:from-[#9747FF]/90 hover:to-[#7C3AED]/90"
-              onClick={() => toast({ title: "Em breve", description: "Convites serão conectados ao backend." })}
+              onClick={handleInvite}
+              disabled={isUpdating}
             >
               Convidar
             </Button>
@@ -652,7 +845,7 @@ function TeamAccessSection() {
               </tr>
             </thead>
             <tbody>
-              {members.map((m) => (
+              {tableMembers.map((m) => (
                 <tr key={m.id} className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50">
                   <td className="px-6 py-4 text-[#141414] font-medium">
                     <div className="flex items-center gap-3">
@@ -667,16 +860,23 @@ function TeamAccessSection() {
                   <td className="px-6 py-4 text-[#141414]">{m.email}</td>
                   <td className="px-6 py-4 text-[#141414]">{m.role}</td>
                   <td className="px-6 py-4">
-                    <Badge className="bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]">{m.status}</Badge>
+                    <Badge className={m.status === "Ativo" ? "bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]" : "bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]"}>
+                      {m.status}
+                    </Badge>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <Button
-                      variant="ghost"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => toast({ title: "Em breve", description: "Remoção de membros será conectada ao backend." })}
-                    >
-                      Remover
-                    </Button>
+                    {m.id !== ownerMember.id ? (
+                      <Button
+                        variant="ghost"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleRemove(m.id)}
+                        disabled={isUpdating}
+                      >
+                        Remover
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-[#777777]">Proprietário</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -684,6 +884,7 @@ function TeamAccessSection() {
           </table>
         </div>
       </SettingsCard>
+      </>}
     </div>
   );
 }
@@ -721,50 +922,72 @@ function BillingSection() {
 }
 
 function IntegrationsSection() {
-  const { toast } = useToast();
+  const { data, isLoading, isError, error, refetch, updateSettings, isUpdating } = useSettings();
+
+  const integrationsState = data?.data.integrations;
 
   const integrations = useMemo(
     () => [
       {
-        id: "canal-pro",
+        id: "canal_pro",
         name: "Canal PRO",
         description: "Conecte seu canal de conteúdo e captação.",
-        status: "Em breve",
         icon: <UserCircle2 className="h-5 w-5 text-[#141414]" />,
       },
       {
         id: "asaas",
         name: "Asaas",
         description: "Pagamentos, cobranças e assinaturas.",
-        status: "Em breve",
         icon: <CreditCard className="h-5 w-5 text-[#141414]" />,
       },
       {
         id: "whatsapp",
         name: "WhatsApp",
         description: "Sessão via QR Code (WhatsApp Web).",
-        status: "Ativo (mock)",
         icon: <PlugZap className="h-5 w-5 text-[#141414]" />,
       },
       {
-        id: "google-calendar",
+        id: "google_calendar",
         name: "Google Calendar",
         description: "Sincronize agenda e compromissos.",
-        status: "Em breve",
         icon: <Calendar className="h-5 w-5 text-[#141414]" />,
       },
     ],
     []
   );
 
+  const toggleIntegration = async (integrationId: keyof NonNullable<typeof integrationsState>) => {
+    if (!integrationsState) return;
+
+    try {
+      await updateSettings({
+        integrations: {
+          [integrationId]: {
+            enabled: !integrationsState[integrationId].enabled,
+          },
+        },
+      });
+      await refetch();
+    } catch {
+      // Toast handled by the hook.
+    }
+  };
+
   return (
     <div className="space-y-6">
       <SettingsHeader title="Integrações" description="Conecte serviços para automatizar rotinas e dados." />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <LoadingState isLoading={isLoading} isError={isError} error={error as Error} onRetry={() => refetch()} />
+
+      {!isLoading && !isError && <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {integrations.map((i) => (
           <Card key={i.id} className="border border-gray-100 shadow-sm rounded-2xl hover:shadow-md transition-shadow">
             <CardContent className="p-6">
+              {(() => {
+                const isEnabled = integrationsState?.[i.id as keyof NonNullable<typeof integrationsState>]?.enabled ?? false;
+
+                return (
+                  <>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">{i.icon}</div>
@@ -773,36 +996,73 @@ function IntegrationsSection() {
                     <div className="text-xs text-[#777777] mt-0.5">{i.description}</div>
                   </div>
                 </div>
-                <Badge className="bg-gray-100 text-[#777777] border border-gray-200">{i.status}</Badge>
+                <Badge className={isEnabled ? "bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]" : "bg-gray-100 text-[#777777] border border-gray-200"}>
+                  {isEnabled ? "Conectado" : "Desconectado"}
+                </Badge>
               </div>
 
               <Button
                 className="w-full mt-4 bg-gradient-to-r from-[#9747FF] to-[#7C3AED] hover:from-[#9747FF]/90 hover:to-[#7C3AED]/90"
-                onClick={() => toast({ title: "Em breve", description: "Conexão será disponibilizada na próxima etapa." })}
+                onClick={() => toggleIntegration(i.id as keyof NonNullable<typeof integrationsState>)}
+                disabled={isUpdating}
               >
-                Conectar
+                {isEnabled ? "Desconectar" : "Conectar"}
               </Button>
+                  </>
+                );
+              })()}
             </CardContent>
           </Card>
         ))}
-      </div>
+      </div>}
     </div>
   );
 }
 
 function AutomationsSection() {
-  const { toast } = useToast();
+  const { data, isLoading, isError, error, refetch, updateSettings, isUpdating } = useSettings();
+  const automations = data?.data.automations;
   const [sendOnDue, setSendOnDue] = useState(true);
   const [autoCharge, setAutoCharge] = useState(false);
   const [daysNotice, setDaysNotice] = useState("3");
   const [daysExtrajudicial, setDaysExtrajudicial] = useState("10");
   const [requireApproval, setRequireApproval] = useState(true);
+  const [didInit, setDidInit] = useState(false);
+
+  useEffect(() => {
+    if (!automations || didInit) return;
+    setSendOnDue(automations.send_on_due);
+    setAutoCharge(automations.auto_charge);
+    setDaysNotice(String(automations.days_notice));
+    setDaysExtrajudicial(String(automations.days_extrajudicial));
+    setRequireApproval(automations.require_approval);
+    setDidInit(true);
+  }, [automations, didInit]);
+
+  const save = async () => {
+    try {
+      await updateSettings({
+        automations: {
+          send_on_due: sendOnDue,
+          auto_charge: autoCharge,
+          days_notice: Number(daysNotice) || 0,
+          days_extrajudicial: Number(daysExtrajudicial) || 0,
+          require_approval: requireApproval,
+        },
+      });
+      await refetch();
+    } catch {
+      // Toast handled by the hook.
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <SettingsHeader title="Automações de Cobrança" description="Controle regras e automações para cobrança (mock)." />
+      <SettingsHeader title="Automações de Cobrança" description="Controle regras e automações para cobrança." />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <LoadingState isLoading={isLoading} isError={isError} error={error as Error} onRetry={() => refetch()} />
+
+      {!isLoading && !isError && <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <SettingsCard title="Envio no vencimento" description="Notifique automaticamente no dia do vencimento.">
           <div className="flex items-center justify-between gap-4">
             <div className="text-sm text-[#777777]">Ativar envio automático</div>
@@ -818,11 +1078,11 @@ function AutomationsSection() {
           <div className="grid grid-cols-1 gap-4 mt-4">
             <div className="space-y-2">
               <Label>Dias para aviso</Label>
-              <Input value={daysNotice} onChange={(e) => setDaysNotice(e.target.value)} />
+              <Input value={daysNotice} onChange={(e) => setDaysNotice(e.target.value)} type="number" min="0" />
             </div>
             <div className="space-y-2">
               <Label>Dias para extrajudicial</Label>
-              <Input value={daysExtrajudicial} onChange={(e) => setDaysExtrajudicial(e.target.value)} />
+              <Input value={daysExtrajudicial} onChange={(e) => setDaysExtrajudicial(e.target.value)} type="number" min="0" />
             </div>
           </div>
         </SettingsCard>
@@ -833,12 +1093,13 @@ function AutomationsSection() {
             <Switch checked={requireApproval} onCheckedChange={setRequireApproval} />
           </div>
         </SettingsCard>
-      </div>
+      </div>}
 
       <div className="flex items-center justify-end gap-3">
         <Button
           className="bg-gradient-to-r from-[#9747FF] to-[#7C3AED] hover:from-[#9747FF]/90 hover:to-[#7C3AED]/90"
-          onClick={() => toast({ title: "Salvo", description: "Configurações (mock) atualizadas." })}
+          onClick={save}
+          disabled={isUpdating || isLoading}
         >
           Salvar
         </Button>

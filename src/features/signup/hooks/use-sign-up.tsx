@@ -16,7 +16,7 @@ const getSignupErrorMessage = async (error: unknown) => {
   let payload: ValidationErrorResponse | undefined;
 
   try {
-    payload = await error.response.clone().json<ValidationErrorResponse>();
+    payload = (await error.response.clone().json()) as ValidationErrorResponse;
   } catch {
     return "Houve um erro ao realizar o cadastro. Tente novamente.";
   }
