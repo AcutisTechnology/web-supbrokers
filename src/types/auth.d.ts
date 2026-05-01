@@ -1,9 +1,7 @@
 export interface IAuthenticateUserDTO {
   success: boolean;
   accessToken: string;
-  user: {
-    user: IUserDTO;
-  };
+  user: IUserDTO;
 }
 
 export interface IUserDTO {
@@ -16,6 +14,7 @@ export interface IUserDTO {
   email_verified_at?: string;
   created_at?: string;
   updated_at?: string;
+  permissions?: string[];
   subscription?: {
     value: number;
     description: string;

@@ -13,6 +13,45 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [permissions, setPermissions] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const raw = localStorage.getItem("@SupBrokers:user");
+      if (!raw) {
+        setPermissions([]);
+        return;
+      }
+
+      const parsed: unknown = JSON.parse(raw);
+      const permissionsList =
+        typeof parsed === "object" &&
+        parsed !== null &&
+        "user" in parsed &&
+        typeof (parsed as { user?: unknown }).user === "object" &&
+        (parsed as { user?: unknown }).user !== null &&
+        "permissions" in (parsed as { user: Record<string, unknown> }).user &&
+        Array.isArray((parsed as { user: { permissions: unknown } }).user.permissions)
+          ? (parsed as { user: { permissions: unknown[] } }).user.permissions
+          : typeof parsed === "object" &&
+            parsed !== null &&
+            "permissions" in parsed &&
+            Array.isArray((parsed as { permissions: unknown }).permissions)
+          ? (parsed as { permissions: unknown[] }).permissions
+          : [];
+
+      setPermissions(permissionsList.filter((p): p is string => typeof p === "string"));
+    } catch {
+      setPermissions([]);
+    }
+  }, []);
+
+  const hasPermission = (key: string) => permissions.includes(key);
+  const showAtendimento = ["clientes", "calendario", "whatsapp", "follow_up", "disparo_massa", "agente_ia", "crm"].some(hasPermission);
+  const showImobiliaria = ["captacoes"].some(hasPermission);
+  const showIntegracoes = ["canal_pro", "meta_ads"].some(hasPermission);
 
   useEffect(() => {
     const controlHeader = () => {
@@ -124,168 +163,203 @@ export function Sidebar() {
               {!isCollapsed && <span>Home</span>}
             </Link>
 
-            <Link
-              href="/dashboard/imoveis"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
-              onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "Meus imóveis" : ""}
-            >
-              <Building2 size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>Meus imóveis</span>}
-            </Link>
-            <Link
-              href="/dashboard/alugueis"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
-              onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "Alugueis" : ""}
-            >
-              <Building size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>Alugueis</span>}
-            </Link>
-            <Link
-              href="/dashboard/clientes"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
-              onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "Clientes" : ""}
-            >
-              <Users size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>Clientes</span>}
-            </Link>
-            <Link
-              href="/dashboard/calendario"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
-              onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "Calendário" : ""}
-            >
-              <Calendar size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>Calendário</span>}
-            </Link>
-            <Link
-              href="/dashboard/propostas"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
-              onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "Propostas" : ""}
-            >
-              <Files size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>Propostas</span>}
-            </Link>
-            <Link
-              href="/dashboard/calculadora-fluxo"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
-              onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "Calculadora de Fluxo" : ""}
-            >
-              <Calculator size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>Calculadora de Fluxo</span>}
-            </Link>
+            {hasPermission("meus_imoveis") && (
+              <Link
+                href="/dashboard/imoveis"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Meus imóveis" : ""}
+              >
+                <Building2 size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Meus imóveis</span>}
+              </Link>
+            )}
 
-            <Link
-              href="/dashboard/links-uteis"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
-              onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "Links Úteis" : ""}
-            >
-              <Link2 size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>Links Úteis</span>}
-            </Link>
+            {hasPermission("aluguéis") && (
+              <Link
+                href="/dashboard/alugueis"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Alugueis" : ""}
+              >
+                <Building size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Alugueis</span>}
+              </Link>
+            )}
 
-            {!isCollapsed && (
+            {hasPermission("propostas") && (
+              <Link
+                href="/dashboard/propostas"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Propostas" : ""}
+              >
+                <Files size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Propostas</span>}
+              </Link>
+            )}
+
+            {hasPermission("calculadora_fluxo") && (
+              <Link
+                href="/dashboard/calculadora-fluxo"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Calculadora de Fluxo" : ""}
+              >
+                <Calculator size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Calculadora de Fluxo</span>}
+              </Link>
+            )}
+
+            {hasPermission("links_uteis") && (
+              <Link
+                href="/dashboard/links-uteis"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Links Úteis" : ""}
+              >
+                <Link2 size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Links Úteis</span>}
+              </Link>
+            )}
+
+            {!isCollapsed && showAtendimento && (
               <div className="pt-4 mt-4">
                 <p className="px-3 text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Atendimento</p>
               </div>
             )}
 
-            <Link
-              href="/dashboard/whatsapp"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
-              onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "WhatsApp" : ""}
-            >
-              <MessageCircle size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>WhatsApp</span>}
-            </Link>
+            {hasPermission("clientes") && (
+              <Link
+                href="/dashboard/clientes"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Clientes" : ""}
+              >
+                <Users size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Clientes</span>}
+              </Link>
+            )}
 
-            <Link
-              href="/dashboard/follow-up"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
-              onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "Follow-up" : ""}
-            >
-              <ListTodo size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>Follow-up</span>}
-            </Link>
+            {hasPermission("calendario") && (
+              <Link
+                href="/dashboard/calendario"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Calendário" : ""}
+              >
+                <Calendar size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Calendário</span>}
+              </Link>
+            )}
 
-            <Link
-              href="/dashboard/disparo-em-massa"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
-              onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "Disparo em massa" : ""}
-            >
-              <Send size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>Disparo em massa</span>}
-            </Link>
+            {hasPermission("whatsapp") && (
+              <Link
+                href="/dashboard/whatsapp"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "WhatsApp" : ""}
+              >
+                <MessageCircle size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>WhatsApp</span>}
+              </Link>
+            )}
 
-            <Link
-              href="/dashboard/agente-ia"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
-              onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "Agente de IA" : ""}
-            >
-              <Bot size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>Agente de IA</span>}
-            </Link>
+            {hasPermission("follow_up") && (
+              <Link
+                href="/dashboard/follow-up"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Follow-up" : ""}
+              >
+                <ListTodo size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Follow-up</span>}
+              </Link>
+            )}
 
-            <Link
-              href="/dashboard/crm"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
-              onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "CRM" : ""}
-            >
-              <Filter size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>CRM</span>}
-            </Link>
+            {hasPermission("disparo_massa") && (
+              <Link
+                href="/dashboard/disparo-em-massa"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Disparo em massa" : ""}
+              >
+                <Send size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Disparo em massa</span>}
+              </Link>
+            )}
 
-            {!isCollapsed && (
+            {hasPermission("agente_ia") && (
+              <Link
+                href="/dashboard/agente-ia"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Agente de IA" : ""}
+              >
+                <Bot size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Agente de IA</span>}
+              </Link>
+            )}
+
+            {hasPermission("crm") && (
+              <Link
+                href="/dashboard/crm"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "CRM" : ""}
+              >
+                <Filter size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>CRM</span>}
+              </Link>
+            )}
+
+            {!isCollapsed && showImobiliaria && (
               <div className="pt-4 mt-4">
                 <p className="px-3 text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Imobiliária</p>
               </div>
             )}
 
-            <Link
-              href="/dashboard/captacoes"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
-              onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "Captações" : ""}
-            >
-              <ClipboardList size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>Captações</span>}
-            </Link>
+            {hasPermission("captacoes") && (
+              <Link
+                href="/dashboard/captacoes"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Captações" : ""}
+              >
+                <ClipboardList size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Captações</span>}
+              </Link>
+            )}
 
-            <Link
-              href="/dashboard/canal-pro"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
-              onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "Canal PRO" : ""}
-            >
-              <Crown size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>Canal PRO</span>}
-            </Link>
-
-            {!isCollapsed && (
+            {!isCollapsed && showIntegracoes && (
               <div className="pt-4 mt-4">
                 <p className="px-3 text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Integrações</p>
               </div>
             )}
 
-            <Link
-              href="/dashboard/meta-ads"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
-              onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "Meta ADS" : ""}
-            >
-              <Megaphone size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>Meta ADS</span>}
-            </Link>
+            {hasPermission("canal_pro") && (
+              <Link
+                href="/dashboard/canal-pro"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Canal PRO" : ""}
+              >
+                <Crown size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Canal PRO</span>}
+              </Link>
+            )}
+
+            {hasPermission("meta_ads") && (
+              <Link
+                href="/dashboard/meta-ads"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Meta ADS" : ""}
+              >
+                <Megaphone size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Meta ADS</span>}
+              </Link>
+            )}
           </nav>
 
           {!isCollapsed && (
