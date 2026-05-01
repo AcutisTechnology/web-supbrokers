@@ -14,6 +14,17 @@ import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { ChevronDown, ChevronUp, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,9 +40,17 @@ import { api } from "@/shared/configs/api";
 import { CaptacoesFilters, useCaptacoes, useDeleteCaptacao } from "@/features/dashboard/captacoes/services/captacoes-service";
 import { formatCurrency } from "@/lib/utils";
 
+type CaptacoesImportResult = {
+  total_processados: number;
+  criados: number;
+  atualizados: number;
+  erros: Array<Record<string, unknown>>;
+};
+
 export default function CaptacoesPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
 
   const emptyOption = { id: null as number | null, name: "" };
@@ -53,6 +72,11 @@ export default function CaptacoesPage() {
   const { data, isLoading, isError, error, refetch } = useCaptacoes(currentPage, appliedFilters);
   const deleteMutation = useDeleteCaptacao();
 
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importJsonText, setImportJsonText] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<CaptacoesImportResult | null>(null);
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
@@ -67,6 +91,63 @@ export default function CaptacoesPage() {
         queryClient.invalidateQueries({ queryKey: ["captacoes"] });
       },
     });
+  };
+
+  const parseImportPayload = (text: string): unknown[] => {
+    const trimmed = text.trim();
+    if (!trimmed) throw new Error("Cole ou selecione um JSON para importar.");
+
+    const parsed: unknown = JSON.parse(trimmed);
+    if (Array.isArray(parsed)) return parsed;
+
+    if (typeof parsed === "object" && parsed !== null) {
+      const obj = parsed as Record<string, unknown>;
+      if (Array.isArray(obj.items)) return obj.items as unknown[];
+      if (Array.isArray(obj.data)) return obj.data as unknown[];
+    }
+
+    throw new Error("Formato inválido. Envie um array JSON ou { items: [...] } / { data: [...] }.");
+  };
+
+  const handleImportFile = async (file: File | null) => {
+    if (!file) return;
+    const text = await file.text();
+    setImportJsonText(text);
+  };
+
+  const handleImport = async () => {
+    setIsImporting(true);
+    setImportResult(null);
+
+    try {
+      const items = parseImportPayload(importJsonText);
+
+      const response = await api
+        .post("captacoes/import", {
+          json: items,
+        })
+        .json<CaptacoesImportResult>();
+
+      setImportResult(response);
+
+      toast({
+        title: "Importação concluída",
+        description: `Processados: ${response.total_processados} • Criados: ${response.criados} • Atualizados: ${response.atualizados}`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["captacoes"] });
+      setImportDialogOpen(false);
+      setImportJsonText("");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Falha ao importar.";
+      toast({
+        title: "Erro na importação",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const applyFilters = () => {
@@ -146,10 +227,62 @@ export default function CaptacoesPage() {
           <h1 className="text-2xl font-semibold text-[#141414]">Captações</h1>
           <p className="text-[#777777]">Empreendimentos em captação</p>
         </div>
-        <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Criar nova captação
-        </Button>
+        <div className="flex items-center gap-3">
+          <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">Importar JSON</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Importar captações</DialogTitle>
+                <DialogDescription>
+                  Cole o JSON ou selecione um arquivo .json. A importação faz upsert por external_id.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-3">
+                <Input
+                  type="file"
+                  accept="application/json,.json"
+                  onChange={(e) => handleImportFile(e.target.files?.[0] ?? null)}
+                />
+                <Textarea
+                  value={importJsonText}
+                  onChange={(e) => setImportJsonText(e.target.value)}
+                  placeholder='[{"nome_predio":"...","external_id":"..."}]'
+                  className="min-h-[260px] font-mono text-xs"
+                />
+                {importResult?.erros?.length ? (
+                  <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    <div className="font-medium">Erros ({importResult.erros.length})</div>
+                    <div className="mt-1 space-y-1">
+                      {importResult.erros.slice(0, 5).map((err, idx) => (
+                        <div key={idx} className="break-words">
+                          {typeof err.message === "string" ? err.message : "Erro ao importar registro."}
+                        </div>
+                      ))}
+                      {importResult.erros.length > 5 ? <div>…</div> : null}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setImportDialogOpen(false)} disabled={isImporting}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleImport} disabled={isImporting}>
+                  {isImporting ? "Importando..." : "Importar"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Button onClick={handleCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Criar nova captação
+          </Button>
+        </div>
       </div>
 
       <Card className="border border-gray-100 shadow-sm mb-6">
