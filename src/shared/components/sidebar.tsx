@@ -331,6 +331,18 @@ export function Sidebar() {
               </Link>
             )}
 
+            {hasPermission("captacoes") && (
+              <Link
+                href="/dashboard/construtoras"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Construtoras" : ""}
+              >
+                <Building size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Construtoras</span>}
+              </Link>
+            )}
+
             {!isCollapsed && showIntegracoes && (
               <div className="pt-4 mt-4">
                 <p className="px-3 text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Integrações</p>
