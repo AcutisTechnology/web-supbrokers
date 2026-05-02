@@ -26,7 +26,7 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Link2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, Copy, ExternalLink, Link2, MessageCircle, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   LinkUtil,
   useCreateLinkUtil,
@@ -36,13 +36,15 @@ import {
 } from "@/features/dashboard/links-uteis/services/links-uteis-service";
 
 const formSchema = z.object({
+  tipo: z.enum(["link", "contato"]).default("link"),
   titulo: z.string().trim().min(1, "Informe o título").max(255, "Máximo de 255 caracteres"),
   descricao: z
     .string()
     .trim()
     .min(1, "Informe a descrição")
     .max(500, "Máximo de 500 caracteres"),
-  url: z.string().trim().url("Informe uma URL válida"),
+  url: z.string().trim().optional(),
+  contact: z.string().trim().optional(),
   categoria: z.string().trim().optional(),
   ordem: z
     .string()
@@ -50,6 +52,30 @@ const formSchema = z.object({
     .optional()
     .refine((v) => !v || Number.isInteger(Number(v)), "A ordem deve ser um número inteiro")
     .refine((v) => !v || Number(v) >= 0, "A ordem deve ser maior ou igual a zero"),
+}).superRefine((values, ctx) => {
+  if (values.tipo === "link") {
+    const url = (values.url ?? "").trim();
+    if (!url) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["url"], message: "Informe uma URL válida" });
+      return;
+    }
+    const normalized = normalizeUrl(url);
+    const result = z.string().url().safeParse(normalized);
+    if (!result.success) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["url"], message: "Informe uma URL válida" });
+    }
+  } else {
+    const contact = (values.contact ?? "").trim();
+    if (!contact) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["contact"], message: "Informe o contato" });
+      return;
+    }
+
+    const wa = toWhatsAppNumber(contact);
+    if (!wa) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["contact"], message: "Informe um número válido" });
+    }
+  }
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -61,10 +87,46 @@ const normalizeUrl = (value: string) => {
   return `https://${trimmed}`;
 };
 
+const normalizePhone = (value: string) => value.replace(/\D/g, "");
+
+const toWhatsAppNumber = (raw: string) => {
+  const digits = normalizePhone(raw);
+  if (!digits) return null;
+  if (digits.startsWith("55")) return digits;
+  if (digits.length === 10 || digits.length === 11) return `55${digits}`;
+  return digits;
+};
+
+const formatPhoneBR = (raw: string) => {
+  let digits = normalizePhone(raw);
+  if (!digits) return null;
+
+  if (digits.startsWith("55") && digits.length >= 12) {
+    digits = digits.slice(2);
+  }
+
+  if (digits.length === 11) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  }
+
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+
+  return raw.trim();
+};
+
 const toPayload = (values: FormValues) => ({
   titulo: values.titulo.trim(),
   descricao: values.descricao.trim(),
-  url: normalizeUrl(values.url),
+  url:
+    values.tipo === "contato"
+      ? (() => {
+          const wa = toWhatsAppNumber(values.contact ?? "");
+          return wa ? `https://wa.me/${wa}` : "";
+        })()
+      : normalizeUrl(values.url ?? ""),
+  contact: values.tipo === "contato" ? (values.contact?.trim() ? values.contact.trim() : null) : null,
   categoria: values.categoria?.trim() ? values.categoria.trim() : null,
   ordem: values.ordem?.trim() ? Number(values.ordem) : 0,
 });
@@ -73,6 +135,7 @@ export default function LinksUteisPage() {
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<LinkUtil | null>(null);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
 
   const { data, isLoading, isError, error, refetch } = useLinksUteis({
     categoria: categoriaFiltro === "todas" ? "" : categoriaFiltro,
@@ -84,9 +147,11 @@ export default function LinksUteisPage() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      tipo: "link",
       titulo: "",
       descricao: "",
       url: "",
+      contact: "",
       categoria: "",
       ordem: "0",
     },
@@ -106,9 +171,11 @@ export default function LinksUteisPage() {
   const openCreate = () => {
     setEditing(null);
     form.reset({
+      tipo: "link",
       titulo: "",
       descricao: "",
       url: "",
+      contact: "",
       categoria: "",
       ordem: "0",
     });
@@ -118,9 +185,11 @@ export default function LinksUteisPage() {
   const openEdit = (item: LinkUtil) => {
     setEditing(item);
     form.reset({
+      tipo: item.contact?.trim() ? "contato" : "link",
       titulo: item.titulo,
       descricao: item.descricao,
       url: item.url,
+      contact: item.contact ?? "",
       categoria: item.categoria ?? "",
       ordem: String(item.ordem ?? 0),
     });
@@ -138,27 +207,52 @@ export default function LinksUteisPage() {
     setEditing(null);
   });
 
+  const copyContact = async (id: number, contact: string) => {
+    try {
+      await navigator.clipboard.writeText(contact);
+      setCopiedId(id);
+      window.setTimeout(() => setCopiedId((current) => (current === id ? null : current)), 1500);
+    } catch {
+      setCopiedId(null);
+    }
+  };
+
+  const tipo = form.watch("tipo");
+
   return (
     <>
-      <TopNav title_secondary="Links Úteis" />
+      <TopNav title_secondary="Utilidades" />
 
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#141414]">Links Úteis</h1>
-          <p className="text-[#777777]">Gerencie links importantes para uso diário dos corretores.</p>
+          <h1 className="text-2xl font-semibold text-[#141414]">Utilidades</h1>
+          <p className="text-[#777777]">Gerencie links e contatos importantes para uso diário dos corretores.</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={openCreate}>
               <Plus className="mr-2 h-4 w-4" />
-              Novo Link
+              Nova utilidade
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-xl">
             <DialogHeader>
-              <DialogTitle>{editing ? "Editar Link" : "Novo Link"}</DialogTitle>
+              <DialogTitle>{editing ? "Editar utilidade" : "Nova utilidade"}</DialogTitle>
             </DialogHeader>
             <form className="space-y-4" onSubmit={onSubmit}>
+              <div className="space-y-2">
+                <Label>Tipo *</Label>
+                <Select value={tipo} onValueChange={(v) => form.setValue("tipo", v as "link" | "contato")}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="link">Link</SelectItem>
+                    <SelectItem value="contato">Contato</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label>Título *</Label>
                 <Input {...form.register("titulo")} placeholder="Ex: Portal de Documentação" />
@@ -183,13 +277,23 @@ export default function LinksUteisPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>URL *</Label>
-                <Input {...form.register("url")} placeholder="https://..." />
-                {form.formState.errors.url?.message && (
-                  <p className="text-sm text-red-600">{form.formState.errors.url.message}</p>
-                )}
-              </div>
+              {tipo === "link" ? (
+                <div className="space-y-2">
+                  <Label>URL *</Label>
+                  <Input {...form.register("url")} placeholder="https://..." />
+                  {form.formState.errors.url?.message && (
+                    <p className="text-sm text-red-600">{String(form.formState.errors.url.message)}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label>Contato *</Label>
+                  <Input {...form.register("contact")} placeholder="(83) 99999-9999" />
+                  {form.formState.errors.contact?.message && (
+                    <p className="text-sm text-red-600">{String(form.formState.errors.contact.message)}</p>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -218,7 +322,7 @@ export default function LinksUteisPage() {
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                  {editing ? "Salvar alterações" : "Criar link"}
+                  {editing ? "Salvar alterações" : "Criar utilidade"}
                 </Button>
               </div>
             </form>
@@ -282,15 +386,39 @@ export default function LinksUteisPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <p className="text-sm text-[#777777] line-clamp-3">{item.descricao}</p>
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm text-[#9747FF] hover:underline break-all inline-flex items-center gap-1"
-                    >
-                      {item.url}
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
+                    {item.contact?.trim() ? (
+                      <div className="inline-flex items-center gap-2">
+                        <span className="text-sm text-[#141414]">{formatPhoneBR(item.contact) ?? item.contact}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => copyContact(item.id, item.contact ?? "")}
+                          aria-label="Copiar contato"
+                        >
+                          {copiedId === item.id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                        {toWhatsAppNumber(item.contact) ? (
+                          <Button asChild variant="outline" size="sm">
+                            <a href={`https://wa.me/${toWhatsAppNumber(item.contact)}`} target="_blank" rel="noreferrer">
+                              <MessageCircle className="h-4 w-4" />
+                              WhatsApp
+                            </a>
+                          </Button>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    {item.url?.trim() && (!item.contact?.trim() || !item.url.trim().startsWith("https://wa.me/")) ? (
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm text-[#9747FF] hover:underline break-all inline-flex items-center gap-1"
+                      >
+                        {item.url}
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    ) : null}
                     <div className="flex items-center justify-between gap-3 pt-2">
                       <span className="text-xs text-[#777777]">Ordem: {item.ordem}</span>
                       <div className="flex items-center gap-2">

@@ -216,10 +216,10 @@ export function Sidebar() {
                 href="/dashboard/links-uteis"
                 className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
                 onClick={() => setIsOpen(false)}
-                title={isCollapsed ? "Links Úteis" : ""}
+                title={isCollapsed ? "Utilidades" : ""}
               >
                 <Link2 size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-                {!isCollapsed && <span>Links Úteis</span>}
+                {!isCollapsed && <span>Utilidades</span>}
               </Link>
             )}
 

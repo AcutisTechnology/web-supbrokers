@@ -7,6 +7,7 @@ export type LinkUtil = {
   titulo: string;
   descricao: string;
   url: string;
+  contact: string | null;
   categoria: string | null;
   ordem: number;
   created_at: string;
@@ -40,6 +41,7 @@ type LinkUtilPayload = {
   titulo: string;
   descricao: string;
   url: string;
+  contact?: string | null;
   categoria?: string | null;
   ordem?: number;
 };
