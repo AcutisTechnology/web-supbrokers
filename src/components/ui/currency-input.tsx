@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { NumericFormat, NumericFormatProps } from "react-number-format";
+import { NumericFormat as _NumericFormat, NumericFormatProps } from "react-number-format";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const NumericFormat = _NumericFormat as any;
 import { Input } from "./input";
 import { cn } from "@/lib/utils";
+
 
 interface CurrencyInputProps extends Omit<NumericFormatProps, "value" | "onChange"> {
   value: number;
@@ -54,7 +57,7 @@ export function CurrencyInput({
       decimalScale={2}
       fixedDecimalScale
       value={value === 0 ? "" : value} // Usar string vazia em vez de 0 para evitar mostrar R$ 0,00
-      onValueChange={(values) => {
+      onValueChange={(values: { floatValue?: number }) => {
         onChange(values.floatValue || 0, values);
       }}
       className={cn("bg-white", className)}

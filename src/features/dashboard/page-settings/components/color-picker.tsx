@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { HexColorPicker } from 'react-colorful';
+import { HexColorPicker as _HexColorPicker } from 'react-colorful';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const HexColorPicker = _HexColorPicker as any;
 
 interface ColorPickerProps {
   value: string;
