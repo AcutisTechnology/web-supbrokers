@@ -11,6 +11,7 @@ export type FlowPreset = {
   name: string;
   description: string;
   distribution: Record<PaymentBlockKey, number>;
+  installments: Record<PaymentBlockKey, number>;
 };
 
 const PRESETS: FlowPreset[] = [
@@ -19,30 +20,35 @@ const PRESETS: FlowPreset[] = [
     name: "Tradicional",
     description: "Entrada moderada e saldo distribuído em mensais",
     distribution: { entrada: 10, mensais: 60, semestrais: 20, chaves: 10 },
+    installments: { entrada: 1, mensais: 24, semestrais: 4, chaves: 1 },
   },
   {
     key: "entrada-baixa",
     name: "Entrada Baixa",
     description: "Maior parte em mensais e semestrais, entrada reduzida",
     distribution: { entrada: 5, mensais: 70, semestrais: 20, chaves: 5 },
+    installments: { entrada: 1, mensais: 30, semestrais: 6, chaves: 1 },
   },
   {
     key: "semestrais-fortes",
     name: "Semestrais Fortes",
     description: "Reforços semestrais mais altos para reduzir mensais",
     distribution: { entrada: 10, mensais: 40, semestrais: 40, chaves: 10 },
+    installments: { entrada: 1, mensais: 18, semestrais: 8, chaves: 1 },
   },
   {
     key: "linear",
     name: "Linear",
     description: "Distribuição equilibrada entre todas as fases",
     distribution: { entrada: 25, mensais: 25, semestrais: 25, chaves: 25 },
+    installments: { entrada: 1, mensais: 24, semestrais: 4, chaves: 1 },
   },
   {
     key: "chaves-forte",
     name: "Chaves Forte",
     description: "Percentual mais elevado concentrado na entrega das chaves",
     distribution: { entrada: 10, mensais: 40, semestrais: 10, chaves: 40 },
+    installments: { entrada: 1, mensais: 18, semestrais: 4, chaves: 1 },
   },
 ];
 
@@ -53,7 +59,7 @@ export const flowPresets = {
 };
 
 type Props = {
-  onApply: (key: FlowPresetKey, preset: FlowPreset) => void;
+  onApply: (key: FlowPresetKey) => void;
 };
 
 function distributionLabel(dist: Record<PaymentBlockKey, number>) {
@@ -75,11 +81,11 @@ export function FlowPresets({ onApply }: Props) {
             className={cn(
               "border-[#E2E2E2] shadow-sm cursor-pointer transition-all hover:shadow-md hover:-translate-y-[1px]"
             )}
-            onClick={() => onApply(preset.key, preset)}
+            onClick={() => onApply(preset.key)}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") onApply(preset.key, preset);
+              if (e.key === "Enter" || e.key === " ") onApply(preset.key);
             }}
           >
             <CardContent className="p-4 space-y-2">

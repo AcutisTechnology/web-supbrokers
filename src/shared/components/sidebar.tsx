@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Home, Building2, Users, Settings, LogOut, Files, Menu, X, User, CreditCard, HelpCircle, ChevronLeft, ChevronRight, Building, Calendar, Calculator, ClipboardList } from "lucide-react";
+import { Home, Building2, Users, Settings, LogOut, Files, Menu, X, HelpCircle, ChevronLeft, ChevronRight, Building, Calendar, Calculator, ClipboardList, Crown, MessageCircle, ListTodo, Send, Link2, Bot, Megaphone, Filter } from "lucide-react";
 import { useAuth } from "../hooks/auth/use-auth";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -123,23 +123,15 @@ export function Sidebar() {
               <Home size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
               {!isCollapsed && <span>Home</span>}
             </Link>
+
             <Link
               href="/dashboard/imoveis"
               className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
               onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "Imóveis" : ""}
+              title={isCollapsed ? "Meus imóveis" : ""}
             >
               <Building2 size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>Imóveis</span>}
-            </Link>
-            <Link
-              href="/dashboard/captacoes"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
-              onClick={() => setIsOpen(false)}
-              title={isCollapsed ? "Captações" : ""}
-            >
-              <ClipboardList size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              {!isCollapsed && <span>Captações</span>}
+              {!isCollapsed && <span>Meus imóveis</span>}
             </Link>
             <Link
               href="/dashboard/alugueis"
@@ -186,6 +178,114 @@ export function Sidebar() {
               <Calculator size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
               {!isCollapsed && <span>Calculadora de Fluxo</span>}
             </Link>
+
+            <Link
+              href="/dashboard/links-uteis"
+              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+              onClick={() => setIsOpen(false)}
+              title={isCollapsed ? "Links Úteis" : ""}
+            >
+              <Link2 size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+              {!isCollapsed && <span>Links Úteis</span>}
+            </Link>
+
+            {!isCollapsed && (
+              <div className="pt-4 mt-4">
+                <p className="px-3 text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Atendimento</p>
+              </div>
+            )}
+
+            <Link
+              href="/dashboard/whatsapp"
+              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+              onClick={() => setIsOpen(false)}
+              title={isCollapsed ? "WhatsApp" : ""}
+            >
+              <MessageCircle size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+              {!isCollapsed && <span>WhatsApp</span>}
+            </Link>
+
+            <Link
+              href="/dashboard/follow-up"
+              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+              onClick={() => setIsOpen(false)}
+              title={isCollapsed ? "Follow-up" : ""}
+            >
+              <ListTodo size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+              {!isCollapsed && <span>Follow-up</span>}
+            </Link>
+
+            <Link
+              href="/dashboard/disparo-em-massa"
+              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+              onClick={() => setIsOpen(false)}
+              title={isCollapsed ? "Disparo em massa" : ""}
+            >
+              <Send size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+              {!isCollapsed && <span>Disparo em massa</span>}
+            </Link>
+
+            <Link
+              href="/dashboard/agente-ia"
+              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+              onClick={() => setIsOpen(false)}
+              title={isCollapsed ? "Agente de IA" : ""}
+            >
+              <Bot size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+              {!isCollapsed && <span>Agente de IA</span>}
+            </Link>
+
+            <Link
+              href="/dashboard/crm"
+              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+              onClick={() => setIsOpen(false)}
+              title={isCollapsed ? "CRM" : ""}
+            >
+              <Filter size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+              {!isCollapsed && <span>CRM</span>}
+            </Link>
+
+            {!isCollapsed && (
+              <div className="pt-4 mt-4">
+                <p className="px-3 text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Imobiliária</p>
+              </div>
+            )}
+
+            <Link
+              href="/dashboard/captacoes"
+              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+              onClick={() => setIsOpen(false)}
+              title={isCollapsed ? "Captações" : ""}
+            >
+              <ClipboardList size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+              {!isCollapsed && <span>Captações</span>}
+            </Link>
+
+            <Link
+              href="/dashboard/canal-pro"
+              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+              onClick={() => setIsOpen(false)}
+              title={isCollapsed ? "Canal PRO" : ""}
+            >
+              <Crown size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+              {!isCollapsed && <span>Canal PRO</span>}
+            </Link>
+
+            {!isCollapsed && (
+              <div className="pt-4 mt-4">
+                <p className="px-3 text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Integrações</p>
+              </div>
+            )}
+
+            <Link
+              href="/dashboard/meta-ads"
+              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+              onClick={() => setIsOpen(false)}
+              title={isCollapsed ? "Meta ADS" : ""}
+            >
+              <Megaphone size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+              {!isCollapsed && <span>Meta ADS</span>}
+            </Link>
           </nav>
 
           {!isCollapsed && (
@@ -194,14 +294,6 @@ export function Sidebar() {
                 Minha Conta
               </p>
               <nav className="space-y-2">
-                <Link
-                  href="/dashboard/perfil"
-                  className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <User size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-                  Meu perfil
-                </Link>
                 <Link
                   href="/dashboard/configuracoes"
                   className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group"
@@ -224,14 +316,6 @@ export function Sidebar() {
 
           {isCollapsed && (
             <div className="mt-8 space-y-2 transition-all duration-300">
-              <Link
-                href="/dashboard/perfil"
-                className="flex items-center justify-center px-2 py-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group"
-                onClick={() => setIsOpen(false)}
-                title="Meu perfil"
-              >
-                <User size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-              </Link>
               <Link
                 href="/dashboard/configuracoes"
                 className="flex items-center justify-center px-2 py-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group"

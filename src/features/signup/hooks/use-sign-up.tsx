@@ -1,6 +1,32 @@
 import { api } from "@/shared/configs/api";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { HTTPError } from "ky";
+
+interface ValidationErrorResponse {
+  message?: string;
+  data?: Record<string, string[]>;
+}
+
+const getSignupErrorMessage = async (error: unknown) => {
+  if (!(error instanceof HTTPError)) {
+    return "Houve um erro ao realizar o cadastro. Tente novamente.";
+  }
+
+  let payload: ValidationErrorResponse | undefined;
+
+  try {
+    payload = (await error.response.clone().json()) as ValidationErrorResponse;
+  } catch {
+    return "Houve um erro ao realizar o cadastro. Tente novamente.";
+  }
+
+  const firstValidationMessage = payload?.data
+    ? Object.values(payload.data).flat().find(Boolean)
+    : undefined;
+
+  return firstValidationMessage || payload?.message || "Houve um erro ao realizar o cadastro. Tente novamente.";
+};
 
 export default async function authenticateUser(credentials: {
   name: string;
@@ -41,11 +67,13 @@ function useSignUpMutation() {
         description: "Sua conta foi criada com sucesso!",
       });
     },
-    onError: (error: unknown) => {
+    onError: async (error: unknown) => {
+      const description = await getSignupErrorMessage(error);
+
       toast({
         variant: "destructive",
         title: "Erro ao realizar cadastro",
-        description: "Talvez o CPF ou e-mail já estejam cadastrados.",
+        description,
       });
     },
   });

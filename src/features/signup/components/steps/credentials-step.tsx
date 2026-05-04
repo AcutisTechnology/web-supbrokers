@@ -20,7 +20,7 @@ export function CredentialsStep({ form }: CredentialsStepProps) {
   const passwordConfirmation = watch('password_confirmation');
 
   const passwordsMatch = password && passwordConfirmation && password === passwordConfirmation;
-  const passwordValid = password && password.length >= 6;
+  const passwordValid = password && password.length >= 8;
 
   return (
     <div className="space-y-6">
@@ -69,7 +69,7 @@ export function CredentialsStep({ form }: CredentialsStepProps) {
             className="h-12 border-[#D8D8D8] focus:border-[#9747FF] focus:ring-[#9747FF]/20"
           />
           <p className="text-xs text-[#989898]">
-            A senha deve conter pelo menos 6 caracteres.
+            A senha deve conter pelo menos 8 caracteres.
           </p>
         </motion.div>
 
