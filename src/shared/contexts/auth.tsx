@@ -1,7 +1,7 @@
 "use client";
 
 import { useSignInMutation } from "@/features/login/hooks/use-sign-in";
-import { IAuthenticateUserDTO, IUserDTO } from "@/types/auth";
+import { IAuthenticateUserDTO } from "@/types/auth";
 import { destroyCookie, setCookie } from "nookies";
 import { useRouter } from "next/navigation";
 import React, { createContext, useState, ReactNode, useEffect } from "react";
@@ -9,7 +9,7 @@ import { useSignUpMutation } from "@/features/signup/hooks/use-sign-up";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextProps {
-  user: { user: IUserDTO } | null;
+  user: IAuthenticateUserDTO | null;
   isAuthenticated: boolean;
   signin: (values: { email: string; password: string }) => Promise<void>;
   signup: (values: {
@@ -32,7 +32,7 @@ export const AuthContext = createContext<AuthContextProps>(
 );
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<{ user: IUserDTO } | null>(null);
+  const [user, setUser] = useState<IAuthenticateUserDTO | null>(null);
   const [loading, setLoading] = useState(true); // Começa como true para indicar o carregamento inicial
 
   const router = useRouter();
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Salva os dados do usuário no localStorage
       localStorage.setItem('@SupBrokers:user', JSON.stringify(userData));
-      setUser(userData as { user: IUserDTO });
+      setUser(userData as IAuthenticateUserDTO);
 
       router.push("/dashboard");
     } catch (error) {

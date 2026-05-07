@@ -41,8 +41,9 @@ export interface User {
 export interface BrokerPropertiesResponse {
   data: {
     highlighted: Property[];
-    releases: Property[];
     all: Property[];
+    sale: Property[];
+    rent: Property[];
     user: User;
   };
 }

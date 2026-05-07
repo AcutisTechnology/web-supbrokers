@@ -5,26 +5,17 @@ import { PropertyCard } from '@/features/landing/components/property-card';
 import { SearchForm } from '@/features/landing/components/search-section';
 import { useBrokerProperties } from '@/features/landing/services/broker-service';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { use, useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { use, useRef } from 'react';
 
 export default function Home({ params }: { params: Promise<{ corretor: string }> }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { corretor } = use(params);
 
-  // Get query params from URL
-  const initialFilter = searchParams.get('type') === 'rent' ? 'rent' : 'sale';
-  const initialNeighborhood = searchParams.get('neighborhood') || '';
-  const initialCode = searchParams.get('code') || '';
-
   const { data: properties, isLoading, error } = useBrokerProperties(corretor);
-  const [showAllProperties, setShowAllProperties] = useState(false);
-  const [propertyFilter, setPropertyFilter] = useState<'all' | 'sale' | 'rent'>(
-    initialFilter === 'rent' ? 'rent' : 'sale'
-  );
-  const [neighborhood, setNeighborhood] = useState(initialNeighborhood);
-  const [code, setCode] = useState(initialCode);
 
   // Função para abrir o WhatsApp com a mensagem
   const openWhatsApp = () => {
@@ -38,8 +29,9 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
 
   // Função para lidar com a mudança de filtro do SearchForm
   const handleSearchFilterChange = (filter: 'sale' | 'rent') => {
-    setPropertyFilter(filter);
-    setShowAllProperties(false); // Reset para mostrar apenas 3 imóveis quando mudar o filtro
+    const queryParams = new URLSearchParams(searchParams.toString());
+    queryParams.set('type', filter);
+    router.push(`/${corretor}?${queryParams.toString()}`);
   };
 
   // Função para lidar com a busca
@@ -48,10 +40,6 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
     neighborhood?: string;
     code?: string;
   }) => {
-    setPropertyFilter(params.type === 'rent' ? 'rent' : 'sale');
-    setNeighborhood(params.neighborhood || '');
-    setCode(params.code || '');
-
     // Atualizar URL com os parâmetros
     const queryParams = new URLSearchParams();
     queryParams.set('type', params.type);
@@ -77,27 +65,97 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
     );
   }
 
-  // Filtrar os imóveis com base no filtro selecionado
-  const filteredProperties = properties.data.all.filter(property => {
-    // Filtrar por tipo (venda/aluguel)
-    const typeMatch =
-      propertyFilter === 'all'
-        ? true
-        : propertyFilter === 'sale'
-          ? property.sale
-          : propertyFilter === 'rent'
-            ? property.rent
-            : true;
+  const SectionCarousel = ({
+    title,
+    description,
+    items,
+    viewAllHref,
+  }: {
+    title: string;
+    description?: string;
+    items: typeof properties.data.all;
+    viewAllHref: string;
+  }) => {
+    const scrollerRef = useRef<HTMLDivElement | null>(null);
 
-    // Filtrar por bairro
-    const neighborhoodMatch =
-      !neighborhood || property.neighborhood.toLowerCase().includes(neighborhood.toLowerCase());
+    const scrollByCards = (direction: 'left' | 'right') => {
+      const el = scrollerRef.current;
+      if (!el) return;
+      const amount = Math.max(240, Math.floor(el.clientWidth * 0.9));
+      el.scrollBy({ left: direction === 'left' ? -amount : amount, behavior: 'smooth' });
+    };
 
-    // Filtrar por código
-    const codeMatch = !code || property.slug.toLowerCase().includes(code.toLowerCase());
+    return (
+      <section className="py-10">
+        <div className="container mx-auto px-4">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <h2 className="text-2xl font-medium">{title}</h2>
+              {description ? <p className="text-[#777777] mt-1">{description}</p> : null}
+            </div>
+            <Link
+              href={viewAllHref}
+              className="text-sm text-[#9747FF] hover:underline whitespace-nowrap"
+            >
+              Ver todos
+            </Link>
+          </div>
 
-    return typeMatch && neighborhoodMatch && codeMatch;
-  });
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => scrollByCards('left')}
+              className="hidden md:flex items-center justify-center absolute -left-3 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-white border border-gray-200 shadow hover:shadow-md"
+              aria-label="Scroll para esquerda"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+
+            <div
+              ref={scrollerRef}
+              className="flex gap-6 overflow-x-auto scroll-smooth pb-2"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
+              {items.map((property, i) => (
+                <div key={i} className="min-w-[280px] md:min-w-[320px]">
+                  <PropertyCard
+                    primary_color={properties.data.user.page_settings?.primary_color}
+                    title={property.title}
+                    location={`${property.neighborhood}, João Pessoa`}
+                    price={property.sale ? property.value.split(',')[0] : property.value}
+                    type={property.sale ? 'sale' : 'rent'}
+                    details={{
+                      area: `${property.size}m²`,
+                      bedrooms: `${property.bedrooms} quartos`,
+                      hasElevator: property.characteristics.some(c =>
+                        c.text.toLowerCase().includes('elevador')
+                      ),
+                    }}
+                    imageUrl={
+                      property.attachments[0]?.url ||
+                      'https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg'
+                    }
+                    slug={property.slug}
+                    propertyData={property}
+                    userData={properties.data.user}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => scrollByCards('right')}
+              className="hidden md:flex items-center justify-center absolute -right-3 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-white border border-gray-200 shadow hover:shadow-md"
+              aria-label="Scroll para direita"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -142,109 +200,32 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
         />
       </div>
 
-      {/* Todos os imóveis */}
-      {filteredProperties.length > 0 && (
-        <section className="py-12">
-          <div className="container mx-auto px-4">
-            <h2 className="text-2xl font-medium mb-2">
-              {propertyFilter === 'all' && 'Meus imóveis disponíveis'}
-              {propertyFilter === 'sale' && 'Imóveis à venda'}
-              {propertyFilter === 'rent' && 'Imóveis para alugar'}
-            </h2>
-            <p className="text-[#777777] mb-6">
-              {propertyFilter === 'all' && 'Confira os meus imóveis'}
-              {propertyFilter === 'sale' && 'Confira os imóveis disponíveis para compra'}
-              {propertyFilter === 'rent' && 'Confira os imóveis disponíveis para locação'}
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {filteredProperties
-                .slice(0, showAllProperties ? filteredProperties.length : 3)
-                .map((property, i) => (
-                  <PropertyCard
-                    key={i}
-                    primary_color={properties.data.user.page_settings?.primary_color}
-                    title={property.title}
-                    location={`${property.neighborhood}, João Pessoa`}
-                    price={property.sale ? property.value.split(',')[0] : property.value}
-                    type={property.sale ? 'sale' : 'rent'}
-                    details={{
-                      area: `${property.size}m²`,
-                      bedrooms: `${property.bedrooms} quartos`,
-                      hasElevator: property.characteristics.some(c =>
-                        c.text.toLowerCase().includes('elevador')
-                      ),
-                    }}
-                    imageUrl={
-                      property.attachments[0]?.url ||
-                      'https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg'
-                    }
-                    slug={property.slug}
-                    propertyData={property}
-                    userData={properties.data.user}
-                  />
-                ))}
-            </div>
-            {!showAllProperties && filteredProperties.length > 3 && (
-              <div className="text-center mt-8">
-                <button
-                  onClick={() => setShowAllProperties(true)}
-                  style={{ backgroundColor: properties.data.user.page_settings?.primary_color }}
-                  className="rounded-full text-white px-6 py-3 hover:bg-primary/90 transition-colors bg-primary"
-                >
-                  Ver mais imóveis
-                </button>
-              </div>
-            )}
-            {showAllProperties && filteredProperties.length > 3 && (
-              <div className="text-center mt-8">
-                <button
-                  onClick={() => setShowAllProperties(false)}
-                  style={{ backgroundColor: properties.data.user.page_settings?.primary_color }}
-                  className="rounded-full  text-gray-700 px-6 py-3 hover:bg-gray-300 transition-colors bg-gray-200"
-                >
-                  Ver menos imóveis
-                </button>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
+      {properties.data.highlighted.length > 0 ? (
+        <SectionCarousel
+          title="Lançamentos / Destaques"
+          description="Confira os imóveis em destaque."
+          items={properties.data.highlighted}
+          viewAllHref={`/${corretor}/imoveis/destaques`}
+        />
+      ) : null}
 
-      {/* Lançamentos */}
-      {properties.data.releases.length > 0 && (
-        <section className="py-12">
-          <div className="container mx-auto px-4">
-            <h2 className="text-2xl font-medium mb-2">Lançamentos para você</h2>
-            <p className="text-[#777777] mb-6">Confira os meus imóveis em destaque</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {properties.data.releases.slice(0, 3).map((property, i) => (
-                <PropertyCard
-                  key={i}
-                  primary_color={properties.data.user.page_settings?.primary_color}
-                  title={property.title}
-                  location={`${property.neighborhood}, João Pessoa`}
-                  price={property.sale ? property.value.split(',')[0] : property.value}
-                  type={property.sale ? 'sale' : 'rent'}
-                  details={{
-                    area: `${property.size}m²`,
-                    bedrooms: `${property.bedrooms} quartos`,
-                    hasElevator: property.characteristics.some(c =>
-                      c.text.toLowerCase().includes('elevador')
-                    ),
-                  }}
-                  imageUrl={
-                    property.attachments[0]?.url ||
-                    'https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg'
-                  }
-                  slug={property.slug}
-                  propertyData={property}
-                  userData={properties.data.user}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {properties.data.sale.length > 0 ? (
+        <SectionCarousel
+          title="Imóveis à venda"
+          description="Confira os imóveis disponíveis para compra."
+          items={properties.data.sale}
+          viewAllHref={`/${corretor}/imoveis/venda`}
+        />
+      ) : null}
+
+      {properties.data.rent.length > 0 ? (
+        <SectionCarousel
+          title="Imóveis para aluguel"
+          description="Confira os imóveis disponíveis para locação."
+          items={properties.data.rent}
+          viewAllHref={`/${corretor}/imoveis/aluguel`}
+        />
+      ) : null}
 
       {/* <section className="py-12">
         <div className="container mx-auto px-4">

@@ -37,18 +37,18 @@ export default function DashboardPage() {
   // Mock do slug do corretor (substituir pelo valor real depois)
   const brokerSlug = user?.user?.slug;
   
-  // Obter o domínio dinamicamente
-  const getDomain = () => {
-    if (typeof window !== 'undefined') {
-      return window.location.hostname;
+  const getPublicBaseUrl = () => {
+    if (typeof window !== "undefined") {
+      return window.location.origin;
     }
-    return 'imobile.com.br'; // fallback para SSR
+    return "https://imobile.com.br";
   };
   
-  const publicUrl = `https://${getDomain()}/${brokerSlug}`;
+  const publicUrl = brokerSlug ? `${getPublicBaseUrl()}/${brokerSlug}` : "";
   
   const handleCopyLink = async () => {
     try {
+      if (!publicUrl) return;
       await navigator.clipboard.writeText(publicUrl);
       setIsCopied(true);
       toast({
@@ -65,6 +65,7 @@ export default function DashboardPage() {
   };
 
   const handleNavigateToLink = () => {
+    if (!publicUrl) return;
     window.open(publicUrl, '_blank');
   };
   
@@ -172,6 +173,7 @@ export default function DashboardPage() {
                   variant="ghost"
                   size="sm"
                   onClick={handleCopyLink}
+                  disabled={!publicUrl}
                   className="h-8 w-8 p-0 hover:bg-transparent"
                 >
                   {isCopied ? (
@@ -185,6 +187,7 @@ export default function DashboardPage() {
                   variant="ghost"
                   size="sm"
                   onClick={handleNavigateToLink}
+                  disabled={!publicUrl}
                   className="h-8 p-0 hover:bg-transparent cursor-pointer"
                 >
                   <Navigation className="w-4 h-4 text-[#9747ff]" />
