@@ -2,8 +2,7 @@ import ky from "ky";
 import { parseCookies } from "nookies";
 
 export const api = ky.create({
-  prefixUrl: `http://localhost:8000/api/v1/`,
-  // prefixUrl: `https://coral-app-yi7ul.ondigitalocean.app/api/v1/`,
+  prefixUrl: `${process.env.NEXT_PUBLIC_API_URL}/api/v1/`,
   hooks: {
     beforeRequest: [
       (request) => {
