@@ -24,9 +24,10 @@ import type { PageSettings } from "@/features/dashboard/page-settings/services/p
 import { useSettings } from "@/features/dashboard/settings/hooks/use-settings";
 import type { TeamMemberSetting, UserSettingsData } from "@/features/dashboard/settings/services/settings-service";
 import { cn } from "@/lib/utils";
-import { Building2, Calendar, CreditCard, PlugZap, Settings2, Shield, Users, UserCircle2 } from "lucide-react";
+import { Building2, Calendar, CreditCard, PlugZap, Settings2, Shield, ShieldCheck, Users, UserCircle2 } from "lucide-react";
+import { GruposPermissaoFeature } from "@/features/dashboard/grupos-permissao";
 
-type SectionKey = "profile" | "company" | "team" | "billing" | "integrations" | "automations";
+type SectionKey = "profile" | "company" | "team" | "billing" | "integrations" | "automations" | "permissions";
 
 const settingsSections: Array<{
   key: SectionKey;
@@ -69,6 +70,12 @@ const settingsSections: Array<{
     label: "Automações (Cobrança)",
     description: "Fluxos e regras de cobrança",
     icon: Settings2,
+  },
+  {
+    key: "permissions",
+    label: "Grupos de Permissão",
+    description: "Gerenciar grupos e acessos",
+    icon: ShieldCheck,
   },
 ];
 
@@ -173,6 +180,7 @@ function ConfiguracoesPageContent() {
           {active.key === "billing" && <BillingSection />}
           {active.key === "integrations" && <IntegrationsSection />}
           {active.key === "automations" && <AutomationsSection />}
+          {active.key === "permissions" && <PermissionGroupsSection />}
         </div>
       </div>
 
@@ -329,9 +337,10 @@ function ProfileSection() {
   const profile = data?.data;
   const settings = settingsResponse?.data;
 
+  const groupName = user?.user?.permission_group?.name ?? null;
+
   const [draft, setDraft] = useState({
     name: user?.user?.name ?? "",
-    role: "Corretor",
     email: user?.user?.email ?? "",
     phone: "",
   });
@@ -343,7 +352,6 @@ function ProfileSection() {
     if (didInit || (!profile && !settings)) return;
     setDraft({
       name: profile?.name ?? user?.user?.name ?? "",
-      role: settings?.profile.job_title ?? "Corretor",
       email: profile?.email ?? user?.user?.email ?? "",
       phone: profile?.phone ?? "",
     });
@@ -359,13 +367,7 @@ function ProfileSection() {
         phone: draft.phone.trim(),
       });
 
-      await updateSettings({
-        profile: {
-          job_title: draft.role.trim(),
-        },
-      });
-
-      await Promise.all([refetch(), refetchSettings()]);
+      await refetch();
     } catch {
       toast({
         title: "Erro ao salvar perfil",
@@ -400,7 +402,7 @@ function ProfileSection() {
           <Button
             className="bg-gradient-to-r from-[#9747FF] to-[#7C3AED] hover:from-[#9747FF]/90 hover:to-[#7C3AED]/90"
             onClick={onSave}
-            disabled={updateProfile.isPending || isUpdatingSettings}
+            disabled={updateProfile.isPending}
           >
             Salvar
           </Button>
@@ -439,7 +441,7 @@ function ProfileSection() {
                 </Avatar>
                 <div>
                   <div className="text-base font-semibold text-[#141414]">{draft.name || "Usuário"}</div>
-                  <div className="text-sm text-[#777777]">{draft.role}</div>
+                  <div className="text-sm text-[#777777]">{groupName ?? "Sem grupo"}</div>
                 </div>
               </div>
             </div>
@@ -451,8 +453,8 @@ function ProfileSection() {
               </div>
 
               <div className="space-y-2">
-                <Label>Cargo</Label>
-                <Input value={draft.role} onChange={(e) => setDraft((p) => ({ ...p, role: e.target.value }))} />
+                <Label>Cargo (Grupo)</Label>
+                <Input value={groupName ?? "Sem grupo"} disabled className="bg-gray-50 text-[#777777] cursor-not-allowed" />
               </div>
 
               <div className="space-y-2">
@@ -1015,6 +1017,18 @@ function IntegrationsSection() {
           </Card>
         ))}
       </div>}
+    </div>
+  );
+}
+
+function PermissionGroupsSection() {
+  return (
+    <div className="space-y-6">
+      <SettingsHeader
+        title="Grupos de Permissão"
+        description="Crie e gerencie grupos com conjuntos de permissões para sua equipe."
+      />
+      <GruposPermissaoFeature />
     </div>
   );
 }

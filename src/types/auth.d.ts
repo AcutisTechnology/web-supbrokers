@@ -15,6 +15,13 @@ export interface IUserDTO {
   created_at?: string;
   updated_at?: string;
   permissions?: string[];
+  permission_group_id?: number | null;
+  permission_group?: {
+    id: number;
+    name: string;
+    description?: string | null;
+    active: boolean;
+  } | null;
   subscription?: {
     value: number;
     description: string;
