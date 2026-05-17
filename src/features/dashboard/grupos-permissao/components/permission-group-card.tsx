@@ -181,7 +181,7 @@ export function PermissionGroupCard({ group, onEdit }: Props) {
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir grupo "{group.name}"?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir grupo &quot;{group.name}&quot;?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta ação não pode ser desfeita. Grupos com usuários vinculados não podem ser excluídos.
             </AlertDialogDescription>
