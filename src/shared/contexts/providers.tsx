@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode } from "react";
 import { queryClient } from "../configs/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
 
 interface AppProvidersProps {
@@ -16,6 +17,7 @@ const AppProviders = ({ children }: AppProvidersProps) => {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>{children}</AuthProvider>
       <Toaster />
+      <SonnerToaster position="top-right" richColors closeButton />
       <Analytics />
     </QueryClientProvider>
   );
