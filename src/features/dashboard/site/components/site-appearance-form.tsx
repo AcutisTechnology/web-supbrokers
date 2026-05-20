@@ -16,8 +16,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { ColorPicker } from "@/features/dashboard/page-settings/components/color-picker";
-import { ImageUpload } from "@/features/dashboard/page-settings/components/image-upload";
+import { ColorPicker } from "./color-picker";
+import { ImageUpload } from "./image-upload";
 import type { SiteSetting, UpdateSiteSettingPayload } from "../services/site-service";
 
 const schema = z.object({

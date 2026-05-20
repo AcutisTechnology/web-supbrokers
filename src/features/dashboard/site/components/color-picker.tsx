@@ -20,7 +20,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
         style={{ backgroundColor: value }}
         onClick={() => setIsOpen(!isOpen)}
       />
-      
+
       {isOpen && (
         <div className="absolute z-50 mt-2 p-2 bg-white rounded-lg shadow-lg">
           <HexColorPicker color={value} onChange={onChange} />
@@ -36,4 +36,4 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
       )}
     </div>
   );
-} 
+}
