@@ -5,6 +5,9 @@ import { PropertyCard } from '@/features/landing/components/property-card';
 import { SearchForm } from '@/features/landing/components/search-section';
 import { useBrokerProperties } from '@/features/landing/services/broker-service';
 import { BrokerFooter } from '@/features/landing/components/broker-footer';
+import { SiteDynamicMenu } from '@/features/landing/components/site-dynamic-menu';
+import { fetchPublicSiteMenu } from '@/features/dashboard/site/services/site-pages-service';
+import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -17,6 +20,12 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
   const { corretor } = use(params);
 
   const { data: properties, isLoading, error } = useBrokerProperties(corretor);
+
+  const { data: dynamicMenu = [] } = useQuery({
+    queryKey: ['public-site-menu', corretor],
+    queryFn: () => fetchPublicSiteMenu(corretor),
+    enabled: !!corretor,
+  });
 
   // Função para abrir o WhatsApp com a mensagem
   const openWhatsApp = () => {
@@ -163,13 +172,20 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
       <div className="rounded-xl m-4 md:m-8 p-6 md:px-20 md:py-9" style={{ backgroundColor: properties.data.user.site?.primary_color || '#9747FF' }}>
         {/* Botões de ação */}
         <div className="flex flex-col md:flex-row justify-between items-center md:items-start space-y-4 md:space-y-0">
-          <Image 
+          <Image
             src={properties.data.user.site?.brand_image || '/logo-extendida-roxo.svg'}
-            width={142} 
-            alt="logo do corretor" 
-            height={42} 
+            width={142}
+            alt="logo do corretor"
+            height={42}
           />
-          <div className="flex space-x-2 md:space-x-4">
+          {dynamicMenu.length > 0 && (
+            <SiteDynamicMenu
+              brokerSlug={corretor}
+              pages={dynamicMenu}
+              className="order-3 md:order-2 w-full md:w-auto justify-center"
+            />
+          )}
+          <div className="flex space-x-2 md:space-x-4 order-2 md:order-3">
             <button
               onClick={() => router.push('/login')}
               className="rounded-full border border-white px-4 py-2 md:p-4 h-10 md:h-11 flex items-center justify-center text-white text-sm md:text-base hover:bg-white hover:text-black"

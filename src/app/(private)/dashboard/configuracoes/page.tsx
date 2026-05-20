@@ -20,7 +20,12 @@ import { SiteAppearanceForm, type SiteAppearanceFormData } from "@/features/dash
 import { SiteFooterForm, type SiteFooterFormData } from "@/features/dashboard/site/components/site-footer-form";
 import { SiteSocialLinksManager } from "@/features/dashboard/site/components/site-social-links-manager";
 import { SitePreview } from "@/features/dashboard/site/components/site-preview";
+import { SitePagesManager } from "@/features/dashboard/site/components/site-pages-manager";
+import { SitePagePreview } from "@/features/dashboard/site/components/site-page-preview";
 import { useSiteFooter, useSiteSettings, useSiteSocialLinks } from "@/features/dashboard/site/hooks/use-site";
+import { useSitePages } from "@/features/dashboard/site/hooks/use-site-pages";
+import type { SitePage } from "@/features/dashboard/site/services/site-pages-service";
+import type { SitePageFormValues } from "@/features/dashboard/site/components/site-pages-form";
 import { useSettings } from "@/features/dashboard/settings/hooks/use-settings";
 import type { TeamMemberSetting, UserSettingsData } from "@/features/dashboard/settings/services/settings-service";
 import { cn } from "@/lib/utils";
@@ -678,7 +683,7 @@ function CompanySection() {
   );
 }
 
-type PageSubTab = "appearance" | "footer" | "social";
+type PageSubTab = "appearance" | "footer" | "social" | "pages";
 
 function PageSection() {
   const [tab, setTab] = useState<PageSubTab>("appearance");
@@ -765,7 +770,13 @@ function PageSection() {
     { key: "appearance", label: "Aparência", description: "Cores, logo e cabeçalho" },
     { key: "footer", label: "Rodapé", description: "Contato, endereço e CRECI" },
     { key: "social", label: "Redes Sociais", description: "Links exibidos no rodapé" },
+    { key: "pages", label: "Páginas", description: "Páginas institucionais do site" },
   ];
+
+  const { pages: sitePages } = useSitePages();
+  const menuPages = sitePages.filter((p) => p.is_published && p.show_in_menu);
+  const [activePage, setActivePage] = useState<SitePage | undefined>(undefined);
+  const [pageDraft, setPageDraft] = useState<SitePageFormValues | null>(null);
 
   return (
     <div className="space-y-6">
@@ -842,15 +853,38 @@ function PageSection() {
                 />
               </SettingsCard>
             )}
+
+            {tab === "pages" && (
+              <SettingsCard
+                title="Páginas"
+                description="Gerencie as páginas institucionais do site público."
+              >
+                <SitePagesManager
+                  onActivePageChange={setActivePage}
+                  onDraftChange={setPageDraft}
+                />
+              </SettingsCard>
+            )}
           </div>
 
           <div className="lg:col-span-5">
             <SettingsCard title="Preview" description="Pré-visualização em tempo real.">
-              <SitePreview
-                settings={{ ...settings, ...previewSettings }}
-                footer={{ ...footer, ...previewFooter }}
-                socialLinks={socialLinks}
-              />
+              {tab === "pages" ? (
+                <SitePagePreview
+                  settings={{ ...settings, ...previewSettings }}
+                  footer={{ ...footer, ...previewFooter }}
+                  socialLinks={socialLinks}
+                  menuPages={menuPages}
+                  page={activePage}
+                  draft={pageDraft}
+                />
+              ) : (
+                <SitePreview
+                  settings={{ ...settings, ...previewSettings }}
+                  footer={{ ...footer, ...previewFooter }}
+                  socialLinks={socialLinks}
+                />
+              )}
             </SettingsCard>
           </div>
         </div>
