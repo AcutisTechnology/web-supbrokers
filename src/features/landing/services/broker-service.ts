@@ -25,6 +25,41 @@ export interface Property {
   created_at: string;
 }
 
+export interface PublicSiteFooter {
+  company_name: string | null;
+  email: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  address: string | null;
+  address_number: string | null;
+  district: string | null;
+  city: string | null;
+  state: string | null;
+  zipcode: string | null;
+  creci: string | null;
+  footer_text: string | null;
+  show_social_links: boolean;
+}
+
+export interface PublicSocialLink {
+  id: number;
+  platform: string;
+  url: string;
+  icon: string | null;
+  sort_order: number;
+}
+
+export interface PublicSite {
+  primary_color: string | null;
+  secondary_color: string | null;
+  brand_image: string | null;
+  favicon: string | null;
+  site_title: string | null;
+  site_subtitle: string | null;
+  footer: PublicSiteFooter | null;
+  social_links: PublicSocialLink[];
+}
+
 // Interface para os dados do corretor
 export interface User {
   name: string;
@@ -35,6 +70,7 @@ export interface User {
     subtitle: string;
     brand_image: string;
   }
+  site?: PublicSite | null;
 }
 
 // Interface para os dados retornados pela API

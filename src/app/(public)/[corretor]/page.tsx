@@ -4,6 +4,7 @@ import { NewsCard } from '@/features/landing/components/news-card';
 import { PropertyCard } from '@/features/landing/components/property-card';
 import { SearchForm } from '@/features/landing/components/search-section';
 import { useBrokerProperties } from '@/features/landing/services/broker-service';
+import { BrokerFooter } from '@/features/landing/components/broker-footer';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -251,21 +252,7 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
         </div>
       </section> */}
 
-      <footer className="py-8 text-center text-sm text-[#777777]">
-        <div className="flex flex-row items-center gap-2 justify-center">
-          <p>Esse site foi feito na</p>
-          <Image src="/logo-extendida.svg" width={81} height={12} alt="logo pequena" />
-        </div>
-        <p className="mb-4">Copyright © iMoobile. Todos os direitos reservados</p>
-        <div className="flex justify-center gap-4">
-          <a href="#" className="hover:text-[#9747FF]">
-            Política de privacidade
-          </a>
-          <a href="#" className="hover:text-[#9747FF]">
-            Termos de uso
-          </a>
-        </div>
-      </footer>
+      <BrokerFooter site={properties.data.user.site} />
     </div>
   );
 }

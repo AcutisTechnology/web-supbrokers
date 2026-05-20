@@ -16,18 +16,18 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/shared/hooks/auth/use-auth";
 import { useProfile, useUpdateProfile } from "@/features/dashboard/profile/services/profile-service";
-import { PageSettingsForm } from "@/features/dashboard/page-settings/components/page-settings-form";
-import { PageSettingsPreview } from "@/features/dashboard/page-settings/components/page-settings-preview";
-import { useBrokerProperties } from "@/features/landing/services/broker-service";
-import { usePageSettings } from "@/features/dashboard/page-settings/hooks/use-page-settings";
-import type { PageSettings } from "@/features/dashboard/page-settings/services/page-settings-service";
+import { SiteAppearanceForm, type SiteAppearanceFormData } from "@/features/dashboard/site/components/site-appearance-form";
+import { SiteFooterForm, type SiteFooterFormData } from "@/features/dashboard/site/components/site-footer-form";
+import { SiteSocialLinksManager } from "@/features/dashboard/site/components/site-social-links-manager";
+import { SitePreview } from "@/features/dashboard/site/components/site-preview";
+import { useSiteFooter, useSiteSettings, useSiteSocialLinks } from "@/features/dashboard/site/hooks/use-site";
 import { useSettings } from "@/features/dashboard/settings/hooks/use-settings";
 import type { TeamMemberSetting, UserSettingsData } from "@/features/dashboard/settings/services/settings-service";
 import { cn } from "@/lib/utils";
-import { Building2, Calendar, CreditCard, PlugZap, Settings2, Shield, ShieldCheck, Users, UserCircle2 } from "lucide-react";
+import { Building2, Calendar, CreditCard, Globe, PlugZap, Settings2, Shield, ShieldCheck, Users, UserCircle2 } from "lucide-react";
 import { GruposPermissaoFeature } from "@/features/dashboard/grupos-permissao";
 
-type SectionKey = "profile" | "company" | "team" | "billing" | "integrations" | "automations" | "permissions";
+type SectionKey = "profile" | "company" | "page" | "team" | "billing" | "integrations" | "automations" | "permissions";
 
 const settingsSections: Array<{
   key: SectionKey;
@@ -44,8 +44,14 @@ const settingsSections: Array<{
   {
     key: "company",
     label: "Imobiliária",
-    description: "Dados, contato e aparência",
+    description: "Dados, contato e endereço",
     icon: Building2,
+  },
+  {
+    key: "page",
+    label: "Página",
+    description: "Aparência da sua página pública",
+    icon: Globe,
   },
   {
     key: "team",
@@ -176,6 +182,7 @@ function ConfiguracoesPageContent() {
         <div className="lg:col-span-8 xl:col-span-9 space-y-6">
           {active.key === "profile" && <ProfileSection />}
           {active.key === "company" && <CompanySection />}
+          {active.key === "page" && <PageSection />}
           {active.key === "team" && <TeamAccessSection />}
           {active.key === "billing" && <BillingSection />}
           {active.key === "integrations" && <IntegrationsSection />}
@@ -667,64 +674,183 @@ function CompanySection() {
           </div>
         </SettingsCard>
       </div>}
-
-      <AppearanceSettingsSection />
     </div>
   );
 }
 
-function AppearanceSettingsSection() {
-  const { user } = useAuth();
-  const slug = user?.user?.slug ?? "";
-  const { data: properties, isLoading, isError, error, refetch } = useBrokerProperties(slug);
-  const { updateSettings } = usePageSettings();
+type PageSubTab = "appearance" | "footer" | "social";
 
-  const settings = properties?.data?.user?.page_settings;
-  const defaultSettings = useMemo<PageSettings>(
-    () => ({
-      primary_color: "#9747FF",
-      title: "Encontre o imóvel perfeito para você",
-      subtitle: "Confira os melhores imóveis disponíveis",
-      brand_image: "/logo-extendida-roxo.svg",
-    }),
-    []
-  );
+function PageSection() {
+  const [tab, setTab] = useState<PageSubTab>("appearance");
 
-  const [previewSettings, setPreviewSettings] = useState<PageSettings>(() => settings || defaultSettings);
+  const {
+    settings,
+    isLoading: isLoadingSettings,
+    isError: isErrorSettings,
+    error: errorSettings,
+    refetch: refetchSettings,
+    update: updateSettings,
+    isUpdating: isUpdatingSettings,
+  } = useSiteSettings();
+
+  const {
+    footer,
+    isLoading: isLoadingFooter,
+    isError: isErrorFooter,
+    error: errorFooter,
+    refetch: refetchFooter,
+    update: updateFooter,
+    isUpdating: isUpdatingFooter,
+  } = useSiteFooter();
+
+  const {
+    socialLinks,
+    isLoading: isLoadingSocial,
+    isError: isErrorSocial,
+    error: errorSocial,
+    refetch: refetchSocial,
+    create: createSocial,
+    update: updateSocial,
+    remove: removeSocial,
+    isCreating,
+    isUpdating: isUpdatingSocial,
+    isRemoving,
+  } = useSiteSocialLinks();
+
+  const isLoading = isLoadingSettings || isLoadingFooter || isLoadingSocial;
+  const isError = isErrorSettings || isErrorFooter || isErrorSocial;
+  const error = (errorSettings || errorFooter || errorSocial) as Error | null;
+
+  const retryAll = () => {
+    refetchSettings();
+    refetchFooter();
+    refetchSocial();
+  };
+
+  const [previewSettings, setPreviewSettings] = useState<Partial<SiteAppearanceFormData>>({});
+  const [previewFooter, setPreviewFooter] = useState<Partial<SiteFooterFormData>>({});
 
   useEffect(() => {
-    if (!settings) return;
-    setPreviewSettings(settings);
+    if (settings) {
+      setPreviewSettings({
+        primary_color: settings.primary_color ?? undefined,
+        site_title: settings.site_title ?? undefined,
+        site_subtitle: settings.site_subtitle ?? undefined,
+        brand_image: settings.brand_image ?? undefined,
+      });
+    }
   }, [settings]);
 
-  const handleFormChange = (data: Partial<PageSettings>) => {
-    setPreviewSettings((prev) => ({ ...prev, ...data }));
-  };
+  useEffect(() => {
+    if (footer) {
+      setPreviewFooter({
+        company_name: footer.company_name ?? "",
+        email: footer.email ?? "",
+        phone: footer.phone ?? "",
+        whatsapp: footer.whatsapp ?? "",
+        address: footer.address ?? "",
+        address_number: footer.address_number ?? "",
+        district: footer.district ?? "",
+        city: footer.city ?? "",
+        state: footer.state ?? "",
+        zipcode: footer.zipcode ?? "",
+        creci: footer.creci ?? "",
+        footer_text: footer.footer_text ?? "",
+        show_social_links: footer.show_social_links,
+      });
+    }
+  }, [footer]);
 
-  const handleSubmit = async (data: PageSettings) => {
-    await updateSettings(data);
-    await refetch();
-  };
+  const subTabs: Array<{ key: PageSubTab; label: string; description: string }> = [
+    { key: "appearance", label: "Aparência", description: "Cores, logo e cabeçalho" },
+    { key: "footer", label: "Rodapé", description: "Contato, endereço e CRECI" },
+    { key: "social", label: "Redes Sociais", description: "Links exibidos no rodapé" },
+  ];
 
   return (
     <div className="space-y-6">
       <SettingsHeader
-        title="Aparência da Página"
-        description="Personalize como sua página de imóveis será exibida."
+        title="Página"
+        description="Configure como sua página pública é exibida para o cliente."
       />
 
-      <LoadingState isLoading={isLoading} isError={isError} error={error as Error} onRetry={() => refetch()} />
+      <LoadingState isLoading={isLoading} isError={isError} error={error ?? undefined} onRetry={retryAll} />
 
       {!isLoading && !isError && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div className="lg:col-span-6">
-            <SettingsCard title="Configuração" description="Ajuste cor, logo e textos do cabeçalho.">
-              <PageSettingsForm initialData={settings || defaultSettings} onSubmit={handleSubmit} onChange={handleFormChange} />
-            </SettingsCard>
+          <div className="lg:col-span-7 space-y-4">
+            <div className="flex flex-wrap gap-2 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm">
+              {subTabs.map((item) => {
+                const isActive = item.key === tab;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setTab(item.key)}
+                    className={cn(
+                      "flex-1 min-w-[120px] rounded-xl px-3 py-2 text-left transition-colors",
+                      isActive ? "bg-[#9747FF]/10" : "hover:bg-gray-50"
+                    )}
+                  >
+                    <div className={cn("text-sm font-semibold", isActive ? "text-[#9747FF]" : "text-[#141414]")}>
+                      {item.label}
+                    </div>
+                    <div className="text-xs text-[#777777]">{item.description}</div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {tab === "appearance" && (
+              <SettingsCard title="Aparência" description="Cor primária, logomarca e textos do cabeçalho.">
+                <SiteAppearanceForm
+                  initial={settings}
+                  onSubmit={async (payload) => {
+                    await updateSettings(payload);
+                  }}
+                  onChange={(data) => setPreviewSettings((prev) => ({ ...prev, ...data }))}
+                  isSubmitting={isUpdatingSettings}
+                />
+              </SettingsCard>
+            )}
+
+            {tab === "footer" && (
+              <SettingsCard title="Rodapé" description="Dados de contato e textos exibidos no rodapé do site público.">
+                <SiteFooterForm
+                  initial={footer}
+                  onSubmit={async (payload) => {
+                    await updateFooter(payload);
+                  }}
+                  onChange={(data) => setPreviewFooter((prev) => ({ ...prev, ...data }))}
+                  isSubmitting={isUpdatingFooter}
+                />
+              </SettingsCard>
+            )}
+
+            {tab === "social" && (
+              <SettingsCard
+                title="Redes Sociais"
+                description="Cadastre os perfis sociais que aparecerão no rodapé."
+              >
+                <SiteSocialLinksManager
+                  socialLinks={socialLinks}
+                  isLoading={isLoadingSocial}
+                  onCreate={createSocial}
+                  onUpdate={(id, payload) => updateSocial({ id, payload })}
+                  onDelete={removeSocial}
+                  isMutating={isCreating || isUpdatingSocial || isRemoving}
+                />
+              </SettingsCard>
+            )}
           </div>
-          <div className="lg:col-span-6">
+
+          <div className="lg:col-span-5">
             <SettingsCard title="Preview" description="Pré-visualização em tempo real.">
-              <PageSettingsPreview settings={previewSettings} />
+              <SitePreview
+                settings={{ ...settings, ...previewSettings }}
+                footer={{ ...footer, ...previewFooter }}
+                socialLinks={socialLinks}
+              />
             </SettingsCard>
           </div>
         </div>
