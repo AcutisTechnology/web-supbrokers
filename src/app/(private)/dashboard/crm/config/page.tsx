@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ColorPicker } from "@/features/dashboard/page-settings/components/color-picker";
+import { ColorPicker } from "@/features/dashboard/site/components/color-picker";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, ChevronUp, Plus, Tag, Trash2, Wand2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";

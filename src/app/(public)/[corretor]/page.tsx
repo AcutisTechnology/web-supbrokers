@@ -120,7 +120,7 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
               {items.map((property, i) => (
                 <div key={i} className="min-w-[280px] md:min-w-[320px]">
                   <PropertyCard
-                    primary_color={properties.data.user.page_settings?.primary_color}
+                    primary_color={properties.data.user.site?.primary_color ?? undefined}
                     title={property.title}
                     location={`${property.neighborhood}, João Pessoa`}
                     price={property.sale ? property.value.split(',')[0] : property.value}
@@ -160,11 +160,11 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="rounded-xl m-4 md:m-8 p-6 md:px-20 md:py-9" style={{ backgroundColor: properties.data.user.page_settings?.primary_color || '#9747FF' }}>
+      <div className="rounded-xl m-4 md:m-8 p-6 md:px-20 md:py-9" style={{ backgroundColor: properties.data.user.site?.primary_color || '#9747FF' }}>
         {/* Botões de ação */}
         <div className="flex flex-col md:flex-row justify-between items-center md:items-start space-y-4 md:space-y-0">
           <Image 
-            src={properties.data.user.page_settings?.brand_image || '/logo-extendida-roxo.svg'} 
+            src={properties.data.user.site?.brand_image || '/logo-extendida-roxo.svg'}
             width={142} 
             alt="logo do corretor" 
             height={42} 
@@ -187,17 +187,17 @@ export default function Home({ params }: { params: Promise<{ corretor: string }>
 
         {/* Título */}
         <p className="font-medium text-3xl md:text-5xl text-white mt-6 md:mt-8 leading-snug text-center md:text-left">
-          {properties.data.user.page_settings?.title || 'Encontre o imóvel perfeito para você.'}
+          {properties.data.user.site?.site_title || 'Encontre o imóvel perfeito para você.'}
         </p>
         <p className="text-white text-lg md:text-xl mt-2">
-          {properties.data.user.page_settings?.subtitle || 'Confira os melhores imóveis disponíveis para você.'}
+          {properties.data.user.site?.site_subtitle || 'Confira os melhores imóveis disponíveis para você.'}
         </p>
 
         {/* Localizar imóvel */}
         <SearchForm 
           onFilterChange={handleSearchFilterChange} 
           onSearch={handleSearch} 
-          primaryColor={properties.data.user.page_settings?.primary_color || '#9747FF'}
+          primaryColor={properties.data.user.site?.primary_color || '#9747FF'}
         />
       </div>
 

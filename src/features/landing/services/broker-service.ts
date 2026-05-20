@@ -64,12 +64,6 @@ export interface PublicSite {
 export interface User {
   name: string;
   phone: string;
-  page_settings?: {
-    primary_color: string;
-    title: string;
-    subtitle: string;
-    brand_image: string;
-  }
   site?: PublicSite | null;
 }
 

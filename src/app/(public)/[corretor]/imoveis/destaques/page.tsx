@@ -32,7 +32,7 @@ export default function ImoveisDestaquesPage({ params }: { params: Promise<{ cor
     <div className="min-h-screen bg-white">
       <div
         className="rounded-xl m-4 md:m-8 p-6 md:px-20 md:py-9"
-        style={{ backgroundColor: user.page_settings?.primary_color || "#9747FF" }}
+        style={{ backgroundColor: user.site?.primary_color || "#9747FF" }}
       >
         <div className="flex items-center justify-between">
           <Link href={`/${corretor}`} className="text-white hover:underline">
@@ -50,7 +50,7 @@ export default function ImoveisDestaquesPage({ params }: { params: Promise<{ cor
               {items.map((property, i) => (
                 <PropertyCard
                   key={i}
-                  primary_color={user.page_settings?.primary_color}
+                  primary_color={user.site?.primary_color ?? undefined}
                   title={property.title}
                   location={`${property.neighborhood}, João Pessoa`}
                   price={property.sale ? property.value.split(",")[0] : property.value}
