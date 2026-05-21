@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Home, Building2, Users, Settings, LogOut, Files, Menu, X, HelpCircle, ChevronLeft, ChevronRight, Building, Calendar, Calculator, ClipboardList, Crown, MessageCircle, ListTodo, Send, Link2, Bot, Megaphone, Filter, CalendarCheck, Wallet, ShoppingCart, Receipt } from "lucide-react";
+import { Home, Building2, Users, Settings, LogOut, Files, Menu, X, HelpCircle, ChevronLeft, ChevronRight, Building, Calendar, Calculator, ClipboardList, Crown, MessageCircle, ListTodo, Send, Link2, Bot, Megaphone, Filter, CalendarCheck, Wallet, ShoppingCart, Receipt, CreditCard, FileBarChart } from "lucide-react";
 import { useAuth } from "../hooks/auth/use-auth";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -354,6 +354,42 @@ export function Sidebar() {
               >
                 <ShoppingCart size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
                 {!isCollapsed && <span>Vendas</span>}
+              </Link>
+            )}
+
+            {showFinanceiro && canManageFinance && (
+              <Link
+                href="/dashboard/financeiro/parcelas"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Parcelas" : ""}
+              >
+                <CalendarCheck size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Parcelas</span>}
+              </Link>
+            )}
+
+            {showFinanceiro && canManageFinance && (
+              <Link
+                href="/dashboard/financeiro/pagamentos"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Pagamentos" : ""}
+              >
+                <CreditCard size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Pagamentos</span>}
+              </Link>
+            )}
+
+            {showFinanceiro && (
+              <Link
+                href="/dashboard/financeiro/extrato"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Extrato" : ""}
+              >
+                <FileBarChart size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Extrato</span>}
               </Link>
             )}
 
