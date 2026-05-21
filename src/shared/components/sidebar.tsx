@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Home, Building2, Users, Settings, LogOut, Files, Menu, X, HelpCircle, ChevronLeft, ChevronRight, Building, Calendar, Calculator, ClipboardList, Crown, MessageCircle, ListTodo, Send, Link2, Bot, Megaphone, Filter, CalendarCheck } from "lucide-react";
+import { Home, Building2, Users, Settings, LogOut, Files, Menu, X, HelpCircle, ChevronLeft, ChevronRight, Building, Calendar, Calculator, ClipboardList, Crown, MessageCircle, ListTodo, Send, Link2, Bot, Megaphone, Filter, CalendarCheck, Wallet, ShoppingCart, Receipt } from "lucide-react";
 import { useAuth } from "../hooks/auth/use-auth";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -52,6 +52,8 @@ export function Sidebar() {
   const showAtendimento = ["clientes", "calendario", "whatsapp", "follow_up", "disparo_massa", "agente_ia", "crm", "visitas"].some(hasPermission);
   const showImobiliaria = ["captacoes"].some(hasPermission);
   const showIntegracoes = ["canal_pro", "meta_ads"].some(hasPermission);
+  const showFinanceiro = ["finance.view", "finance.create", "finance.update", "finance.delete", "finance.manage"].some(hasPermission);
+  const canManageFinance = ["finance.create", "finance.update", "finance.delete", "finance.manage"].some(hasPermission);
 
   useEffect(() => {
     const controlHeader = () => {
@@ -322,6 +324,48 @@ export function Sidebar() {
               >
                 <CalendarCheck size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
                 {!isCollapsed && <span>Visitas</span>}
+              </Link>
+            )}
+
+            {!isCollapsed && showFinanceiro && (
+              <div className="pt-4 mt-4">
+                <p className="px-3 text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Financeiro</p>
+              </div>
+            )}
+
+            {showFinanceiro && (
+              <Link
+                href="/dashboard/financeiro"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Financeiro" : ""}
+              >
+                <Wallet size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Financeiro</span>}
+              </Link>
+            )}
+
+            {showFinanceiro && (
+              <Link
+                href="/dashboard/financeiro/vendas"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Vendas" : ""}
+              >
+                <ShoppingCart size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Vendas</span>}
+              </Link>
+            )}
+
+            {showFinanceiro && !canManageFinance && (
+              <Link
+                href="/dashboard/financeiro/minhas-comissoes"
+                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                onClick={() => setIsOpen(false)}
+                title={isCollapsed ? "Minhas Comissões" : ""}
+              >
+                <Receipt size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Minhas Comissões</span>}
               </Link>
             )}
 
