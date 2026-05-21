@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Plus, Filter, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ import {
 } from "@/features/dashboard/financeiro/services/finance-service";
 
 export default function FinanceSalesPage() {
+  const router = useRouter();
   const [filters, setFilters] = useState<SaleFilters>({ page: 1, per_page: 15 });
   const [showFilters, setShowFilters] = useState(false);
   const [openModal, setOpenModal] = useState(false);
@@ -209,7 +211,7 @@ export default function FinanceSalesPage() {
         <>
           <FinanceSalesTable
             sales={sales}
-            onView={onEdit}
+            onView={(sale) => router.push(`/dashboard/financeiro/vendas/${sale.id}`)}
             onEdit={onEdit}
             onDelete={(sale) => setToDelete(sale)}
           />
