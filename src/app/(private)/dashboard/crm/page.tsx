@@ -13,25 +13,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/shared/configs/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink, Filter, Flame, Plus, Search, Settings2, User2, MessageCircle } from "lucide-react";
+import { Filter, Plus, Search, Settings2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import {
-  CrmLead,
   CrmLeadsFilters,
-  CrmTag,
   useCreateCrmLead,
+  useCrmLeadSources,
   useCrmLeads,
   useCrmMetrics,
   useCrmPipelineStages,
   useCrmTags,
-  useDuplicateCrmLead,
-  useMarkLostCrmLead,
-  useMarkWonCrmLead,
   useMoveCrmLeadStage,
 } from "@/features/dashboard/crm/services/crm-service";
+import { KanbanBoard } from "@/features/dashboard/crm/components/kanban-board";
 
 type Broker = {
   id: number;
@@ -42,7 +39,8 @@ type Broker = {
 const createLeadSchema = z.object({
   name: z.string().min(1, "Informe o nome"),
   phone: z.string().min(1, "Informe o telefone"),
-  source: z.string().optional(),
+  email: z.string().email("E-mail inválido").optional().or(z.literal("")),
+  source_id: z.string().optional(),
   value: z.string().optional(),
   priority: z.enum(["1", "2", "3"]).default("2"),
   assigned_user_id: z.string().optional(),
@@ -58,14 +56,6 @@ const formatCurrency = (value: string | null | undefined) => {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number.isFinite(numeric) ? numeric : 0);
 };
 
-const normalizePhoneDigits = (phone: string) => phone.replace(/\D/g, "");
-
-const formatDateTime = (iso: string | null | undefined) => {
-  if (!iso) return "-";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "-";
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date);
-};
 
 export default function CrmPage() {
   const { data: stagesData, isLoading: isLoadingStages } = useCrmPipelineStages();
@@ -85,56 +75,12 @@ export default function CrmPage() {
   const { data: metricsData } = useCrmMetrics(filters.period);
 
   const moveStageMutation = useMoveCrmLeadStage();
-  const duplicateMutation = useDuplicateCrmLead();
-  const markWonMutation = useMarkWonCrmLead();
-  const markLostMutation = useMarkLostCrmLead();
+  const { data: sourcesData } = useCrmLeadSources();
 
   const stages = useMemo(() => (stagesData ?? []).slice().sort((a, b) => a.order - b.order), [stagesData]);
   const leads = useMemo(() => leadsData ?? [], [leadsData]);
   const tags = useMemo(() => tagsData ?? [], [tagsData]);
-
-  const leadsByStageId = useMemo(() => {
-    const map = new Map<number, CrmLead[]>();
-    for (const stage of stages) map.set(stage.id, []);
-    for (const lead of leads) {
-      const list = map.get(lead.pipeline_stage_id) ?? [];
-      list.push(lead);
-      map.set(lead.pipeline_stage_id, list);
-    }
-    for (const [stageId, list] of map.entries()) {
-      const sort = filters.sort ?? "recent";
-      const direction = filters.direction ?? "desc";
-      const sorted = list.slice().sort((a, b) => {
-        if (sort === "value") {
-          const av = a.value ? Number(a.value) : 0;
-          const bv = b.value ? Number(b.value) : 0;
-          return direction === "asc" ? av - bv : bv - av;
-        }
-        if (sort === "priority") {
-          return direction === "asc" ? a.priority - b.priority : b.priority - a.priority;
-        }
-        const ad = new Date(a.created_at).getTime();
-        const bd = new Date(b.created_at).getTime();
-        return direction === "asc" ? ad - bd : bd - ad;
-      });
-      map.set(stageId, sorted);
-    }
-    return map;
-  }, [filters.direction, filters.sort, leads, stages]);
-
-  const draggingLeadRef = useRef<{ leadId: number; fromStageId: number } | null>(null);
-
-  const onDragStart = (leadId: number, fromStageId: number) => {
-    draggingLeadRef.current = { leadId, fromStageId };
-  };
-
-  const onDropOnStage = async (toStageId: number) => {
-    const payload = draggingLeadRef.current;
-    draggingLeadRef.current = null;
-    if (!payload) return;
-    if (payload.fromStageId === toStageId) return;
-    moveStageMutation.mutate({ id: payload.leadId, to_stage_id: toStageId });
-  };
+  const sources = useMemo(() => sourcesData ?? [], [sourcesData]);
 
   const { data: brokersData } = useQuery({
     queryKey: ["brokers", "list"],
@@ -153,7 +99,8 @@ export default function CrmPage() {
     defaultValues: {
       name: "",
       phone: "",
-      source: "",
+      email: "",
+      source_id: "",
       value: "",
       priority: "2",
       assigned_user_id: "",
@@ -170,7 +117,7 @@ export default function CrmPage() {
     }
   }, [form, stages]);
 
-  const selectedTagIds = filters.tag_ids ?? [];
+  const selectedTagIds = useMemo(() => filters.tag_ids ?? [], [filters.tag_ids]);
   const selectedTags = useMemo(() => tags.filter((t) => selectedTagIds.includes(t.id)), [selectedTagIds, tags]);
 
   const handleToggleTagFilter = (tagId: number) => {
@@ -193,7 +140,8 @@ export default function CrmPage() {
     createLeadMutation.mutate({
       name: values.name.trim(),
       phone: values.phone.trim(),
-      source: values.source?.trim() || null,
+      email: values.email?.trim() || null,
+      source_id: values.source_id ? Number(values.source_id) : null,
       value: parseValue(),
       priority: Number(values.priority) as 1 | 2 | 3,
       assigned_user_id: values.assigned_user_id ? Number(values.assigned_user_id) : null,
@@ -270,14 +218,40 @@ export default function CrmPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Origem</Label>
-                    <Input {...form.register("source")} placeholder="Instagram, OLX, Indicação..." />
+                    <Label>E-mail (opcional)</Label>
+                    <Input type="email" {...form.register("email")} placeholder="cliente@email.com" />
+                    {form.formState.errors.email?.message && (
+                      <div className="text-sm text-red-600">{form.formState.errors.email.message}</div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
                     <Label>Valor estimado</Label>
                     <Input {...form.register("value")} placeholder="0,00" />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Origem</Label>
+                    <Select
+                      value={form.watch("source_id") || "none"}
+                      onValueChange={(v) => form.setValue("source_id", v === "none" ? "" : v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sem origem</SelectItem>
+                        {sources.map((s) => (
+                          <SelectItem key={s.id} value={String(s.id)}>
+                            {s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -456,7 +430,7 @@ export default function CrmPage() {
               </Select>
             </div>
 
-            <div className="md:col-span-2">
+            <div>
               <Select
                 value={String(filters.assigned_user_id ?? "all")}
                 onValueChange={(v) => setFilters((p) => ({ ...p, assigned_user_id: v === "all" ? "all" : Number(v) }))}
@@ -465,10 +439,29 @@ export default function CrmPage() {
                   <SelectValue placeholder="Responsável" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="all">Todos responsáveis</SelectItem>
                   {brokers.map((b) => (
                     <SelectItem key={b.id} value={String(b.id)}>
                       {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Select
+                value={String(filters.source_id ?? "all")}
+                onValueChange={(v) => setFilters((p) => ({ ...p, source_id: v === "all" ? "all" : Number(v) }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Origem" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas origens</SelectItem>
+                  {sources.map((s) => (
+                    <SelectItem key={s.id} value={String(s.id)}>
+                      {s.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -548,6 +541,7 @@ export default function CrmPage() {
                     search: "",
                     status: "all",
                     assigned_user_id: "all",
+                    source_id: "all",
                     period: "this_month",
                     sort: "recent",
                     direction: "desc",
@@ -562,172 +556,31 @@ export default function CrmPage() {
         </CardContent>
       </Card>
 
-      <div className="flex gap-4 overflow-x-auto pb-6">
-        {stages.map((stage) => (
-          <div
-            key={stage.id}
-            className="min-w-[300px] w-[300px] md:min-w-[340px] md:w-[340px]"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={() => onDropOnStage(stage.id)}
-          >
-            <Card className="border border-gray-100 shadow-sm rounded-2xl">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div
-                      className="h-2.5 w-2.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: stage.color ?? "#e5e7eb" }}
-                    />
-                    <CardTitle className="text-sm font-semibold text-[#141414] truncate">{stage.name}</CardTitle>
-                  </div>
-                  <Badge className="bg-gray-100 text-[#777777] border border-gray-200">{(leadsByStageId.get(stage.id) ?? []).length}</Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-3">
-                  {(leadsByStageId.get(stage.id) ?? []).map((lead) => (
-                    <LeadCard
-                      key={lead.id}
-                      lead={lead}
-                      onDragStart={() => onDragStart(lead.id, stage.id)}
-                      onDuplicate={() => duplicateMutation.mutate(lead.id)}
-                      onMarkWon={() => markWonMutation.mutate(lead.id)}
-                      onMarkLost={() => markLostMutation.mutate(lead.id)}
-                    />
-                  ))}
-                  {!isLoadingLeads && (leadsByStageId.get(stage.id) ?? []).length === 0 && (
-                    <div className="text-sm text-[#777777] py-6 text-center">Sem leads</div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        ))}
-
-        {!isLoadingStages && stages.length === 0 && (
-          <Card className="border border-gray-100 shadow-sm rounded-2xl w-full">
-            <CardContent className="p-10 text-center">
-              <div className="text-lg font-semibold text-[#141414] mb-2">Nenhuma etapa configurada</div>
-              <div className="text-sm text-[#777777] max-w-md mx-auto">Crie as etapas do seu pipeline para começar.</div>
-              <Button asChild className="mt-6 gap-2">
-                <Link href="/dashboard/crm/config">
-                  <Settings2 className="h-4 w-4" />
-                  Ir para configurações
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      {isLoadingStages || isLoadingLeads ? (
+        <div className="text-sm text-[#777777] py-12 text-center">Carregando pipeline...</div>
+      ) : stages.length === 0 ? (
+        <Card className="border border-gray-100 shadow-sm rounded-2xl w-full">
+          <CardContent className="p-10 text-center">
+            <div className="text-lg font-semibold text-[#141414] mb-2">Nenhuma etapa configurada</div>
+            <div className="text-sm text-[#777777] max-w-md mx-auto">
+              Crie as etapas do seu pipeline para começar.
+            </div>
+            <Button asChild className="mt-6 gap-2">
+              <Link href="/dashboard/crm/config">
+                <Settings2 className="h-4 w-4" />
+                Ir para configurações
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <KanbanBoard
+          stages={stages}
+          leads={leads}
+          onMove={(leadId, toStageId) => moveStageMutation.mutate({ id: leadId, to_stage_id: toStageId })}
+        />
+      )}
     </>
   );
 }
 
-function LeadCard({
-  lead,
-  onDragStart,
-  onDuplicate,
-  onMarkWon,
-  onMarkLost,
-}: {
-  lead: CrmLead;
-  onDragStart: () => void;
-  onDuplicate: () => void;
-  onMarkWon: () => void;
-  onMarkLost: () => void;
-}) {
-  const phoneDigits = normalizePhoneDigits(lead.phone);
-  const whatsappUrl = phoneDigits ? `https://wa.me/${phoneDigits}` : null;
-
-  const isFollowUpDue = useMemo(() => {
-    if (!lead.next_follow_up_at) return false;
-    const date = new Date(lead.next_follow_up_at);
-    if (Number.isNaN(date.getTime())) return false;
-    return date.getTime() <= Date.now();
-  }, [lead.next_follow_up_at]);
-
-  return (
-    <Card
-      className="border border-gray-100 shadow-sm rounded-2xl hover:shadow-md transition-shadow cursor-grab group"
-      draggable
-      onDragStart={onDragStart}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <Link href={`/dashboard/crm/leads/${lead.id}`} className="min-w-0">
-            <div className="font-semibold text-[#141414] truncate">{lead.name}</div>
-            <div className="text-xs text-[#777777] mt-0.5 flex items-center gap-2 flex-wrap">
-              {lead.source && <span className="truncate max-w-[140px]">{lead.source}</span>}
-              {lead.assigned_user?.name && (
-                <span className="inline-flex items-center gap-1">
-                  <User2 className="h-3 w-3" />
-                  <span className="truncate max-w-[120px]">{lead.assigned_user.name}</span>
-                </span>
-              )}
-            </div>
-          </Link>
-
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            {whatsappUrl && (
-              <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-                <a href={whatsappUrl} target="_blank" rel="noreferrer">
-                  <MessageCircle className="h-4 w-4" />
-                </a>
-              </Button>
-            )}
-            <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-              <Link href={`/dashboard/crm/leads/${lead.id}`}>
-                <ExternalLink className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <div className="text-sm font-semibold text-[#141414]">{formatCurrency(lead.value)}</div>
-          <div className="flex items-center gap-2">
-            {lead.is_hot && (
-              <Badge className="bg-[#FFEDD5] text-[#9A3412] border border-[#FED7AA] gap-1">
-                <Flame className="h-3 w-3" />
-                Quente
-              </Badge>
-            )}
-            {isFollowUpDue && <Badge className="bg-gray-100 text-[#141414] border border-gray-200">Follow-up</Badge>}
-          </div>
-        </div>
-
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-1">
-            {(lead.tags ?? []).slice(0, 3).map((t) => (
-              <Badge key={t.id} variant="secondary" className="rounded-full">
-                {t.name}
-              </Badge>
-            ))}
-            {(lead.tags ?? []).length > 3 && (
-              <Badge variant="secondary" className="rounded-full">
-                +{(lead.tags ?? []).length - 3}
-              </Badge>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="h-8 px-2 opacity-0 group-hover:opacity-100" onClick={onDuplicate}>
-              Duplicar
-            </Button>
-            <Button variant="ghost" size="sm" className="h-8 px-2 opacity-0 group-hover:opacity-100" onClick={onMarkWon}>
-              Ganho
-            </Button>
-            <Button variant="ghost" size="sm" className="h-8 px-2 opacity-0 group-hover:opacity-100" onClick={onMarkLost}>
-              Perdido
-            </Button>
-          </div>
-        </div>
-
-        <div className="mt-3 text-[11px] text-[#777777] flex items-center justify-between">
-          <span>Criado: {formatDateTime(lead.created_at)}</span>
-          <span>Último contato: {formatDateTime(lead.last_interaction_at)}</span>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}

@@ -4,11 +4,29 @@ import { useToast } from "@/hooks/use-toast";
 
 export type CrmPipelineStage = {
   id: number;
+  company_id: number;
   name: string;
   order: number;
   color: string | null;
   is_default: boolean;
+  is_won: boolean;
+  is_lost: boolean;
   leads_count?: number;
+};
+
+export type CrmLeadSource = {
+  id: number;
+  name: string;
+  slug: string;
+  color: string | null;
+  is_active: boolean;
+};
+
+export type CrmLeadLossReason = {
+  id: number;
+  name: string;
+  slug: string;
+  is_active: boolean;
 };
 
 export type CrmTag = {
@@ -19,18 +37,35 @@ export type CrmTag = {
 
 export type CrmLead = {
   id: number;
+  company_id: number;
   name: string;
   phone: string;
+  email?: string | null;
+  cpf?: string | null;
+  profession?: string | null;
   source: string | null;
+  source_id?: number | null;
+  lead_source?: CrmLeadSource | null;
   status: "open" | "won" | "lost";
   priority: 1 | 2 | 3;
   value: string | null;
   pipeline_stage_id: number;
-  pipeline_stage?: { id: number; name: string; order: number; color: string | null } | null;
+  pipeline_stage?: {
+    id: number;
+    name: string;
+    order: number;
+    color: string | null;
+    is_won?: boolean;
+    is_lost?: boolean;
+  } | null;
   assigned_user_id: number | null;
   assigned_user?: { id: number; name: string } | null;
   tags?: CrmTag[];
   notes?: string | null;
+  last_loss_reason_id?: number | null;
+  last_loss_reason?: { id: number; name: string } | null;
+  lost_at?: string | null;
+  won_at?: string | null;
   created_at: string;
   updated_at: string;
   last_interaction_at: string | null;
@@ -72,16 +107,24 @@ export type CrmLeadDetail = CrmLead & {
 export type CrmMetrics = {
   total_leads: number;
   total_value: number;
+  open_leads: number;
   won_leads: number;
+  lost_leads: number;
+  negotiation_value: number;
+  won_value: number;
   conversion_rate: number;
+  avg_ticket: number;
 };
 
 export type CrmLeadsFilters = {
   search?: string;
   status?: "open" | "won" | "lost" | "all";
   assigned_user_id?: number | "all";
+  source_id?: number | "all";
   tag_ids?: number[];
   period?: "this_month" | "last_7_days" | "last_30_days" | "all";
+  min_value?: number;
+  max_value?: number;
   sort?: "recent" | "value" | "priority";
   direction?: "asc" | "desc";
 };
@@ -96,12 +139,16 @@ const buildLeadsQuery = (filters?: CrmLeadsFilters) => {
   if (filters.status && filters.status !== "all") params.set("status", filters.status);
   if (filters.assigned_user_id && filters.assigned_user_id !== "all")
     params.set("assigned_user_id", String(filters.assigned_user_id));
+  if (filters.source_id && filters.source_id !== "all")
+    params.set("source_id", String(filters.source_id));
 
   if (filters.period && filters.period !== "all") params.set("period", filters.period);
   if (filters.sort) params.set("sort", filters.sort);
   if (filters.direction) params.set("direction", filters.direction);
 
   if (filters.tag_ids && filters.tag_ids.length > 0) params.set("tag_ids", filters.tag_ids.join(","));
+  if (filters.min_value) params.set("min_value", String(filters.min_value));
+  if (filters.max_value) params.set("max_value", String(filters.max_value));
 
   const qs = params.toString();
   return qs ? `?${qs}` : "";
@@ -167,7 +214,11 @@ export function useCrmMetrics(period?: CrmLeadsFilters["period"]) {
 type CrmLeadCreatePayload = {
   name: string;
   phone: string;
+  email?: string | null;
+  cpf?: string | null;
+  profession?: string | null;
   source?: string | null;
+  source_id?: number | null;
   status?: "open" | "won" | "lost";
   priority?: 1 | 2 | 3;
   value?: number | null;
@@ -320,9 +371,14 @@ export function useMarkLostCrmLead() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  return useMutation<{ data: CrmLead }, Error, number>({
-    mutationFn: async (id) => api.post(`crm/leads/${id}/mark-lost`).json<{ data: CrmLead }>(),
-    onSuccess: (_, id) => {
+  return useMutation<{ data: CrmLead }, Error, { id: number; loss_reason_id?: number | null }>({
+    mutationFn: async ({ id, loss_reason_id }) =>
+      api
+        .post(`crm/leads/${id}/mark-lost`, {
+          json: loss_reason_id ? { loss_reason_id } : {},
+        })
+        .json<{ data: CrmLead }>(),
+    onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["crm", "leads"] });
       queryClient.invalidateQueries({ queryKey: ["crm", "lead", id] });
       queryClient.invalidateQueries({ queryKey: ["crm", "metrics"] });
@@ -335,6 +391,73 @@ export function useMarkLostCrmLead() {
         variant: "destructive",
       });
     },
+  });
+}
+
+export function useCrmLeadSources() {
+  return useQuery({
+    queryKey: ["crm", "sources"],
+    queryFn: async () => (await api.get("crm/sources").json<{ data: CrmLeadSource[] }>()).data,
+  });
+}
+
+export function useCrmLeadLossReasons() {
+  return useQuery({
+    queryKey: ["crm", "loss-reasons"],
+    queryFn: async () =>
+      (await api.get("crm/loss-reasons").json<{ data: CrmLeadLossReason[] }>()).data,
+  });
+}
+
+export function useCreateCrmLeadSource() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { name: string; color?: string | null; is_active?: boolean }) =>
+      api.post("crm/sources", { json: payload }).json<{ data: CrmLeadSource }>(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["crm", "sources"] }),
+  });
+}
+
+export function useUpdateCrmLeadSource() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id: number; name?: string; color?: string | null; is_active?: boolean }) =>
+      api.put(`crm/sources/${id}`, { json: payload }).json<{ data: CrmLeadSource }>(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["crm", "sources"] }),
+  });
+}
+
+export function useDeleteCrmLeadSource() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.delete(`crm/sources/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["crm", "sources"] }),
+  });
+}
+
+export function useCreateCrmLeadLossReason() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { name: string; is_active?: boolean }) =>
+      api.post("crm/loss-reasons", { json: payload }).json<{ data: CrmLeadLossReason }>(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["crm", "loss-reasons"] }),
+  });
+}
+
+export function useUpdateCrmLeadLossReason() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id: number; name?: string; is_active?: boolean }) =>
+      api.put(`crm/loss-reasons/${id}`, { json: payload }).json<{ data: CrmLeadLossReason }>(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["crm", "loss-reasons"] }),
+  });
+}
+
+export function useDeleteCrmLeadLossReason() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.delete(`crm/loss-reasons/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["crm", "loss-reasons"] }),
   });
 }
 
@@ -450,7 +573,7 @@ export function useCreateCrmPipelineStage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  return useMutation<{ data: CrmPipelineStage }, Error, { name: string; color?: string | null; order?: number }>({
+  return useMutation<{ data: CrmPipelineStage }, Error, { name: string; color?: string | null; order?: number; is_won?: boolean; is_lost?: boolean }>({
     mutationFn: async (payload) =>
       api.post("crm/pipeline-stages", { json: payload }).json<{ data: CrmPipelineStage }>(),
     onSuccess: () => {
@@ -471,7 +594,7 @@ export function useUpdateCrmPipelineStage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  return useMutation<{ data: CrmPipelineStage }, Error, { id: number; name?: string; color?: string | null; order?: number }>({
+  return useMutation<{ data: CrmPipelineStage }, Error, { id: number; name?: string; color?: string | null; order?: number; is_won?: boolean; is_lost?: boolean }>({
     mutationFn: async ({ id, ...payload }) =>
       api.put(`crm/pipeline-stages/${id}`, { json: payload }).json<{ data: CrmPipelineStage }>(),
     onSuccess: () => {
