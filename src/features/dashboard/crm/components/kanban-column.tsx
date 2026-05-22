@@ -57,15 +57,14 @@ export function KanbanColumn({ stage, leads }: KanbanColumnProps) {
           isOver ? "bg-[#9747FF]/10 border-[#9747FF]/50 ring-2 ring-[#9747FF]/20" : "border-transparent",
         )}
       >
-        <AnimatePresence initial={false} mode="popLayout">
-          {leads.map((lead, idx) => (
+        <AnimatePresence initial={false}>
+          {leads.map((lead) => (
             <motion.div
               key={lead.id}
-              layout
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4, scale: 0.96 }}
-              transition={{ duration: 0.18, delay: Math.min(idx * 0.02, 0.15) }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
             >
               <LeadCard lead={lead} />
             </motion.div>
