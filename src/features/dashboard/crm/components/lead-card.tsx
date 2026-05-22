@@ -42,18 +42,22 @@ export function LeadCard({ lead, draggable = true }: LeadCardProps) {
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      {...listeners}
       className={cn(
         "bg-white border border-gray-100 rounded-xl p-3 shadow-sm hover:shadow-md transition-all",
         draggable && "cursor-grab active:cursor-grabbing",
       )}
     >
-      <div className="flex items-start justify-between gap-2" {...attributes} {...listeners}>
+      <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <Link
               href={`/dashboard/crm/leads/${lead.id}`}
-              className="text-sm font-semibold text-[#141414] truncate hover:text-[#9747FF]"
+              className="text-sm font-semibold text-[#141414] truncate hover:text-[#9747FF] cursor-pointer"
               onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
             >
               {lead.name}
             </Link>
@@ -132,6 +136,7 @@ export function LeadCard({ lead, draggable = true }: LeadCardProps) {
                 className="h-7 w-7"
                 onClick={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
               >
                 <a href={`tel:+55${phoneDigits}`} title="Ligar">
                   <Phone className="h-3.5 w-3.5" />
@@ -144,6 +149,7 @@ export function LeadCard({ lead, draggable = true }: LeadCardProps) {
                 className="h-7 w-7 text-emerald-600 hover:text-emerald-700"
                 onClick={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
               >
                 <a
                   href={`https://wa.me/55${phoneDigits}`}
