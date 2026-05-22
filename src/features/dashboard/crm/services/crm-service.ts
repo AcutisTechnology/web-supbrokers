@@ -368,21 +368,43 @@ export function useMoveCrmLeadStage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  return useMutation<{ data: CrmLead }, Error, { id: number; to_stage_id: number }>({
+  type MoveVars = { id: number; to_stage_id: number };
+  type MoveCtx = { snapshots: Array<[readonly unknown[], CrmLead[] | undefined]> };
+
+  return useMutation<{ data: CrmLead }, Error, MoveVars, MoveCtx>({
     mutationFn: async ({ id, to_stage_id }) =>
       api.post(`crm/leads/${id}/move`, { json: { to_stage_id } }).json<{ data: CrmLead }>(),
-    onSuccess: (_, vars) => {
-      queryClient.invalidateQueries({ queryKey: ["crm", "leads"] });
-      queryClient.invalidateQueries({ queryKey: ["crm", "lead", vars.id] });
-      queryClient.invalidateQueries({ queryKey: ["crm", "pipeline-stages"] });
-      toast({ title: "Etapa atualizada!" });
+    onMutate: async ({ id, to_stage_id }) => {
+      await queryClient.cancelQueries({ queryKey: ["crm", "leads"] });
+
+      const snapshots = queryClient.getQueriesData<CrmLead[]>({ queryKey: ["crm", "leads"] });
+
+      snapshots.forEach(([key, data]) => {
+        if (!data) return;
+        const updated = data.map((l) =>
+          l.id === id ? { ...l, pipeline_stage_id: to_stage_id } : l,
+        );
+        queryClient.setQueryData(key, updated);
+      });
+
+      return { snapshots };
     },
-    onError: () => {
+    onError: (_, __, ctx) => {
+      ctx?.snapshots.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
       toast({
         title: "Erro ao mover lead",
         description: "Ocorreu um erro ao atualizar a etapa. Tente novamente.",
         variant: "destructive",
       });
+    },
+    onSettled: (_, error, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["crm", "leads"] });
+      queryClient.invalidateQueries({ queryKey: ["crm", "lead", vars.id] });
+      if (!error) {
+        queryClient.invalidateQueries({ queryKey: ["crm", "metrics"] });
+      }
     },
   });
 }
