@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Calendar, CheckCircle2, Clock, RotateCcw, Trash2 } from "lucide-react";
+import { Calendar, CalendarClock, CheckCircle2, Clock, RotateCcw, Trash2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+
+import { EmptyState } from "@/components/ui/empty-state";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -88,9 +91,15 @@ export function LeadActivitiesPanel({ leadId, activities }: Props) {
             {pending.length > 0 && (
               <div className="text-xs uppercase tracking-wide text-[#777777]">Pendentes</div>
             )}
+            <AnimatePresence initial={false} mode="popLayout">
             {pending.map((a) => (
-              <div
+              <motion.div
                 key={a.id}
+                layout
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: 12 }}
+                transition={{ duration: 0.18 }}
                 className={`p-4 rounded-2xl border ${
                   a.is_overdue ? "border-rose-200 bg-rose-50/50" : "border-gray-100"
                 }`}
@@ -143,8 +152,9 @@ export function LeadActivitiesPanel({ leadId, activities }: Props) {
                     </Button>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
+            </AnimatePresence>
 
             {done.length > 0 && (
               <div className="text-xs uppercase tracking-wide text-[#777777] mt-4">Concluídas</div>
@@ -181,7 +191,11 @@ export function LeadActivitiesPanel({ leadId, activities }: Props) {
             ))}
 
             {activities.length === 0 && (
-              <div className="text-sm text-[#777777] py-6 text-center">Nenhuma atividade.</div>
+              <EmptyState
+                icon={<CalendarClock className="h-6 w-6 text-[#9747FF]" />}
+                title="Nenhuma atividade agendada"
+                description="Use o formulário ao lado para criar a primeira atividade deste lead."
+              />
             )}
           </div>
         </CardContent>

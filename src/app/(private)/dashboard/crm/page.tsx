@@ -29,6 +29,9 @@ import {
   useMoveCrmLeadStage,
 } from "@/features/dashboard/crm/services/crm-service";
 import { KanbanBoard } from "@/features/dashboard/crm/components/kanban-board";
+import { KanbanSkeleton } from "@/features/dashboard/crm/components/kanban-skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Users } from "lucide-react";
 
 type Broker = {
   id: number;
@@ -607,20 +610,33 @@ export default function CrmPage() {
       </Card>
 
       {isLoadingStages || isLoadingLeads ? (
-        <div className="text-sm text-[#777777] py-12 text-center">Carregando pipeline...</div>
+        <KanbanSkeleton columns={Math.max(stages.length || 5, 4)} />
       ) : stages.length === 0 ? (
         <Card className="border border-gray-100 shadow-sm rounded-2xl w-full">
-          <CardContent className="p-10 text-center">
-            <div className="text-lg font-semibold text-[#141414] mb-2">Nenhuma etapa configurada</div>
-            <div className="text-sm text-[#777777] max-w-md mx-auto">
-              Crie as etapas do seu pipeline para começar.
+          <CardContent className="p-2">
+            <EmptyState
+              icon={<Settings2 className="h-6 w-6 text-[#9747FF]" />}
+              title="Nenhuma etapa configurada"
+              description="Crie as etapas do seu pipeline para começar a organizar seus leads."
+            />
+            <div className="flex justify-center pb-6">
+              <Button asChild className="gap-2">
+                <Link href="/dashboard/crm/config">
+                  <Settings2 className="h-4 w-4" />
+                  Ir para configurações
+                </Link>
+              </Button>
             </div>
-            <Button asChild className="mt-6 gap-2">
-              <Link href="/dashboard/crm/config">
-                <Settings2 className="h-4 w-4" />
-                Ir para configurações
-              </Link>
-            </Button>
+          </CardContent>
+        </Card>
+      ) : leads.length === 0 ? (
+        <Card className="border border-gray-100 shadow-sm rounded-2xl w-full">
+          <CardContent className="p-2">
+            <EmptyState
+              icon={<Users className="h-6 w-6 text-[#9747FF]" />}
+              title="Nenhum lead encontrado"
+              description="Ajuste os filtros acima ou cadastre o primeiro lead do seu pipeline."
+            />
           </CardContent>
         </Card>
       ) : (

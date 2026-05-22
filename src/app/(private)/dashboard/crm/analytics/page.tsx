@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Bar,
   BarChart,
@@ -19,6 +21,7 @@ import {
   YAxis,
 } from "recharts";
 import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import {
   CrmAnalyticsPeriod,
   useCrmBrokerRanking,
@@ -27,7 +30,7 @@ import {
   useCrmMetrics,
   useCrmTimeline,
 } from "@/features/dashboard/crm/services/crm-service";
-import { Award, TrendingUp, Filter, Target } from "lucide-react";
+import { Award, BarChart3, TrendingUp, Filter, Target } from "lucide-react";
 import Link from "next/link";
 
 const PERIOD_OPTIONS: { value: CrmAnalyticsPeriod; label: string }[] = [
@@ -48,11 +51,11 @@ const formatDate = (iso: string) => {
 export default function CrmAnalyticsPage() {
   const [period, setPeriod] = useState<CrmAnalyticsPeriod>("this_month");
 
-  const { data: metrics } = useCrmMetrics(period === "this_year" ? "last_30_days" : period);
-  const { data: funnel } = useCrmFunnel(period);
-  const { data: conversion } = useCrmConversion(period);
-  const { data: ranking } = useCrmBrokerRanking(period);
-  const { data: timeline } = useCrmTimeline(period);
+  const { data: metrics, isLoading: loadingMetrics } = useCrmMetrics(period === "this_year" ? "last_30_days" : period);
+  const { data: funnel, isLoading: loadingFunnel } = useCrmFunnel(period);
+  const { data: conversion, isLoading: loadingConversion } = useCrmConversion(period);
+  const { data: ranking, isLoading: loadingRanking } = useCrmBrokerRanking(period);
+  const { data: timeline, isLoading: loadingTimeline } = useCrmTimeline(period);
 
   const funnelChartData = useMemo(
     () =>
@@ -105,41 +108,40 @@ export default function CrmAnalyticsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border border-gray-100 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs text-[#777777] font-medium">Leads no período</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#141414]">{metrics?.total_leads ?? 0}</div>
-            </CardContent>
-          </Card>
-          <Card className="border border-gray-100 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs text-[#777777] font-medium">Ganhos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-emerald-600">{metrics?.won_leads ?? 0}</div>
-              <div className="text-xs text-[#777777]">{formatCurrency(metrics?.won_value ?? 0)}</div>
-            </CardContent>
-          </Card>
-          <Card className="border border-gray-100 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs text-[#777777] font-medium">Conversão</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#141414]">{metrics?.conversion_rate ?? 0}%</div>
-            </CardContent>
-          </Card>
-          <Card className="border border-gray-100 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs text-[#777777] font-medium">Ticket médio</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#141414]">{formatCurrency(metrics?.avg_ticket ?? 0)}</div>
-            </CardContent>
-          </Card>
-        </div>
+        <motion.div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+          initial="hidden"
+          animate="show"
+          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }}
+        >
+          {[
+            { label: "Leads no período", value: metrics?.total_leads ?? 0 },
+            { label: "Ganhos", value: metrics?.won_leads ?? 0, sub: formatCurrency(metrics?.won_value ?? 0), color: "text-emerald-600" },
+            { label: "Conversão", value: `${metrics?.conversion_rate ?? 0}%` },
+            { label: "Ticket médio", value: formatCurrency(metrics?.avg_ticket ?? 0) },
+          ].map((kpi, i) => (
+            <motion.div
+              key={i}
+              variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}
+            >
+              <Card className="border border-gray-100 shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs text-[#777777] font-medium">{kpi.label}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loadingMetrics ? (
+                    <Skeleton className="h-8 w-20" />
+                  ) : (
+                    <>
+                      <div className={`text-2xl font-bold ${kpi.color ?? "text-[#141414]"}`}>{kpi.value}</div>
+                      {kpi.sub && <div className="text-xs text-[#777777]">{kpi.sub}</div>}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </motion.div>
 
         <Tabs defaultValue="funnel">
           <TabsList>
@@ -163,8 +165,14 @@ export default function CrmAnalyticsPage() {
                 <CardTitle className="text-base">Distribuição por etapa</CardTitle>
               </CardHeader>
               <CardContent>
-                {funnelChartData.length === 0 ? (
-                  <div className="text-sm text-[#777777] py-8 text-center">Sem dados no período.</div>
+                {loadingFunnel ? (
+                  <Skeleton className="h-[320px] w-full" />
+                ) : funnelChartData.length === 0 ? (
+                  <EmptyState
+                    icon={<BarChart3 className="h-6 w-6 text-[#9747FF]" />}
+                    title="Sem dados no período"
+                    description="Não há leads neste recorte. Tente expandir o período no filtro acima."
+                  />
                 ) : (
                   <ResponsiveContainer width="100%" height={320}>
                     <BarChart data={funnelChartData} layout="vertical" margin={{ left: 20 }}>
@@ -188,8 +196,18 @@ export default function CrmAnalyticsPage() {
                 <CardTitle className="text-base">Conversão entre etapas</CardTitle>
               </CardHeader>
               <CardContent>
-                {(conversion?.rows.length ?? 0) === 0 ? (
-                  <div className="text-sm text-[#777777] py-4">Sem movimentações no período.</div>
+                {loadingConversion ? (
+                  <div className="space-y-2">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <Skeleton key={i} className="h-9 w-full" />
+                    ))}
+                  </div>
+                ) : (conversion?.rows.length ?? 0) === 0 ? (
+                  <EmptyState
+                    icon={<Target className="h-6 w-6 text-[#9747FF]" />}
+                    title="Sem movimentações"
+                    description="Quando leads mudarem de etapa, a conversão entre elas aparecerá aqui."
+                  />
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -242,8 +260,14 @@ export default function CrmAnalyticsPage() {
                 <CardTitle className="text-base">Leads ao longo do tempo</CardTitle>
               </CardHeader>
               <CardContent>
-                {timelineChartData.length === 0 ? (
-                  <div className="text-sm text-[#777777] py-8 text-center">Sem dados no período.</div>
+                {loadingTimeline ? (
+                  <Skeleton className="h-[320px] w-full" />
+                ) : timelineChartData.length === 0 ? (
+                  <EmptyState
+                    icon={<TrendingUp className="h-6 w-6 text-[#9747FF]" />}
+                    title="Sem dados no período"
+                    description="Crie ou movimente leads para visualizar a evolução temporal."
+                  />
                 ) : (
                   <ResponsiveContainer width="100%" height={320}>
                     <LineChart data={timelineChartData}>
@@ -268,8 +292,18 @@ export default function CrmAnalyticsPage() {
                 <CardTitle className="text-base">Ranking de corretores</CardTitle>
               </CardHeader>
               <CardContent>
-                {(ranking?.rows.length ?? 0) === 0 ? (
-                  <div className="text-sm text-[#777777] py-4">Sem dados no período.</div>
+                {loadingRanking ? (
+                  <div className="space-y-2">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <Skeleton key={i} className="h-9 w-full" />
+                    ))}
+                  </div>
+                ) : (ranking?.rows.length ?? 0) === 0 ? (
+                  <EmptyState
+                    icon={<Award className="h-6 w-6 text-[#9747FF]" />}
+                    title="Sem dados no período"
+                    description="Atribua leads a corretores para começar a montar o ranking."
+                  />
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">

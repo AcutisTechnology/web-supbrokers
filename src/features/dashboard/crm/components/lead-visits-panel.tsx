@@ -5,6 +5,8 @@ import { CalendarCheck, ExternalLink } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useVisits } from "@/features/dashboard/visitas/services/visits-service";
 
 interface Props {
@@ -46,9 +48,17 @@ export function LeadVisitsPanel({ leadId }: Props) {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="text-sm text-[#777777] py-6 text-center">Carregando...</div>
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 rounded-2xl" />
+            ))}
+          </div>
         ) : visits.length === 0 ? (
-          <div className="text-sm text-[#777777] py-6 text-center">Nenhuma visita vinculada a este lead.</div>
+          <EmptyState
+            icon={<CalendarCheck className="h-6 w-6 text-[#9747FF]" />}
+            title="Nenhuma visita vinculada"
+            description="Quando uma visita for criada para este lead, ela aparecerá aqui."
+          />
         ) : (
           <div className="space-y-2">
             {visits.map((v) => (

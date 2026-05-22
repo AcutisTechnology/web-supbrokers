@@ -7,6 +7,8 @@ import { CrmLeadProposal } from "@/features/dashboard/crm/services/crm-service";
 import { FileText, Plus } from "lucide-react";
 import Link from "next/link";
 
+import { EmptyState } from "@/components/ui/empty-state";
+
 const STATUS_STYLES: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
   shared: "bg-blue-100 text-blue-700",
@@ -53,9 +55,11 @@ export function LeadProposalsPanel({ proposals }: { proposals: CrmLeadProposal[]
       </CardHeader>
       <CardContent>
         {proposals.length === 0 ? (
-          <div className="text-sm text-[#777777] py-4">
-            Nenhuma proposta vinculada. Crie uma proposta e informe este lead para vinculá-la.
-          </div>
+          <EmptyState
+            icon={<FileText className="h-6 w-6 text-[#9747FF]" />}
+            title="Nenhuma proposta vinculada"
+            description="Crie uma proposta e informe este lead para vinculá-la automaticamente."
+          />
         ) : (
           <div className="space-y-3">
             {proposals.map((p) => (

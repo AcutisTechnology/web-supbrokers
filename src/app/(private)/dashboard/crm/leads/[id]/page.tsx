@@ -26,6 +26,7 @@ import {
   useUpdateCrmLead,
   useUploadCrmLeadAttachment,
 } from "@/features/dashboard/crm/services/crm-service";
+import { Skeleton } from "@/components/ui/skeleton";
 import { LeadActivitiesPanel } from "@/features/dashboard/crm/components/lead-activities-panel";
 import { LeadVisitsPanel } from "@/features/dashboard/crm/components/lead-visits-panel";
 import { LeadPropertiesPanel } from "@/features/dashboard/crm/components/lead-properties-panel";
@@ -168,6 +169,29 @@ export default function CrmLeadDetailPage() {
     );
   }
 
+  if (isLoading && !lead) {
+    return (
+      <>
+        <TopNav title_secondary="CRM" />
+        <div className="flex items-center gap-3 mb-6">
+          <Skeleton className="h-9 w-9 rounded-md" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-7 w-64" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+          <Skeleton className="h-9 w-28" />
+          <Skeleton className="h-9 w-32" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          <Skeleton className="h-64 lg:col-span-2 rounded-2xl" />
+          <Skeleton className="h-64 rounded-2xl" />
+        </div>
+        <Skeleton className="h-12 w-full rounded-2xl mb-4" />
+        <Skeleton className="h-96 w-full rounded-2xl" />
+      </>
+    );
+  }
+
   return (
     <>
       <TopNav title_secondary="CRM" />
@@ -220,7 +244,7 @@ export default function CrmLeadDetailPage() {
           {lead && lead.status !== "won" && (
             <Button
               type="button"
-              className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+              className="gap-2 bg-emerald-600 hover:bg-emerald-700 transition-transform hover:scale-[1.02] active:scale-[0.98]"
               onClick={() => markWonMutation.mutate(lead.id)}
               disabled={markWonMutation.isPending}
             >

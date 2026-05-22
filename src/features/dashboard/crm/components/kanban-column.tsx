@@ -1,6 +1,8 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
+import { AnimatePresence, motion } from "framer-motion";
+import { Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CrmLead, CrmPipelineStage } from "../services/crm-service";
 import { LeadCard } from "./lead-card";
@@ -22,9 +24,9 @@ export function KanbanColumn({ stage, leads }: KanbanColumnProps) {
   const totalValue = leads.reduce((acc, lead) => acc + Number(lead.value ?? 0), 0);
 
   return (
-    <div className="min-w-[280px] max-w-[300px] flex-shrink-0">
+    <div className="w-[85vw] sm:w-[280px] md:min-w-[280px] md:max-w-[300px] flex-shrink-0 snap-start md:snap-align-none">
       <div
-        className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl"
+        className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl sticky top-0 z-10 backdrop-blur"
         style={{
           backgroundColor: `${stage.color ?? "#9747FF"}1a`,
           borderLeft: `4px solid ${stage.color ?? "#9747FF"}`,
@@ -52,14 +54,29 @@ export function KanbanColumn({ stage, leads }: KanbanColumnProps) {
         ref={setNodeRef}
         className={cn(
           "min-h-[400px] rounded-xl p-2 space-y-2 transition-colors border border-dashed",
-          isOver ? "bg-[#9747FF]/5 border-[#9747FF]/40" : "border-transparent",
+          isOver ? "bg-[#9747FF]/10 border-[#9747FF]/50 ring-2 ring-[#9747FF]/20" : "border-transparent",
         )}
       >
-        {leads.map((lead) => (
-          <LeadCard key={lead.id} lead={lead} />
-        ))}
+        <AnimatePresence initial={false} mode="popLayout">
+          {leads.map((lead, idx) => (
+            <motion.div
+              key={lead.id}
+              layout
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4, scale: 0.96 }}
+              transition={{ duration: 0.18, delay: Math.min(idx * 0.02, 0.15) }}
+            >
+              <LeadCard lead={lead} />
+            </motion.div>
+          ))}
+        </AnimatePresence>
         {leads.length === 0 && (
-          <div className="text-center text-xs text-[#777777] py-6">Sem leads nesta etapa</div>
+          <div className="flex flex-col items-center justify-center text-center py-8 text-[#777777]">
+            <Inbox className="h-6 w-6 mb-2 opacity-40" />
+            <div className="text-xs">Sem leads nesta etapa</div>
+            <div className="text-[10px] mt-1 opacity-70">Arraste cards até aqui</div>
+          </div>
         )}
       </div>
 

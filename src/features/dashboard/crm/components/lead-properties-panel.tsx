@@ -16,6 +16,10 @@ import { useProperties } from "@/features/dashboard/imoveis/services/property-se
 import { Home, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const INTEREST_LABELS: Record<string, string> = {
   compra: "Compra",
@@ -114,13 +118,30 @@ export function LeadPropertiesPanel({ leadId }: { leadId: number }) {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-sm text-[#777777] py-4">Carregando...</div>
+            <div className="space-y-2">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 rounded-lg" />
+              ))}
+            </div>
           ) : (properties?.length ?? 0) === 0 ? (
-            <div className="text-sm text-[#777777] py-4">Nenhum imóvel vinculado.</div>
+            <EmptyState
+              icon={<Home className="h-6 w-6 text-[#9747FF]" />}
+              title="Nenhum imóvel vinculado"
+              description="Selecione um imóvel acima para vincular este lead ao seu interesse."
+            />
           ) : (
             <div className="space-y-3">
+              <AnimatePresence initial={false} mode="popLayout">
               {(properties ?? []).map((p: LeadProperty) => (
-                <div key={p.id} className="flex items-start justify-between gap-3 border rounded-lg p-3">
+                <motion.div
+                  key={p.id}
+                  layout
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: 12 }}
+                  transition={{ duration: 0.16 }}
+                  className="flex items-start justify-between gap-3 border rounded-lg p-3"
+                >
                   <div className="flex items-start gap-3">
                     <Home className="h-5 w-5 text-[#9747FF] mt-1" />
                     <div>
@@ -153,8 +174,9 @@ export function LeadPropertiesPanel({ leadId }: { leadId: number }) {
                   >
                     <Trash2 className="h-4 w-4 text-rose-500" />
                   </Button>
-                </div>
+                </motion.div>
               ))}
+              </AnimatePresence>
             </div>
           )}
         </CardContent>
