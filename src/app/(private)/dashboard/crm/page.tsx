@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/shared/configs/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { Filter, Plus, Search, Settings2 } from "lucide-react";
+import { BarChart3, Filter, Plus, Search, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -181,6 +181,12 @@ export default function CrmPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <Button asChild variant="ghost" className="gap-2">
+            <Link href="/dashboard/crm/analytics">
+              <BarChart3 className="h-4 w-4" />
+              Dashboard
+            </Link>
+          </Button>
           <Button asChild variant="ghost" className="gap-2">
             <Link href="/dashboard/crm/config">
               <Settings2 className="h-4 w-4" />

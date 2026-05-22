@@ -130,12 +130,36 @@ export type CrmLeadActivity = {
   updated_at: string;
 };
 
+export type CrmLeadProposal = {
+  id: number;
+  uuid: string;
+  code: string | null;
+  status: string;
+  property: { id: number; title: string | null; code: string | null } | null;
+  total_value: string | null;
+  created_at: string;
+  accepted_at: string | null;
+  rejected_at: string | null;
+};
+
 export type CrmLeadDetail = CrmLead & {
   interactions: CrmLeadInteraction[];
   stage_movements: CrmLeadStageMovement[];
   attachments: CrmLeadAttachment[];
   activities?: CrmLeadActivity[];
   pending_activities_count?: number;
+  properties?: Array<{
+    id: number;
+    code: string | null;
+    title: string | null;
+    street: string | null;
+    neighborhood: string | null;
+    value: string | null;
+    rent: boolean | null;
+    sale: boolean | null;
+    pivot?: { interest_type: string | null; notes: string | null; created_at: string | null } | null;
+  }>;
+  proposals?: CrmLeadProposal[];
 };
 
 export type CrmMetrics = {
@@ -832,6 +856,177 @@ export function useMarkDoneCrmLeadActivity() {
       toast({
         title: "Erro ao concluir atividade",
         description: "Ocorreu um erro. Tente novamente.",
+        variant: "destructive",
+      }),
+  });
+}
+
+// ─── analytics ────────────────────────────────────────────────────────────────
+
+export type CrmAnalyticsPeriod = "this_month" | "last_7_days" | "last_30_days" | "this_year";
+
+export type CrmFunnelRow = {
+  stage_id: number;
+  name: string;
+  color: string | null;
+  order: number;
+  is_won: boolean;
+  is_lost: boolean;
+  count: number;
+  value: number;
+};
+
+export type CrmConversionRow = {
+  stage_id: number;
+  name: string;
+  order: number;
+  entries: number;
+  next_stage_id: number | null;
+  next_stage_name: string | null;
+  next_entries: number | null;
+  conversion_rate: number | null;
+};
+
+export type CrmBrokerRankingRow = {
+  user_id: number;
+  name: string;
+  total_leads: number;
+  won_leads: number;
+  lost_leads: number;
+  open_leads: number;
+  won_value: number;
+  conversion_rate: number;
+};
+
+export type CrmTimelineRow = {
+  date: string;
+  created: number;
+  won: number;
+  lost: number;
+};
+
+const buildAnalyticsQuery = (period?: CrmAnalyticsPeriod, from?: string, to?: string) => {
+  const params = new URLSearchParams();
+  if (period) params.set("period", period);
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  const q = params.toString();
+  return q ? `?${q}` : "";
+};
+
+export function useCrmFunnel(period: CrmAnalyticsPeriod = "this_month") {
+  return useQuery({
+    queryKey: ["crm", "analytics", "funnel", period],
+    queryFn: async () =>
+      api.get(`crm/analytics/funnel${buildAnalyticsQuery(period)}`).json<{
+        data: { period: { from: string; to: string }; stages: CrmFunnelRow[] };
+      }>(),
+    select: (r) => r.data,
+  });
+}
+
+export function useCrmConversion(period: CrmAnalyticsPeriod = "this_month") {
+  return useQuery({
+    queryKey: ["crm", "analytics", "conversion", period],
+    queryFn: async () =>
+      api.get(`crm/analytics/conversion${buildAnalyticsQuery(period)}`).json<{
+        data: { period: { from: string; to: string }; rows: CrmConversionRow[] };
+      }>(),
+    select: (r) => r.data,
+  });
+}
+
+export function useCrmBrokerRanking(period: CrmAnalyticsPeriod = "this_month") {
+  return useQuery({
+    queryKey: ["crm", "analytics", "broker-ranking", period],
+    queryFn: async () =>
+      api.get(`crm/analytics/broker-ranking${buildAnalyticsQuery(period)}`).json<{
+        data: { period: { from: string; to: string }; rows: CrmBrokerRankingRow[] };
+      }>(),
+    select: (r) => r.data,
+  });
+}
+
+export function useCrmTimeline(period: CrmAnalyticsPeriod = "this_month") {
+  return useQuery({
+    queryKey: ["crm", "analytics", "timeline", period],
+    queryFn: async () =>
+      api.get(`crm/analytics/timeline${buildAnalyticsQuery(period)}`).json<{
+        data: { period: { from: string; to: string }; rows: CrmTimelineRow[] };
+      }>(),
+    select: (r) => r.data,
+  });
+}
+
+// ─── lead properties ──────────────────────────────────────────────────────────
+
+export type LeadProperty = {
+  id: number;
+  code: string | null;
+  title: string | null;
+  street: string | null;
+  neighborhood: string | null;
+  bedrooms: number | null;
+  garages: number | null;
+  size: string | null;
+  value: string | null;
+  rent: boolean | null;
+  sale: boolean | null;
+  active: boolean;
+  pivot?: { interest_type: string | null; notes: string | null; created_at: string | null } | null;
+};
+
+export function useLeadProperties(leadId: number | null) {
+  return useQuery({
+    queryKey: ["crm", "lead", leadId, "properties"],
+    queryFn: async () =>
+      api.get(`crm/leads/${leadId}/properties`).json<{ data: LeadProperty[] }>(),
+    enabled: !!leadId,
+    select: (r) => r.data,
+  });
+}
+
+export function useAttachLeadProperty() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { data: LeadProperty },
+    Error,
+    { leadId: number; property_id: number; interest_type?: string; notes?: string }
+  >({
+    mutationFn: async ({ leadId, ...payload }) =>
+      api.post(`crm/leads/${leadId}/properties`, { json: payload }).json<{ data: LeadProperty }>(),
+    onSuccess: (_, { leadId }) => {
+      queryClient.invalidateQueries({ queryKey: ["crm", "lead", leadId] });
+      queryClient.invalidateQueries({ queryKey: ["crm", "lead", leadId, "properties"] });
+      toast({ title: "Imóvel vinculado ao lead." });
+    },
+    onError: () =>
+      toast({
+        title: "Erro ao vincular imóvel",
+        description: "Tente novamente.",
+        variant: "destructive",
+      }),
+  });
+}
+
+export function useDetachLeadProperty() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation<unknown, Error, { leadId: number; propertyId: number }>({
+    mutationFn: async ({ leadId, propertyId }) =>
+      api.delete(`crm/leads/${leadId}/properties/${propertyId}`).json(),
+    onSuccess: (_, { leadId }) => {
+      queryClient.invalidateQueries({ queryKey: ["crm", "lead", leadId] });
+      queryClient.invalidateQueries({ queryKey: ["crm", "lead", leadId, "properties"] });
+      toast({ title: "Imóvel desvinculado." });
+    },
+    onError: () =>
+      toast({
+        title: "Erro ao desvincular",
+        description: "Tente novamente.",
         variant: "destructive",
       }),
   });

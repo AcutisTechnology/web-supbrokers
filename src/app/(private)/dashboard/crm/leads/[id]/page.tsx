@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/shared/configs/api";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CalendarCheck, CalendarClock, CheckCircle2, FileUp, History, ListTodo, MessageCircle, MessageSquareText, Phone, Tag, User2, XCircle } from "lucide-react";
+import { ArrowLeft, CalendarCheck, CalendarClock, CheckCircle2, FileText, FileUp, History, Home, ListTodo, MessageCircle, MessageSquareText, Phone, Tag, User2, XCircle } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import {
@@ -28,6 +28,8 @@ import {
 } from "@/features/dashboard/crm/services/crm-service";
 import { LeadActivitiesPanel } from "@/features/dashboard/crm/components/lead-activities-panel";
 import { LeadVisitsPanel } from "@/features/dashboard/crm/components/lead-visits-panel";
+import { LeadPropertiesPanel } from "@/features/dashboard/crm/components/lead-properties-panel";
+import { LeadProposalsPanel } from "@/features/dashboard/crm/components/lead-proposals-panel";
 import { MarkLostDialog } from "@/features/dashboard/crm/components/mark-lost-dialog";
 
 type Broker = {
@@ -403,6 +405,24 @@ export default function CrmLeadDetailPage() {
             <CalendarCheck className="h-4 w-4" />
             Visitas
           </TabsTrigger>
+          <TabsTrigger value="properties" className="gap-2">
+            <Home className="h-4 w-4" />
+            Imóveis
+            {(lead?.properties?.length ?? 0) > 0 && (
+              <Badge className="ml-1 bg-[#9747FF]/10 text-[#9747FF] border border-[#9747FF]/20">
+                {lead!.properties!.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="proposals" className="gap-2">
+            <FileText className="h-4 w-4" />
+            Propostas
+            {(lead?.proposals?.length ?? 0) > 0 && (
+              <Badge className="ml-1 bg-[#9747FF]/10 text-[#9747FF] border border-[#9747FF]/20">
+                {lead!.proposals!.length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="notes" className="gap-2">
             <MessageSquareText className="h-4 w-4" />
             Observações
@@ -483,6 +503,14 @@ export default function CrmLeadDetailPage() {
 
         <TabsContent value="visits" className="mt-6">
           <LeadVisitsPanel leadId={leadId} />
+        </TabsContent>
+
+        <TabsContent value="properties" className="mt-6">
+          <LeadPropertiesPanel leadId={leadId} />
+        </TabsContent>
+
+        <TabsContent value="proposals" className="mt-6">
+          <LeadProposalsPanel proposals={lead?.proposals ?? []} />
         </TabsContent>
 
         <TabsContent value="notes" className="mt-6">
