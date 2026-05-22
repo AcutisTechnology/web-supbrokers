@@ -69,6 +69,9 @@ export default function CrmPage() {
     sort: "recent",
     direction: "desc",
     tag_ids: [],
+    is_hot: false,
+    no_activity: false,
+    no_contact_days: undefined,
   });
 
   const { data: leadsData, isLoading: isLoadingLeads } = useCrmLeads(filters);
@@ -531,6 +534,44 @@ export default function CrmPage() {
                     {t.name}
                   </Badge>
                 ))}
+
+                <Button
+                  type="button"
+                  variant={filters.is_hot ? "default" : "outline"}
+                  size="sm"
+                  className="gap-1"
+                  onClick={() => setFilters((p) => ({ ...p, is_hot: !p.is_hot }))}
+                  title="Leads em aberto sem contato há 3+ dias"
+                >
+                  🔥 Quente
+                </Button>
+
+                <Button
+                  type="button"
+                  variant={filters.no_activity ? "default" : "outline"}
+                  size="sm"
+                  className="gap-1"
+                  onClick={() => setFilters((p) => ({ ...p, no_activity: !p.no_activity }))}
+                  title="Leads sem atividades pendentes"
+                >
+                  Sem atividade
+                </Button>
+
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs text-[#777777]">Sem contato há</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder="-"
+                    value={filters.no_contact_days ?? ""}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setFilters((p) => ({ ...p, no_contact_days: v === "" ? undefined : Number(v) }));
+                    }}
+                    className="h-9 w-16"
+                  />
+                  <span className="text-xs text-[#777777]">dias</span>
+                </div>
               </div>
 
               <Button
@@ -546,6 +587,9 @@ export default function CrmPage() {
                     sort: "recent",
                     direction: "desc",
                     tag_ids: [],
+                    is_hot: false,
+                    no_activity: false,
+                    no_contact_days: undefined,
                   })
                 }
               >

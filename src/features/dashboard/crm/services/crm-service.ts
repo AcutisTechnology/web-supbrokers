@@ -76,7 +76,7 @@ export type CrmLead = {
 
 export type CrmLeadInteraction = {
   id: number;
-  type: "call" | "whatsapp" | "note" | "email";
+  type: "call" | "whatsapp" | "note" | "email" | "meeting" | "visit" | "task";
   description: string;
   created_at: string;
 };
@@ -98,10 +98,44 @@ export type CrmLeadAttachment = {
   created_at: string;
 };
 
+export const CRM_ACTIVITY_TYPES = ["call", "whatsapp", "meeting", "visit", "email", "task"] as const;
+export type CrmActivityType = (typeof CRM_ACTIVITY_TYPES)[number];
+
+export const CRM_ACTIVITY_TYPE_LABELS: Record<CrmActivityType, string> = {
+  call: "Ligação",
+  whatsapp: "WhatsApp",
+  meeting: "Reunião",
+  visit: "Visita",
+  email: "E-mail",
+  task: "Tarefa",
+};
+
+export type CrmLeadActivity = {
+  id: number;
+  uuid: string;
+  lead_id: number;
+  type: CrmActivityType;
+  title: string;
+  description: string | null;
+  scheduled_for: string | null;
+  done_at: string | null;
+  is_done: boolean;
+  is_overdue: boolean;
+  responsible_user_id: number | null;
+  responsible?: { id: number; name: string } | null;
+  created_by_user_id: number | null;
+  created_by?: { id: number; name: string } | null;
+  lead?: { id: number; name: string; phone: string } | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type CrmLeadDetail = CrmLead & {
   interactions: CrmLeadInteraction[];
   stage_movements: CrmLeadStageMovement[];
   attachments: CrmLeadAttachment[];
+  activities?: CrmLeadActivity[];
+  pending_activities_count?: number;
 };
 
 export type CrmMetrics = {
@@ -125,6 +159,9 @@ export type CrmLeadsFilters = {
   period?: "this_month" | "last_7_days" | "last_30_days" | "all";
   min_value?: number;
   max_value?: number;
+  no_contact_days?: number;
+  no_activity?: boolean;
+  is_hot?: boolean;
   sort?: "recent" | "value" | "priority";
   direction?: "asc" | "desc";
 };
@@ -149,6 +186,9 @@ const buildLeadsQuery = (filters?: CrmLeadsFilters) => {
   if (filters.tag_ids && filters.tag_ids.length > 0) params.set("tag_ids", filters.tag_ids.join(","));
   if (filters.min_value) params.set("min_value", String(filters.min_value));
   if (filters.max_value) params.set("max_value", String(filters.max_value));
+  if (filters.no_contact_days) params.set("no_contact_days", String(filters.no_contact_days));
+  if (filters.no_activity) params.set("no_activity", "1");
+  if (filters.is_hot) params.set("is_hot", "1");
 
   const qs = params.toString();
   return qs ? `?${qs}` : "";
@@ -653,5 +693,167 @@ export function useReorderCrmPipelineStages() {
         variant: "destructive",
       });
     },
+  });
+}
+
+// ─── FASE 2: atividades agendadas ─────────────────────────────────────────────
+
+type ActivityListFilters = {
+  lead_id?: number;
+  responsible_user_id?: number;
+  type?: CrmActivityType;
+  status?: "pending" | "done" | "overdue";
+  date_from?: string;
+  date_to?: string;
+  order?: "soonest" | "latest" | "recent";
+  per_page?: number;
+};
+
+const buildActivityQs = (filters?: ActivityListFilters): string => {
+  if (!filters) return "";
+  const params = new URLSearchParams();
+  if (filters.lead_id) params.set("lead_id", String(filters.lead_id));
+  if (filters.responsible_user_id) params.set("responsible_user_id", String(filters.responsible_user_id));
+  if (filters.type) params.set("type", filters.type);
+  if (filters.status) params.set("status", filters.status);
+  if (filters.date_from) params.set("date_from", filters.date_from);
+  if (filters.date_to) params.set("date_to", filters.date_to);
+  if (filters.order) params.set("order", filters.order);
+  if (filters.per_page) params.set("per_page", String(filters.per_page));
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+};
+
+export function useCrmLeadActivities(filters?: ActivityListFilters) {
+  const qs = buildActivityQs(filters);
+  return useQuery({
+    queryKey: ["crm", "activities", filters ?? {}],
+    queryFn: async () => (await api.get(`crm/activities${qs}`).json<{ data: CrmLeadActivity[] }>()).data,
+  });
+}
+
+type CreateActivityPayload = {
+  lead_id: number;
+  type: CrmActivityType;
+  title: string;
+  description?: string | null;
+  scheduled_for: string;
+  responsible_user_id?: number | null;
+};
+
+type UpdateActivityPayload = Partial<Omit<CreateActivityPayload, "lead_id">>;
+
+export function useCreateCrmLeadActivity() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation<{ data: CrmLeadActivity }, Error, CreateActivityPayload>({
+    mutationFn: async (payload) => api.post("crm/activities", { json: payload }).json<{ data: CrmLeadActivity }>(),
+    onSuccess: (_, payload) => {
+      queryClient.invalidateQueries({ queryKey: ["crm", "activities"] });
+      queryClient.invalidateQueries({ queryKey: ["crm", "lead", payload.lead_id] });
+      queryClient.invalidateQueries({ queryKey: ["crm", "leads"] });
+      toast({ title: "Atividade agendada!" });
+    },
+    onError: () =>
+      toast({
+        title: "Erro ao agendar atividade",
+        description: "Ocorreu um erro ao salvar. Tente novamente.",
+        variant: "destructive",
+      }),
+  });
+}
+
+export function useUpdateCrmLeadActivity() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation<{ data: CrmLeadActivity }, Error, { id: number; leadId?: number; payload: UpdateActivityPayload }>({
+    mutationFn: async ({ id, payload }) =>
+      api.put(`crm/activities/${id}`, { json: payload }).json<{ data: CrmLeadActivity }>(),
+    onSuccess: (_, { leadId }) => {
+      queryClient.invalidateQueries({ queryKey: ["crm", "activities"] });
+      if (leadId) queryClient.invalidateQueries({ queryKey: ["crm", "lead", leadId] });
+      toast({ title: "Atividade atualizada!" });
+    },
+    onError: () =>
+      toast({
+        title: "Erro ao atualizar atividade",
+        description: "Ocorreu um erro ao salvar. Tente novamente.",
+        variant: "destructive",
+      }),
+  });
+}
+
+export function useDeleteCrmLeadActivity() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, { id: number; leadId?: number }>({
+    mutationFn: async ({ id }) => {
+      await api.delete(`crm/activities/${id}`).json();
+    },
+    onSuccess: (_, { leadId }) => {
+      queryClient.invalidateQueries({ queryKey: ["crm", "activities"] });
+      if (leadId) queryClient.invalidateQueries({ queryKey: ["crm", "lead", leadId] });
+      toast({ title: "Atividade removida." });
+    },
+    onError: () =>
+      toast({
+        title: "Erro ao remover atividade",
+        description: "Ocorreu um erro. Tente novamente.",
+        variant: "destructive",
+      }),
+  });
+}
+
+export function useMarkDoneCrmLeadActivity() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { data: CrmLeadActivity },
+    Error,
+    { id: number; leadId?: number; interaction?: { type?: CrmActivityType; description?: string } | null }
+  >({
+    mutationFn: async ({ id, interaction }) =>
+      api
+        .post(`crm/activities/${id}/mark-done`, {
+          json: interaction ? { interaction } : {},
+        })
+        .json<{ data: CrmLeadActivity }>(),
+    onSuccess: (_, { leadId }) => {
+      queryClient.invalidateQueries({ queryKey: ["crm", "activities"] });
+      queryClient.invalidateQueries({ queryKey: ["crm", "leads"] });
+      if (leadId) queryClient.invalidateQueries({ queryKey: ["crm", "lead", leadId] });
+      toast({ title: "Atividade concluída!" });
+    },
+    onError: () =>
+      toast({
+        title: "Erro ao concluir atividade",
+        description: "Ocorreu um erro. Tente novamente.",
+        variant: "destructive",
+      }),
+  });
+}
+
+export function useReopenCrmLeadActivity() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation<{ data: CrmLeadActivity }, Error, { id: number; leadId?: number }>({
+    mutationFn: async ({ id }) =>
+      api.post(`crm/activities/${id}/reopen`).json<{ data: CrmLeadActivity }>(),
+    onSuccess: (_, { leadId }) => {
+      queryClient.invalidateQueries({ queryKey: ["crm", "activities"] });
+      if (leadId) queryClient.invalidateQueries({ queryKey: ["crm", "lead", leadId] });
+      toast({ title: "Atividade reaberta." });
+    },
+    onError: () =>
+      toast({
+        title: "Erro ao reabrir atividade",
+        description: "Ocorreu um erro. Tente novamente.",
+        variant: "destructive",
+      }),
   });
 }
