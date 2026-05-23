@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { PROPERTY_FALLBACK_IMAGE } from '@/lib/property';
 
 interface PropertyGalleryProps {
   images: Array<{ name: string; url: string }>;
@@ -10,9 +11,7 @@ export function PropertyGallery({ images }: PropertyGalleryProps) {
   const [showModal, setShowModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Use a fallback image if no images are provided
   const hasImages = images && images.length > 0;
-  const fallbackImage = 'https://www.cimentoitambe.com.br/wp-content/uploads/2024/04/OAS1-1.jpg';
 
   const openModal = (index: number) => {
     setCurrentImageIndex(index);
@@ -45,7 +44,7 @@ export function PropertyGallery({ images }: PropertyGalleryProps) {
   if (!hasImages) {
     return (
       <div className="relative rounded-lg overflow-hidden aspect-[16/9] bg-gray-100">
-        <Image src={fallbackImage} alt="Imóvel sem imagem" fill className="object-cover" />
+        <Image src={PROPERTY_FALLBACK_IMAGE} alt="Imóvel sem imagem" fill className="object-cover" />
       </div>
     );
   }

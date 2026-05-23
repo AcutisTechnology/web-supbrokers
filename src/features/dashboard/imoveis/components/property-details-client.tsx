@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { PROPERTY_FALLBACK_IMAGE } from "@/lib/property";
 import { 
   Carousel,
   CarouselContent,
@@ -368,8 +369,13 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
                   )}
                 </div>
               ) : (
-                <div className="h-[300px] md:h-[400px] bg-gray-100 flex items-center justify-center">
-                  <p className="text-gray-500">Sem imagens disponíveis</p>
+                <div className="relative h-[300px] md:h-[400px] w-full">
+                  <Image
+                    src={PROPERTY_FALLBACK_IMAGE}
+                    alt="Imóvel sem imagem"
+                    fill
+                    className="object-cover"
+                  />
                 </div>
               )}
             </div>

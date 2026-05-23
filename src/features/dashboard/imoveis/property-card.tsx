@@ -1,6 +1,7 @@
 import { Users, Bath, Home, MapPin, Tag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
+import { PROPERTY_FALLBACK_IMAGE } from "@/lib/property";
 import { Property } from "./services/property-service";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -25,10 +26,9 @@ interface PropertyCardProps {
 export function PropertyCard({ property, onDelete }: PropertyCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   
-  // Obter a primeira imagem ou usar um placeholder
   const imageUrl = property.attachments && property.attachments.length > 0
     ? property.attachments[0].url
-    : "/placeholder.svg";
+    : PROPERTY_FALLBACK_IMAGE;
 
   // Formatar o valor para exibição
   const formattedValue = property.value 
