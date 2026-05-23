@@ -27,6 +27,7 @@ import Image from "next/image";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/shared/hooks/auth/use-auth";
+import { PROPERTY_FALLBACK_IMAGE } from "@/lib/property";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -307,18 +308,16 @@ export default function DashboardPage() {
                     <h3 className="font-medium text-xs sm:text-sm text-[#969696] mb-3">Imóvel mais recente</h3>
                     <div className="bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
                       <div className="h-32 sm:h-40 relative">
-                        {latestProperty.attachments && latestProperty.attachments.length > 0 ? (
-                          <Image
-                            src={latestProperty.attachments[0].url}
-                            alt={latestProperty.title}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                            <Building2 className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
-                          </div>
-                        )}
+                        <Image
+                          src={
+                            latestProperty.attachments && latestProperty.attachments.length > 0
+                              ? latestProperty.attachments[0].url
+                              : PROPERTY_FALLBACK_IMAGE
+                          }
+                          alt={latestProperty.title}
+                          fill
+                          className="object-cover"
+                        />
                         <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-white px-2 py-1 rounded text-xs font-medium">
                           {latestProperty.rent ? 'Aluguel' : 'Venda'}
                         </div>
