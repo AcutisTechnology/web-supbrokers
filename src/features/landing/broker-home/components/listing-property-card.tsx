@@ -3,6 +3,8 @@
 import { motion } from 'framer-motion';
 import { Bath, BedDouble, Car, Heart, Maximize2, MessageCircle, Share2 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import type { Badge, MockProperty } from '../data/mock';
 import { useFavorites } from '../hooks/use-favorites';
@@ -37,6 +39,17 @@ export function ListingPropertyCard({
   const [imageLoaded, setImageLoaded] = useState(false);
   const fav = isFavorite(property.id);
 
+  // Constrói link para detalhes preservando contexto preview/produção
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const inPreview = pathname?.startsWith('/preview-home') ?? false;
+  const broker = searchParams.get('broker');
+  const detailHref = inPreview
+    ? `/preview-home/imovel/${property.id}${broker ? `?broker=${broker}` : ''}`
+    : broker
+      ? `/${broker}/imovel/${property.id}`
+      : '#';
+
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -67,6 +80,11 @@ export function ListingPropertyCard({
       transition={{ type: 'spring', stiffness: 320, damping: 24 }}
       className="group relative bg-white rounded-2xl overflow-hidden border border-black/[0.05] shadow-[0_2px_20px_-12px_rgba(15,8,32,0.1)] hover:shadow-[0_30px_50px_-20px_rgba(15,8,32,0.25)] transition-shadow duration-500 flex flex-col"
     >
+      <Link
+        href={detailHref}
+        aria-label={`Ver detalhes de ${property.title}`}
+        className="absolute inset-0 z-[1]"
+      />
       {/* Image area */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
         {!imageLoaded && (
@@ -112,7 +130,7 @@ export function ListingPropertyCard({
             toggle(property.id);
           }}
           aria-label={fav ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 backdrop-blur flex items-center justify-center hover:bg-white shadow-md transition-transform hover:scale-110"
+          className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/95 backdrop-blur flex items-center justify-center hover:bg-white shadow-md transition-transform hover:scale-110"
         >
           <Heart
             className={`w-4 h-4 transition-colors ${
@@ -122,7 +140,7 @@ export function ListingPropertyCard({
         </button>
 
         {/* Hover actions bottom */}
-        <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+        <div className="absolute bottom-3 right-3 z-10 flex gap-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
           {whatsappNumber && (
             <button
               onClick={handleWhatsapp}
