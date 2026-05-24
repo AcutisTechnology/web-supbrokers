@@ -1,24 +1,25 @@
 'use client';
 
-import {
-  PROPERTY_TYPE_LABELS,
-  type PropertyType,
-} from '@/features/dashboard/imoveis/novo/schemas/property-schema';
 import { useBrokerProperties } from '@/features/landing/services/broker-service';
-import { ArrowLeft, Loader2, MapPin, SearchX } from 'lucide-react';
+import { ChevronRight, Home, SearchX, SlidersHorizontal } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useBrokerHomeData } from '../hooks/use-broker-home-data';
 import { useSearchFilters } from '../hooks/use-search-filters';
 import { apiToCardProperty } from '../lib/map-property';
 import { FloatingWhatsapp } from './floating-whatsapp';
+import { ListingPagination } from './listing-pagination';
+import { ListingPropertyCard } from './listing-property-card';
+import { ListingSort } from './listing-sort';
 import { PremiumFooter } from './premium-footer';
 import { PremiumHeader } from './premium-header';
-import { PremiumPropertyCard } from './premium-property-card';
+import { PropertySearchForm } from './property-search-form';
 
 interface SearchResultsProps {
   brokerSlug: string | null;
 }
+
+const PAGE_SIZE = 12;
 
 export function SearchResults({ brokerSlug }: SearchResultsProps) {
   const meta = useBrokerHomeData(brokerSlug);
@@ -26,13 +27,34 @@ export function SearchResults({ brokerSlug }: SearchResultsProps) {
 
   const propertiesQuery = useBrokerProperties(brokerSlug ?? '', filters);
   const data = propertiesQuery.data?.data;
-  const items = data?.all ?? [];
+  const items = useMemo(
+    () => (data?.all ?? []).map(apiToCardProperty),
+    [data]
+  );
 
-  // Chips de filtros ativos
-  const activeChips = useMemo(() => buildChips(filters), [filters]);
+  // Paginação client-side
+  const [page, setPage] = useState(1);
+  useEffect(() => {
+    // Resetar para a primeira página quando os filtros mudam (qty de resultados muda)
+    setPage(1);
+  }, [items.length, filtersCount]);
+
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const visible = useMemo(
+    () => items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [items, page]
+  );
 
   const isLoading = propertiesQuery.isLoading;
   const error = propertiesQuery.error;
+
+  const dynamicTitle = useMemo(() => {
+    if (filters.city) return `Imóveis em ${filters.city}`;
+    if (filters.neighborhood) return `Imóveis em ${filters.neighborhood}`;
+    if (filters.purpose === 'sale') return 'Imóveis à venda';
+    if (filters.purpose === 'rent') return 'Imóveis para alugar';
+    return 'Todos os imóveis';
+  }, [filters.city, filters.neighborhood, filters.purpose]);
 
   const homeHref = brokerSlug ? `/${brokerSlug}` : '/preview-home';
 
@@ -44,88 +66,129 @@ export function SearchResults({ brokerSlug }: SearchResultsProps) {
         brokerSlug={meta.brokerSlug}
         whatsappNumber={meta.whatsappNumber}
         menu={meta.menu}
+        theme="light"
       />
 
-      <main className="pt-28 pb-20">
+      <main className="pt-24 md:pt-28 pb-24">
         <div className="container mx-auto px-4 md:px-8">
-          {/* Breadcrumb / voltar */}
-          <Link
-            href={homeHref}
-            className="inline-flex items-center gap-2 text-sm text-[#0F0820]/60 hover:text-[#0F0820] transition-colors mb-6"
+          {/* Breadcrumb */}
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 text-xs text-[#0F0820]/50 mb-5"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar para o início
-          </Link>
-
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-            <div>
-              <p className="text-xs tracking-[0.25em] uppercase text-[#9747FF] mb-2">
-                Resultados da busca
-              </p>
-              <h1 className="font-display text-3xl md:text-5xl tracking-tight leading-[1.05]">
-                {isLoading
-                  ? 'Buscando…'
-                  : `${items.length} ${items.length === 1 ? 'imóvel encontrado' : 'imóveis encontrados'}`}
-              </h1>
-            </div>
-
-            {filtersCount > 0 && (
-              <button
-                onClick={clearFilters}
-                className="text-sm text-[#9747FF] hover:underline whitespace-nowrap"
-              >
-                Limpar filtros ({filtersCount})
-              </button>
+            <Link
+              href={homeHref}
+              className="inline-flex items-center gap-1 hover:text-[#0F0820] transition-colors"
+            >
+              <Home className="w-3 h-3" />
+              Início
+            </Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-[#0F0820]/80">Imóveis</span>
+            {(filters.city || filters.neighborhood) && (
+              <>
+                <ChevronRight className="w-3 h-3" />
+                <span className="text-[#0F0820]/80">
+                  {filters.city ?? filters.neighborhood}
+                </span>
+              </>
             )}
+          </nav>
+
+          {/* Search bar (mesmo componente usado na Home, theme=light) */}
+          <PropertySearchForm
+            theme="light"
+            citySuggestions={meta.citySuggestions}
+            neighborhoodSuggestions={meta.neighborhoodSuggestions}
+            submitLabel="Refinar Busca"
+            onSubmit={() =>
+              document
+                .getElementById('listing-results')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+          />
+
+          {/* Title + sort */}
+          <div
+            id="listing-results"
+            className="mt-10 md:mt-14 flex flex-col md:flex-row md:items-end md:justify-between gap-4 scroll-mt-24"
+          >
+            <div>
+              <h1 className="font-display text-3xl md:text-4xl tracking-tight leading-[1.05] text-[#0F0820]">
+                {dynamicTitle}
+              </h1>
+              <p className="mt-2 text-sm text-[#0F0820]/60">
+                {isLoading ? (
+                  'Buscando imóveis…'
+                ) : items.length === 0 ? (
+                  'Nenhum imóvel encontrado com esses filtros.'
+                ) : (
+                  <>
+                    Encontramos{' '}
+                    <strong className="text-[#0F0820]">{items.length}</strong>{' '}
+                    {items.length === 1
+                      ? 'propriedade exclusiva disponível.'
+                      : 'propriedades exclusivas disponíveis.'}
+                  </>
+                )}
+              </p>
+            </div>
+            <div className="flex items-center justify-between md:justify-end gap-4">
+              <ListingSort />
+            </div>
           </div>
 
-          {/* Chips */}
-          {activeChips.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-8">
-              {activeChips.map(c => (
-                <span
-                  key={c.key}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-black/10 text-xs text-[#0F0820]"
-                >
-                  <span className="text-[#9747FF]">{c.label}:</span>
-                  <span className="font-medium">{c.value}</span>
-                </span>
-              ))}
-            </div>
-          )}
+          {/* Results */}
+          <section className="mt-8">
+            {isLoading ? (
+              <LoadingGrid />
+            ) : error ? (
+              <EmptyState
+                icon={<SearchX className="w-7 h-7" />}
+                title="Erro ao carregar imóveis"
+                description="Tente novamente em instantes."
+              />
+            ) : items.length === 0 ? (
+              <EmptyState
+                icon={<SearchX className="w-7 h-7" />}
+                title="Nenhum imóvel encontrado"
+                description="Ajuste os filtros ou amplie sua busca para ver mais resultados."
+                action={
+                  filtersCount > 0 ? (
+                    <button
+                      onClick={clearFilters}
+                      className="mt-5 inline-flex items-center gap-2 bg-[#0F0820] text-white px-5 py-2.5 rounded-full text-sm hover:bg-[#1f1240] transition-colors"
+                    >
+                      <SlidersHorizontal className="w-4 h-4" />
+                      Limpar filtros ({filtersCount})
+                    </button>
+                  ) : null
+                }
+              />
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6">
+                  {visible.map(p => (
+                    <ListingPropertyCard
+                      key={p.id}
+                      property={p}
+                      whatsappNumber={meta.whatsappNumber}
+                    />
+                  ))}
+                </div>
 
-          {/* Conteúdo */}
-          {isLoading ? (
-            <LoadingGrid />
-          ) : error ? (
-            <EmptyState
-              title="Erro ao buscar imóveis"
-              description="Tente novamente em instantes."
-            />
-          ) : items.length === 0 ? (
-            <EmptyState
-              title="Nenhum imóvel encontrado"
-              description="Ajuste os filtros e tente novamente."
-              action={
-                <button
-                  onClick={clearFilters}
-                  className="mt-4 inline-flex items-center gap-2 bg-[#0F0820] text-white px-5 py-2.5 rounded-full text-sm hover:bg-[#1f1240] transition-colors"
-                >
-                  Limpar filtros
-                </button>
-              }
-            />
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-              {items.map(p => (
-                <PremiumPropertyCard
-                  key={p.slug}
-                  property={apiToCardProperty(p)}
-                />
-              ))}
-            </div>
-          )}
+                {totalPages > 1 && (
+                  <div className="mt-12">
+                    <ListingPagination
+                      page={page}
+                      totalPages={totalPages}
+                      onChange={setPage}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </section>
         </div>
       </main>
 
@@ -135,89 +198,38 @@ export function SearchResults({ brokerSlug }: SearchResultsProps) {
   );
 }
 
-function buildChips(filters: ReturnType<typeof useSearchFilters>['filters']) {
-  const chips: { key: string; label: string; value: string }[] = [];
-
-  if (filters.purpose) {
-    chips.push({
-      key: 'purpose',
-      label: 'Finalidade',
-      value:
-        filters.purpose === 'sale'
-          ? 'Comprar'
-          : filters.purpose === 'rent'
-            ? 'Alugar'
-            : 'Todos',
-    });
-  }
-  if (filters.city) chips.push({ key: 'city', label: 'Cidade', value: filters.city });
-  if (filters.neighborhood)
-    chips.push({ key: 'neighborhood', label: 'Bairro', value: filters.neighborhood });
-  if (filters.q) chips.push({ key: 'q', label: 'Busca', value: filters.q });
-  if (filters.property_type) {
-    const types = Array.isArray(filters.property_type)
-      ? filters.property_type
-      : [filters.property_type];
-    chips.push({
-      key: 'property_type',
-      label: 'Tipo',
-      value: types.map(t => PROPERTY_TYPE_LABELS[t as PropertyType] ?? t).join(', '),
-    });
-  }
-  if (filters.bedrooms_min)
-    chips.push({ key: 'bedrooms_min', label: 'Quartos', value: `${filters.bedrooms_min}+` });
-  if (filters.suites_min)
-    chips.push({ key: 'suites_min', label: 'Suítes', value: `${filters.suites_min}+` });
-  if (filters.bathrooms_min)
-    chips.push({ key: 'bathrooms_min', label: 'Banheiros', value: `${filters.bathrooms_min}+` });
-  if (filters.garages_min)
-    chips.push({ key: 'garages_min', label: 'Vagas', value: `${filters.garages_min}+` });
-  if (filters.size_min || filters.size_max) {
-    const min = filters.size_min ?? 0;
-    const max = filters.size_max ?? '∞';
-    chips.push({ key: 'size', label: 'Área', value: `${min}–${max} m²` });
-  }
-  if (filters.price_min || filters.price_max) {
-    const min = filters.price_min ? `R$ ${filters.price_min.toLocaleString('pt-BR')}` : 'R$ 0';
-    const max = filters.price_max
-      ? `R$ ${filters.price_max.toLocaleString('pt-BR')}`
-      : '∞';
-    chips.push({ key: 'price', label: 'Preço', value: `${min} – ${max}` });
-  }
-  if (filters.code) chips.push({ key: 'code', label: 'Código', value: filters.code });
-
-  return chips;
-}
+/* -------------------- Helpers -------------------- */
 
 function LoadingGrid() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-      {Array.from({ length: 6 }).map((_, i) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6">
+      {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
-          className="bg-white rounded-3xl overflow-hidden border border-black/[0.06] animate-pulse"
+          className="bg-white rounded-2xl overflow-hidden border border-black/[0.05] animate-pulse"
         >
           <div className="aspect-[4/3] bg-gray-200" />
-          <div className="p-5 space-y-3">
-            <div className="h-4 bg-gray-200 rounded w-3/4" />
-            <div className="h-3 bg-gray-200 rounded w-1/2" />
+          <div className="p-4 md:p-5 space-y-3">
+            <div className="h-3 bg-gray-200 rounded w-1/3" />
+            <div className="h-5 bg-gray-200 rounded w-3/4" />
             <div className="h-3 bg-gray-200 rounded w-2/3" />
+            <div className="pt-3 border-t border-black/[0.06]">
+              <div className="h-6 bg-gray-200 rounded w-1/2" />
+            </div>
           </div>
         </div>
       ))}
-      <div className="col-span-full flex items-center justify-center pt-6 text-[#0F0820]/40">
-        <Loader2 className="w-5 h-5 animate-spin mr-2" />
-        Carregando imóveis…
-      </div>
     </div>
   );
 }
 
 function EmptyState({
+  icon,
   title,
   description,
   action,
 }: {
+  icon: React.ReactNode;
   title: string;
   description: string;
   action?: React.ReactNode;
@@ -225,13 +237,10 @@ function EmptyState({
   return (
     <div className="text-center py-20 bg-white rounded-3xl border border-black/5">
       <div className="inline-flex w-16 h-16 rounded-full bg-[#FAFAF7] items-center justify-center mb-5 text-[#9747FF]">
-        <SearchX className="w-7 h-7" />
+        {icon}
       </div>
       <h2 className="font-display text-2xl text-[#0F0820] mb-2">{title}</h2>
-      <p className="text-[#777] flex items-center justify-center gap-2">
-        <MapPin className="w-4 h-4" />
-        {description}
-      </p>
+      <p className="text-[#0F0820]/60 max-w-md mx-auto">{description}</p>
       {action}
     </div>
   );
