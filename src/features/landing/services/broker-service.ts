@@ -6,16 +6,23 @@ export interface Property {
   title: string;
   description: string;
   slug: string;
+  property_type: string | null;
   street: string;
   neighborhood: string;
+  city: string | null;
+  state: string | null;
+  zipcode: string | null;
   size: number;
   bedrooms: number;
+  suites: number;
+  bathrooms: number;
   garages: number;
   rent: boolean;
   sale: boolean;
   value: string;
+  value_raw?: number;
   iptu_value: string;
-  condominium_value?: string; // Valor do condomínio (opcional)
+  condominium_value?: string;
   code: string;
   qr_code: string;
   active: boolean;
@@ -126,20 +133,64 @@ export function getSelectedProperty(): PropertyDetailResponse | null {
   return null;
 }
 
+export interface BrokerSearchFilters {
+  q?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  property_type?: string | string[];
+  purpose?: "sale" | "rent" | "both";
+  bedrooms_min?: number;
+  suites_min?: number;
+  bathrooms_min?: number;
+  garages_min?: number;
+  size_min?: number;
+  size_max?: number;
+  price_min?: number;
+  price_max?: number;
+  code?: string;
+  sort?: "newest" | "oldest" | "price_asc" | "price_desc" | "size_desc";
+}
+
+function buildFilterQuery(filters: BrokerSearchFilters = {}): string {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+    if (Array.isArray(value)) {
+      if (value.length === 0) return;
+      params.append(key, value.join(","));
+    } else {
+      params.append(key, String(value));
+    }
+  });
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
 /**
- * Hook para buscar os imóveis de um corretor
+ * Hook para buscar os imóveis de um corretor com filtros opcionais.
+ * Os filtros são serializados em query string e enviados ao endpoint público,
+ * que aplica filtros server-side em todos os buckets (all/highlighted/sale/rent).
+ *
  * @param slug Slug do corretor
+ * @param filters Filtros opcionais
  */
-export function useBrokerProperties(slug: string) {
+export function useBrokerProperties(
+  slug: string,
+  filters: BrokerSearchFilters = {}
+) {
+  const query = buildFilterQuery(filters);
   return useQuery({
-    queryKey: ["broker-properties", slug],
+    queryKey: ["broker-properties", slug, query],
     queryFn: async () => {
-      const response = await api.get(`${slug}/properties`).json<BrokerPropertiesResponse>();
+      const response = await api
+        .get(`${slug}/properties${query}`)
+        .json<BrokerPropertiesResponse>();
       return response;
     },
     enabled: !!slug,
     retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }
 
