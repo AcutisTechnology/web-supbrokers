@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Home, Bed, Car, Ruler } from "lucide-react";
+import { Home, Bed, Car, Ruler, Bath, ShowerHead } from "lucide-react";
 import { PropertyFormValues } from "../../schemas/property-schema";
 
 interface PropertyDetailsStepProps {
@@ -58,6 +58,70 @@ export function PropertyDetailsStep({ form }: PropertyDetailsStepProps) {
                   <SelectItem value="3">3 quartos</SelectItem>
                   <SelectItem value="4">4 quartos</SelectItem>
                   <SelectItem value="5">5+ quartos</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="suites"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-base font-medium flex items-center gap-2">
+                <ShowerHead className="w-4 h-4" />
+                Suítes
+              </FormLabel>
+              <Select
+                onValueChange={(value) => field.onChange(parseInt(value))}
+                value={field.value?.toString() ?? "0"}
+              >
+                <FormControl>
+                  <SelectTrigger className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="0">Sem suíte</SelectItem>
+                  <SelectItem value="1">1 suíte</SelectItem>
+                  <SelectItem value="2">2 suítes</SelectItem>
+                  <SelectItem value="3">3 suítes</SelectItem>
+                  <SelectItem value="4">4 suítes</SelectItem>
+                  <SelectItem value="5">5+ suítes</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="bathrooms"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-base font-medium flex items-center gap-2">
+                <Bath className="w-4 h-4" />
+                Banheiros
+              </FormLabel>
+              <Select
+                onValueChange={(value) => field.onChange(parseInt(value))}
+                value={field.value?.toString() ?? "0"}
+              >
+                <FormControl>
+                  <SelectTrigger className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="0">Sem banheiro</SelectItem>
+                  <SelectItem value="1">1 banheiro</SelectItem>
+                  <SelectItem value="2">2 banheiros</SelectItem>
+                  <SelectItem value="3">3 banheiros</SelectItem>
+                  <SelectItem value="4">4 banheiros</SelectItem>
+                  <SelectItem value="5">5+ banheiros</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />

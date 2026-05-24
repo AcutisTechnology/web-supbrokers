@@ -16,7 +16,10 @@ import {
   Star,
   Building2
 } from "lucide-react";
-import { PropertyFormValues } from "../../schemas/property-schema";
+import {
+  PROPERTY_TYPE_LABELS,
+  PropertyFormValues,
+} from "../../schemas/property-schema";
 import { formatCurrency } from "@/lib/utils";
 
 interface ReviewStepProps {
@@ -100,6 +103,14 @@ export function ReviewStep({ form }: ReviewStepProps) {
                 <span className="text-sm font-medium text-gray-600">Código:</span>
                 <p className="font-medium">{formData.code || "Não informado"}</p>
               </div>
+              {formData.property_type && (
+                <div>
+                  <span className="text-sm font-medium text-gray-600">Tipo do imóvel:</span>
+                  <p className="font-medium">
+                    {PROPERTY_TYPE_LABELS[formData.property_type]}
+                  </p>
+                </div>
+              )}
               <div>
                 <span className="text-sm font-medium text-gray-600">Finalidade:</span>
                 <Badge variant={isRent ? "secondary" : "default"} className="ml-2">
@@ -130,11 +141,26 @@ export function ReviewStep({ form }: ReviewStepProps) {
                 <span className="text-sm font-medium text-gray-600">Endereço:</span>
                 <p className="font-medium text-lg">{formData.street || "Não informado"}</p>
               </div>
-              <div>
-                <span className="text-sm font-medium text-gray-600">Bairro:</span>
-                <p className="font-medium">{formData.neighborhood || "Não informado"}</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div>
+                  <span className="text-sm font-medium text-gray-600">Bairro:</span>
+                  <p className="font-medium">{formData.neighborhood || "—"}</p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-600">Cidade:</span>
+                  <p className="font-medium">{formData.city || "—"}</p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-600">UF:</span>
+                  <p className="font-medium">{formData.state || "—"}</p>
+                </div>
+                {formData.zipcode && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">CEP:</span>
+                    <p className="font-medium">{formData.zipcode}</p>
+                  </div>
+                )}
               </div>
-
             </CardContent>
           </Card>
         );
@@ -149,13 +175,25 @@ export function ReviewStep({ form }: ReviewStepProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <Bed className="w-5 h-5 text-purple-600" />
                     <span className="text-3xl font-bold text-purple-600">{formData.bedrooms || 0}</span>
                   </div>
                   <span className="text-sm text-gray-600 font-medium">Quartos</span>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <span className="text-3xl font-bold text-purple-600">{formData.suites || 0}</span>
+                  </div>
+                  <span className="text-sm text-gray-600 font-medium">Suítes</span>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <span className="text-3xl font-bold text-purple-600">{formData.bathrooms || 0}</span>
+                  </div>
+                  <span className="text-sm text-gray-600 font-medium">Banheiros</span>
                 </div>
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center justify-center gap-2 mb-2">
@@ -171,7 +209,6 @@ export function ReviewStep({ form }: ReviewStepProps) {
                   </div>
                   <span className="text-sm text-gray-600 font-medium">Vagas</span>
                 </div>
-
               </div>
             </CardContent>
           </Card>
@@ -253,10 +290,10 @@ export function ReviewStep({ form }: ReviewStepProps) {
                     <p className="text-xl font-bold">{formatCurrency(formData.iptu_value)}</p>
                   </div>
                 )}
-                {formData.condo_value > 0 && (
+                {formData.condominium_value > 0 && (
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <span className="text-sm font-medium text-gray-600 block mb-1">Condomínio:</span>
-                    <p className="text-xl font-bold">{formatCurrency(formData.condo_value)}</p>
+                    <p className="text-xl font-bold">{formatCurrency(formData.condominium_value)}</p>
                   </div>
                 )}
               </div>

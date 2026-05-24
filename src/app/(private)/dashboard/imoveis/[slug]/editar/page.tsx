@@ -5,7 +5,11 @@ import { TopNav } from "@/features/dashboard/imoveis/top-nav";
 import { PropertyForm } from "@/features/dashboard/imoveis/novo/components/property-form";
 import { useProperty } from "@/features/dashboard/imoveis/services/property-service";
 import { LoadingState } from "@/components/ui/loading-state";
-import { PropertyFormValues } from "@/features/dashboard/imoveis/novo/schemas/property-schema";
+import {
+  PROPERTY_TYPES,
+  PropertyFormValues,
+  type PropertyType,
+} from "@/features/dashboard/imoveis/novo/schemas/property-schema";
 import React, { useMemo } from "react";
 
 // Componente cliente que recebe o slug como propriedade
@@ -38,25 +42,38 @@ function EditPropertyClient({ slug }: { slug: string }) {
       return parseFloat(value.replace(/[R$\s.]/g, '').replace(',', '.')) || 0;
     };
 
+    const propertyType =
+      property.property_type &&
+      (PROPERTY_TYPES as readonly string[]).includes(property.property_type)
+        ? (property.property_type as PropertyType)
+        : null;
+
     return {
       title: property.title,
       description: property.description,
+      property_type: propertyType,
       street: property.street,
       neighborhood: property.neighborhood,
+      city: property.city ?? "",
+      state: property.state ?? "",
+      zipcode: property.zipcode ?? "",
       size: property.size,
       bedrooms: property.bedrooms,
+      suites: property.suites ?? 0,
+      bathrooms: property.bathrooms ?? 0,
       garages: property.garages,
       rent: property.rent ? 1 : 0,
       sale: property.sale ? 1 : 0,
       value: parseMoneyValue(property.value),
       iptu_value: parseMoneyValue(property.iptu_value),
+      condominium_value: parseMoneyValue(property.condominium_value),
       code: property.code,
       qr_code: property.qr_code,
       active: property.active ? 1 : 0,
       characteristics: property.characteristics?.map(c => c.text) || [],
       purpose,
     };
-  }, [property]); // Dependência apenas do property
+  }, [property]);
 
   return (
     <>

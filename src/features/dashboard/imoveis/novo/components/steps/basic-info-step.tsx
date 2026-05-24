@@ -19,7 +19,11 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
-import { PropertyFormValues } from "../../schemas/property-schema";
+import {
+  PROPERTY_TYPES,
+  PROPERTY_TYPE_LABELS,
+  PropertyFormValues,
+} from "../../schemas/property-schema";
 
 interface BasicInfoStepProps {
   form: UseFormReturn<PropertyFormValues>;
@@ -91,7 +95,7 @@ export function BasicInfoStep({ form }: BasicInfoStepProps) {
           )}
         />
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-3">
           <FormField
             control={form.control}
             name="purpose"
@@ -113,6 +117,36 @@ export function BasicInfoStep({ form }: BasicInfoStepProps) {
                   <SelectContent>
                     <SelectItem value="sell">Venda</SelectItem>
                     <SelectItem value="rent">Aluguel</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="property_type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-base font-medium">
+                  Tipo do imóvel
+                </FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value ?? undefined}
+                >
+                  <FormControl>
+                    <SelectTrigger className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {PROPERTY_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {PROPERTY_TYPE_LABELS[type]}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
