@@ -34,14 +34,19 @@ export interface BrokerHomeData {
   topNeighborhoods: NeighborhoodSummary[];
 }
 
-const ANCHOR_FALLBACK = [
-  { id: 'comprar', label: 'Comprar', href: '#imoveis-venda' },
-  { id: 'alugar', label: 'Alugar', href: '#imoveis-aluguel' },
-  { id: 'lancamentos', label: 'Lançamentos', href: '#lancamentos' },
-  { id: 'regioes', label: 'Regiões', href: '#regioes' },
-  { id: 'sobre', label: 'Sobre', href: '#institucional' },
-  { id: 'blog', label: 'Blog', href: '#blog' },
-];
+function defaultMenuItems(brokerSlug: string | null) {
+  // Preview enquanto a rota /[corretor]/equipe não existe em produção.
+  const teamHref = brokerSlug
+    ? `/preview-home/equipe?broker=${brokerSlug}`
+    : '/preview-home/equipe';
+  return [
+    { id: 'comprar', label: 'Comprar', href: '#imoveis-venda' },
+    { id: 'alugar', label: 'Alugar', href: '#imoveis-aluguel' },
+    { id: 'regioes', label: 'Regiões', href: '#regioes' },
+    { id: 'sobre', label: 'Sobre', href: '#institucional' },
+    { id: 'equipe', label: 'Equipe', href: teamHref },
+  ];
+}
 
 function buildMenuHref(brokerSlug: string, pageSlug: string): string {
   if (pageSlug === '/' || pageSlug === '') return `/${brokerSlug}`;
@@ -72,7 +77,7 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
       brandLogo: null,
       primaryColor: mockBrand.primaryColor,
       whatsappNumber: mockBrand.whatsapp,
-      menu: ANCHOR_FALLBACK,
+      menu: defaultMenuItems(brokerSlug),
       properties: null,
       neighborhoodSuggestions: [],
       citySuggestions: [],
@@ -107,7 +112,7 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
           label: p.title,
           href: buildMenuHref(brokerSlug, p.slug),
         }))
-    : ANCHOR_FALLBACK;
+    : defaultMenuItems(brokerSlug);
 
   // Sugestões para o autocomplete derivadas do conjunto real de imóveis ativos
   const all = data?.all ?? [];
