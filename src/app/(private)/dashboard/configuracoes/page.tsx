@@ -24,6 +24,7 @@ import { HomeHeroForm } from "@/features/dashboard/site/components/home-hero-for
 import { SiteStatsManager } from "@/features/dashboard/site/components/site-stats-manager";
 import { InstitutionalForm } from "@/features/dashboard/site/components/institutional-form";
 import { TestimonialsManager } from "@/features/dashboard/site/components/testimonials-manager";
+import { PostsManager } from "@/features/dashboard/site/components/posts-manager";
 import { HomeLayoutManager } from "@/features/dashboard/site/components/home-layout-manager";
 import { SeoListingForm } from "@/features/dashboard/site/components/seo-listing-form";
 import { WhatsappTemplatesManager } from "@/features/dashboard/site/components/whatsapp-templates-manager";
@@ -971,6 +972,12 @@ function PageSection() {
                   description="Depoimentos de clientes exibidos no slider da home."
                 >
                   <TestimonialsManager />
+                </SettingsCard>
+                <SettingsCard
+                  title="Blog (Trends & Insights)"
+                  description="Artigos exibidos na seção de conteúdo da home."
+                >
+                  <PostsManager />
                 </SettingsCard>
               </div>
             )}

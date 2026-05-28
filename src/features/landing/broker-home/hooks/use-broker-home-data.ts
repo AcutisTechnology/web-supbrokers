@@ -55,6 +55,7 @@ export interface BrokerHomeData {
   whatsappTemplates: { key: string; message: string }[];
   institutional: BrokerPropertiesResponse['data']['institutional'] | null;
   testimonials: BrokerPropertiesResponse['data']['testimonials'];
+  posts: BrokerPropertiesResponse['data']['posts'];
   homeLayout: { key: string; enabled: boolean }[] | null;
   seo: { title: string | null; description: string | null; ogImage: string | null };
   listing: { pageSize: number | null; defaultSort: string | null };
@@ -117,6 +118,7 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
       whatsappTemplates: [],
       institutional: null,
       testimonials: [],
+      posts: [],
       homeLayout: null,
       seo: { title: null, description: null, ogImage: null },
       listing: { pageSize: null, defaultSort: null },
@@ -278,6 +280,7 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
     whatsappTemplates,
     institutional: data?.institutional ?? null,
     testimonials: data?.testimonials ?? [],
+    posts: data?.posts ?? [],
     homeLayout: site?.home_layout ?? null,
     seo: {
       title: site?.seo_title ?? null,

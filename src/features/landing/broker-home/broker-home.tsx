@@ -161,7 +161,7 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
                 />
               );
             case 'equipe':
-              return <BrokersSection key={key} />;
+              return <BrokersSection key={key} brokerSlug={data.brokerSlug} />;
             case 'depoimentos':
               return (
                 <TestimonialsSection
@@ -170,7 +170,12 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
                 />
               );
             case 'blog':
-              return <BlogSection key={key} />;
+              return (
+                <BlogSection
+                  key={key}
+                  posts={brokerSlug ? data.posts : undefined}
+                />
+              );
             default:
               return null;
           }
