@@ -22,6 +22,8 @@ import { SiteSocialLinksManager } from "@/features/dashboard/site/components/sit
 import { AgentProfilesManager } from "@/features/dashboard/site/components/agent-profiles-manager";
 import { HomeHeroForm } from "@/features/dashboard/site/components/home-hero-form";
 import { SiteStatsManager } from "@/features/dashboard/site/components/site-stats-manager";
+import { InstitutionalForm } from "@/features/dashboard/site/components/institutional-form";
+import { TestimonialsManager } from "@/features/dashboard/site/components/testimonials-manager";
 import { WhatsappTemplatesManager } from "@/features/dashboard/site/components/whatsapp-templates-manager";
 import { SitePreview } from "@/features/dashboard/site/components/site-preview";
 import { SitePagesManager } from "@/features/dashboard/site/components/site-pages-manager";
@@ -921,6 +923,18 @@ function PageSection() {
                   description="Cards numéricos exibidos abaixo do hero (anos de mercado, imóveis vendidos, etc.)."
                 >
                   <SiteStatsManager />
+                </SettingsCard>
+                <SettingsCard
+                  title="Institucional (Sobre)"
+                  description="Seção 'Sobre' da home: imagem, textos, valores e diferenciais."
+                >
+                  <InstitutionalForm />
+                </SettingsCard>
+                <SettingsCard
+                  title="Depoimentos"
+                  description="Depoimentos de clientes exibidos no slider da home."
+                >
+                  <TestimonialsManager />
                 </SettingsCard>
               </div>
             )}

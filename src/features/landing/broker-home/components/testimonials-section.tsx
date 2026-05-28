@@ -1,22 +1,64 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Quote, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Quote, Star, UserCircle2 } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import type { PublicTestimonial } from '@/features/landing/services/broker-service';
 import { mockTestimonials } from '../data/mock';
 import { Reveal } from './primitives/reveal';
 
-export function TestimonialsSection() {
+interface TestimonialsSectionProps {
+  testimonials?: PublicTestimonial[];
+}
+
+interface NormalizedTestimonial {
+  id: number | string;
+  name: string;
+  role: string | null;
+  avatar: string | null;
+  rating: number;
+  message: string;
+}
+
+export function TestimonialsSection({ testimonials }: TestimonialsSectionProps) {
+  // undefined → modo demo (usa mock). Array (mesmo vazio) → modo broker (usa real).
+  const isDemo = testimonials === undefined;
+  const items: NormalizedTestimonial[] = isDemo
+    ? mockTestimonials.map(t => ({
+        id: t.id,
+        name: t.name,
+        role: t.role,
+        avatar: t.avatar,
+        rating: t.rating,
+        message: t.message,
+      }))
+    : (testimonials ?? []).map(t => ({
+        id: t.id,
+        name: t.name,
+        role: t.role,
+        avatar: t.avatar_url,
+        rating: t.rating,
+        message: t.message,
+      }));
+
   const [index, setIndex] = useState(0);
-  const total = mockTestimonials.length;
+  const total = items.length;
 
   useEffect(() => {
+    if (total <= 1) return;
     const id = setInterval(() => setIndex(i => (i + 1) % total), 7000);
     return () => clearInterval(id);
   }, [total]);
 
-  const current = mockTestimonials[index];
+  // Reseta o índice se a lista mudar de tamanho
+  useEffect(() => {
+    setIndex(0);
+  }, [total]);
+
+  if (total === 0) return null;
+
+  const current = items[Math.min(index, total - 1)];
 
   return (
     <section className="relative py-24 md:py-32 bg-[#0F0820] text-white overflow-hidden">
@@ -57,14 +99,18 @@ export function TestimonialsSection() {
                     “{current.message}”
                   </p>
                   <div className="mt-8 flex items-center gap-4">
-                    <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-amber-300/50">
-                      <Image
-                        src={current.avatar}
-                        alt={current.name}
-                        fill
-                        sizes="56px"
-                        className="object-cover"
-                      />
+                    <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-amber-300/50 bg-white/10 flex items-center justify-center">
+                      {current.avatar ? (
+                        <Image
+                          src={current.avatar}
+                          alt={current.name}
+                          fill
+                          sizes="56px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <UserCircle2 className="w-7 h-7 text-white/60" />
+                      )}
                     </div>
                     <div>
                       <p className="font-medium">{current.name}</p>
@@ -86,7 +132,7 @@ export function TestimonialsSection() {
               <ChevronLeft className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2">
-              {mockTestimonials.map((_, i) => (
+              {items.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setIndex(i)}

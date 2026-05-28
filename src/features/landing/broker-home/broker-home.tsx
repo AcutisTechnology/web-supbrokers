@@ -115,11 +115,11 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
           neighborhoods={data.topNeighborhoods}
         />
 
-        <InstitutionalSection />
+        <InstitutionalSection data={brokerSlug ? data.institutional : undefined} />
 
         <BrokersSection />
 
-        <TestimonialsSection />
+        <TestimonialsSection testimonials={brokerSlug ? data.testimonials : undefined} />
 
         <BlogSection />
 

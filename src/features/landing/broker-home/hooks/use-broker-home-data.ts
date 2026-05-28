@@ -52,6 +52,8 @@ export interface BrokerHomeData {
   hero: HeroContent;
   stats: HomeStat[];
   whatsappTemplates: { key: string; message: string }[];
+  institutional: BrokerPropertiesResponse['data']['institutional'] | null;
+  testimonials: BrokerPropertiesResponse['data']['testimonials'];
 }
 
 function defaultMenuItems(brokerSlug: string | null) {
@@ -111,6 +113,8 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
       },
       stats: [],
       whatsappTemplates: [],
+      institutional: null,
+      testimonials: [],
     };
   }
 
@@ -231,6 +235,8 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
     hero,
     stats,
     whatsappTemplates,
+    institutional: data?.institutional ?? null,
+    testimonials: data?.testimonials ?? [],
   };
 }
 

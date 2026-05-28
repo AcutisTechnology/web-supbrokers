@@ -86,6 +86,30 @@ export interface PublicWhatsappTemplate {
   message: string;
 }
 
+export interface PublicInstitutionalDifferential {
+  icon: string;
+  title: string;
+  text: string;
+}
+
+export interface PublicInstitutional {
+  eyebrow: string | null;
+  title: string | null;
+  body: string | null;
+  image_url: string | null;
+  values: string[];
+  differentials: PublicInstitutionalDifferential[];
+}
+
+export interface PublicTestimonial {
+  id: number;
+  name: string;
+  role: string | null;
+  avatar_url: string | null;
+  rating: number;
+  message: string;
+}
+
 // Interface para os dados do corretor
 export interface User {
   name: string;
@@ -102,6 +126,8 @@ export interface BrokerPropertiesResponse {
     rent: Property[];
     stats: PublicSiteStat[];
     whatsapp_templates: PublicWhatsappTemplate[];
+    institutional: PublicInstitutional | null;
+    testimonials: PublicTestimonial[];
     user: User;
   };
 }
