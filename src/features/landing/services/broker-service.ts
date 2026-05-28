@@ -116,6 +116,18 @@ export interface PublicTestimonial {
   message: string;
 }
 
+export interface PublicPost {
+  id: number;
+  slug: string;
+  title: string;
+  category: string | null;
+  excerpt: string | null;
+  image_url: string | null;
+  link_url: string | null;
+  reading_time: string | null;
+  published_at: string | null;
+}
+
 // Interface para os dados do corretor
 export interface User {
   name: string;
@@ -134,6 +146,7 @@ export interface BrokerPropertiesResponse {
     whatsapp_templates: PublicWhatsappTemplate[];
     institutional: PublicInstitutional | null;
     testimonials: PublicTestimonial[];
+    posts: PublicPost[];
     user: User;
   };
 }
