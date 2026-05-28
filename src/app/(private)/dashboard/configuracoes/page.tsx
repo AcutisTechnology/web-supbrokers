@@ -20,6 +20,8 @@ import { SiteAppearanceForm, type SiteAppearanceFormData } from "@/features/dash
 import { SiteFooterForm, type SiteFooterFormData } from "@/features/dashboard/site/components/site-footer-form";
 import { SiteSocialLinksManager } from "@/features/dashboard/site/components/site-social-links-manager";
 import { AgentProfilesManager } from "@/features/dashboard/site/components/agent-profiles-manager";
+import { HomeHeroForm } from "@/features/dashboard/site/components/home-hero-form";
+import { SiteStatsManager } from "@/features/dashboard/site/components/site-stats-manager";
 import { SitePreview } from "@/features/dashboard/site/components/site-preview";
 import { SitePagesManager } from "@/features/dashboard/site/components/site-pages-manager";
 import { SitePagePreview } from "@/features/dashboard/site/components/site-page-preview";
@@ -684,7 +686,7 @@ function CompanySection() {
   );
 }
 
-type PageSubTab = "appearance" | "footer" | "social" | "pages" | "team";
+type PageSubTab = "appearance" | "home" | "footer" | "social" | "pages" | "team";
 
 function PageSection() {
   const [tab, setTab] = useState<PageSubTab>("appearance");
@@ -769,6 +771,7 @@ function PageSection() {
 
   const subTabs: Array<{ key: PageSubTab; label: string; description: string }> = [
     { key: "appearance", label: "Aparência", description: "Cores, logo e cabeçalho" },
+    { key: "home", label: "Home", description: "Hero e estatísticas" },
     { key: "footer", label: "Rodapé", description: "Contato, endereço e CRECI" },
     { key: "social", label: "Redes Sociais", description: "Links exibidos no rodapé" },
     { key: "pages", label: "Páginas", description: "Páginas institucionais do site" },
@@ -875,6 +878,33 @@ function PageSection() {
               >
                 <AgentProfilesManager />
               </SettingsCard>
+            )}
+
+            {tab === "home" && (
+              <div className="space-y-4">
+                <SettingsCard
+                  title="Hero da Home"
+                  description="Imagem de fundo, eyebrow, título em 2 linhas e subtítulo do hero principal."
+                >
+                  <HomeHeroForm
+                    initial={settings}
+                    onSubmit={async payload => {
+                      await updateSettings(payload);
+                      setPreviewSettings(prev => ({
+                        ...prev,
+                        site_subtitle: payload.site_subtitle ?? undefined,
+                      }));
+                    }}
+                    isSubmitting={isUpdatingSettings}
+                  />
+                </SettingsCard>
+                <SettingsCard
+                  title="Estatísticas"
+                  description="Cards numéricos exibidos abaixo do hero (anos de mercado, imóveis vendidos, etc.)."
+                >
+                  <SiteStatsManager />
+                </SettingsCard>
+              </div>
             )}
           </div>
 

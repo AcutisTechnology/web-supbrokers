@@ -19,6 +19,23 @@ export interface NeighborhoodSummary {
   image: string | null;
 }
 
+export interface HeroContent {
+  eyebrow: string | null;
+  titleLine1: string | null;
+  titleLine2: string | null;
+  subtitle: string | null;
+  backgroundUrl: string | null;
+}
+
+export interface HomeStat {
+  id: number;
+  label: string;
+  value: number;
+  prefix: string | null;
+  suffix: string | null;
+  icon: string | null;
+}
+
 export interface BrokerHomeData {
   brokerSlug: string | null;
   loading: boolean;
@@ -32,6 +49,8 @@ export interface BrokerHomeData {
   neighborhoodSuggestions: string[];
   citySuggestions: string[];
   topNeighborhoods: NeighborhoodSummary[];
+  hero: HeroContent;
+  stats: HomeStat[];
 }
 
 function defaultMenuItems(brokerSlug: string | null) {
@@ -82,6 +101,14 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
       neighborhoodSuggestions: [],
       citySuggestions: [],
       topNeighborhoods: [],
+      hero: {
+        eyebrow: null,
+        titleLine1: null,
+        titleLine2: null,
+        subtitle: null,
+        backgroundUrl: null,
+      },
+      stats: [],
     };
   }
 
@@ -164,6 +191,23 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
     .sort((a, b) => b.count - a.count)
     .slice(0, 4);
 
+  const hero: HeroContent = {
+    eyebrow: site?.hero_eyebrow ?? null,
+    titleLine1: site?.hero_title_line_1 ?? site?.site_title ?? null,
+    titleLine2: site?.hero_title_line_2 ?? null,
+    subtitle: site?.site_subtitle ?? null,
+    backgroundUrl: site?.hero_background_url ?? null,
+  };
+
+  const stats: HomeStat[] = (data?.stats ?? []).map(s => ({
+    id: s.id,
+    label: s.label,
+    value: s.value,
+    prefix: s.prefix,
+    suffix: s.suffix,
+    icon: s.icon,
+  }));
+
   return {
     brokerSlug,
     loading,
@@ -177,6 +221,8 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
     neighborhoodSuggestions,
     citySuggestions,
     topNeighborhoods,
+    hero,
+    stats,
   };
 }
 

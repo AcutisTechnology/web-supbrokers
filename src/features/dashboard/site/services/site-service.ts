@@ -53,6 +53,10 @@ export interface SiteSetting {
   favicon: string | null;
   site_title: string | null;
   site_subtitle: string | null;
+  hero_eyebrow: string | null;
+  hero_title_line_1: string | null;
+  hero_title_line_2: string | null;
+  hero_background_url: string | null;
   created_at: string;
   updated_at: string;
   footer?: SiteFooter | null;
@@ -66,6 +70,10 @@ export interface UpdateSiteSettingPayload {
   favicon?: string | null;
   site_title?: string | null;
   site_subtitle?: string | null;
+  hero_eyebrow?: string | null;
+  hero_title_line_1?: string | null;
+  hero_title_line_2?: string | null;
+  hero_background_url?: string | null;
 }
 
 export interface UpdateSiteFooterPayload {

@@ -15,7 +15,17 @@ interface PremiumHeroProps {
   brandSubtitle?: string;
   neighborhoodSuggestions: string[];
   citySuggestions: string[];
+  hero?: {
+    eyebrow: string | null;
+    titleLine1: string | null;
+    titleLine2: string | null;
+    subtitle: string | null;
+    backgroundUrl: string | null;
+  };
 }
+
+const DEFAULT_HERO_BG =
+  'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=2400&q=80';
 
 export function PremiumHero({
   brokerSlug,
@@ -23,6 +33,7 @@ export function PremiumHero({
   brandSubtitle,
   neighborhoodSuggestions,
   citySuggestions,
+  hero,
 }: PremiumHeroProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -38,13 +49,19 @@ export function PremiumHero({
     router.push(buildSearchPath(basePath, filters));
   };
 
+  const bgUrl = hero?.backgroundUrl || DEFAULT_HERO_BG;
+  const titleLine1 = hero?.titleLine1 || brandTagline || 'Onde o luxo encontra';
+  const titleLine2 = hero?.titleLine2 || 'o seu novo lar.';
+  const subtitle = hero?.subtitle || brandSubtitle || mockBrand.subtitle;
+  const eyebrow = hero?.eyebrow;
+
   return (
     <section className="relative min-h-[100vh] flex items-center overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0">
         <Image
-          src="https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=2400&q=80"
-          alt="Imóvel de luxo"
+          src={bgUrl}
+          alt="Hero"
           fill
           priority
           className="object-cover scale-105"
@@ -58,20 +75,28 @@ export function PremiumHero({
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 md:px-8 pt-32 pb-20">
         <div className="max-w-4xl">
+          {eyebrow && (
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="text-xs md:text-sm tracking-[0.3em] uppercase text-amber-200/85 mb-5 font-medium"
+            >
+              {eyebrow}
+            </motion.p>
+          )}
           <motion.h1
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             className="font-display text-white text-5xl md:text-7xl leading-[1.05] tracking-tight"
           >
-            {brandTagline ? (
-              brandTagline
-            ) : (
+            {titleLine1}
+            {titleLine2 && (
               <>
-                Onde o luxo encontra
                 <br />
-                <span className="bg-gradient-to-r from-amber-200 via-amber-100 to-white bg-clip-text text-transparent">
-                  o seu novo lar.
+                <span className="bg-gradient-to-r from-amber-200 via-amber-100 to-white bg-clip-text text-transparent italic">
+                  {titleLine2}
                 </span>
               </>
             )}
@@ -83,7 +108,7 @@ export function PremiumHero({
             transition={{ duration: 0.8, delay: 0.35 }}
             className="mt-6 text-lg md:text-xl text-white/70 max-w-2xl leading-relaxed"
           >
-            {brandSubtitle ?? mockBrand.subtitle}
+            {subtitle}
           </motion.p>
         </div>
 

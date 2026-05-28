@@ -1,13 +1,66 @@
 'use client';
 
-import { Award, Building2, Crown, Users } from 'lucide-react';
+import {
+  Award,
+  BarChart3,
+  Building2,
+  Crown,
+  Heart,
+  Home,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  TrendingUp,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import { mockStats } from '../data/mock';
+import type { HomeStat } from '../hooks/use-broker-home-data';
 import { CountUp } from './primitives/count-up';
 import { Reveal, Stagger, StaggerItem } from './primitives/reveal';
 
-const ICONS = [Award, Building2, Crown, Users];
+interface StatsStripProps {
+  stats?: HomeStat[];
+}
 
-export function StatsStrip() {
+const ICON_MAP: Record<string, LucideIcon> = {
+  Award,
+  Building2,
+  Crown,
+  Users,
+  Sparkles,
+  ShieldCheck,
+  TrendingUp,
+  Home,
+  Star,
+  Heart,
+};
+
+const FALLBACK_ICONS: LucideIcon[] = [Award, Building2, Crown, Users];
+
+function resolveIcon(name: string | null | undefined, fallback: LucideIcon): LucideIcon {
+  if (!name) return fallback;
+  return ICON_MAP[name] ?? BarChart3;
+}
+
+export function StatsStrip({ stats }: StatsStripProps) {
+  // Quando há stats reais (com broker conectado), usa eles. Senão, mocks pra demonstração.
+  const items: HomeStat[] = stats && stats.length > 0
+    ? stats
+    : mockStats.map((s, i) => ({
+        id: i,
+        label: s.label,
+        value: s.value,
+        prefix: s.prefix ?? null,
+        suffix: s.suffix ?? null,
+        icon: null,
+      }));
+
+  if (items.length === 0) return null;
+
+  const cols =
+    items.length >= 4 ? 'md:grid-cols-4' : items.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2';
+
   return (
     <section className="relative py-24 bg-[#FAFAF7]">
       <div className="container mx-auto px-4 md:px-8">
@@ -20,11 +73,11 @@ export function StatsStrip() {
           </h2>
         </Reveal>
 
-        <Stagger className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {mockStats.map((stat, i) => {
-            const Icon = ICONS[i % ICONS.length];
+        <Stagger className={`grid grid-cols-2 ${cols} gap-4 md:gap-6`}>
+          {items.map((stat, i) => {
+            const Icon = resolveIcon(stat.icon, FALLBACK_ICONS[i % FALLBACK_ICONS.length]);
             return (
-              <StaggerItem key={stat.label}>
+              <StaggerItem key={stat.id ?? stat.label}>
                 <div className="group relative bg-white border border-black/5 rounded-2xl p-6 md:p-8 hover:border-amber-300/50 hover:shadow-[0_30px_60px_-20px_rgba(151,71,255,0.15)] transition-all duration-500">
                   <div className="flex items-center justify-between mb-5">
                     <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#0F0820] to-[#1f1240] flex items-center justify-center text-amber-300 group-hover:scale-110 transition-transform">
@@ -35,8 +88,8 @@ export function StatsStrip() {
                   <div className="font-display text-4xl md:text-5xl text-[#0F0820] tracking-tight">
                     <CountUp
                       to={stat.value}
-                      prefix={stat.prefix}
-                      suffix={stat.suffix}
+                      prefix={stat.prefix ?? undefined}
+                      suffix={stat.suffix ?? undefined}
                     />
                   </div>
                   <p className="mt-2 text-sm text-[#777]">{stat.label}</p>

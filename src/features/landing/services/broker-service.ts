@@ -63,8 +63,22 @@ export interface PublicSite {
   favicon: string | null;
   site_title: string | null;
   site_subtitle: string | null;
+  hero_eyebrow: string | null;
+  hero_title_line_1: string | null;
+  hero_title_line_2: string | null;
+  hero_background_url: string | null;
   footer: PublicSiteFooter | null;
   social_links: PublicSocialLink[];
+}
+
+export interface PublicSiteStat {
+  id: number;
+  label: string;
+  value: number;
+  prefix: string | null;
+  suffix: string | null;
+  icon: string | null;
+  sort_order: number;
 }
 
 // Interface para os dados do corretor
@@ -81,6 +95,7 @@ export interface BrokerPropertiesResponse {
     all: Property[];
     sale: Property[];
     rent: Property[];
+    stats: PublicSiteStat[];
     user: User;
   };
 }

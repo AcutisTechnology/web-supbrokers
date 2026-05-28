@@ -67,6 +67,7 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
           brokerSlug={data.brokerSlug}
           neighborhoodSuggestions={data.neighborhoodSuggestions}
           citySuggestions={data.citySuggestions}
+          hero={data.hero}
         />
 
         {buckets.highlighted.length > 0 && (
@@ -105,7 +106,7 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
           />
         )}
 
-        <StatsStrip />
+        <StatsStrip stats={data.stats} />
 
         <NeighborhoodsSection
           brokerSlug={data.brokerSlug}
