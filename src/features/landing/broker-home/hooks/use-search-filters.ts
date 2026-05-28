@@ -87,7 +87,7 @@ interface UseSearchFiltersOptions {
 export function useSearchFilters(options: UseSearchFiltersOptions = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const preserve = options.preserveKeys ?? ['broker'];
+  const preserve = options.preserveKeys ?? [];
 
   const filters = useMemo(
     () => paramsToFilters(searchParams),

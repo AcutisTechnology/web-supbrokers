@@ -3,8 +3,10 @@
 import { motion } from 'framer-motion';
 import { Bath, BedDouble, Car, Heart, Maximize2, Share2 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState } from 'react';
 import type { Badge, MockProperty } from '../data/mock';
+import { brokerUrls } from '../lib/broker-urls';
 
 const BADGE_STYLES: Record<Badge, string> = {
   destaque: 'bg-amber-400 text-[#0F0820]',
@@ -24,10 +26,12 @@ const BADGE_LABEL: Record<Badge, string> = {
 
 interface Props {
   property: MockProperty;
+  brokerSlug?: string | null;
 }
 
-export function PremiumPropertyCard({ property }: Props) {
+export function PremiumPropertyCard({ property, brokerSlug }: Props) {
   const [fav, setFav] = useState(false);
+  const detailHref = brokerSlug ? brokerUrls(brokerSlug).property(property.id) : null;
 
   return (
     <motion.article
@@ -35,6 +39,13 @@ export function PremiumPropertyCard({ property }: Props) {
       transition={{ type: 'spring', stiffness: 300, damping: 22 }}
       className="group relative bg-white rounded-3xl overflow-hidden border border-black/[0.06] shadow-[0_4px_30px_-12px_rgba(15,8,32,0.12)] hover:shadow-[0_30px_60px_-20px_rgba(15,8,32,0.25)] transition-shadow duration-500"
     >
+      {detailHref && (
+        <Link
+          href={detailHref}
+          aria-label={`Ver detalhes de ${property.title}`}
+          className="absolute inset-0 z-[1]"
+        />
+      )}
       {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
         <Image
@@ -68,7 +79,7 @@ export function PremiumPropertyCard({ property }: Props) {
         </div>
 
         {/* Top right actions */}
-        <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 -translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+        <div className="absolute top-3 right-3 z-10 flex flex-col gap-2 opacity-0 -translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
           <button
             onClick={e => {
               e.preventDefault();

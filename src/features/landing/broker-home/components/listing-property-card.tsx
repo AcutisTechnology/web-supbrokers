@@ -4,15 +4,16 @@ import { motion } from 'framer-motion';
 import { Bath, BedDouble, Car, Heart, Maximize2, MessageCircle, Share2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import type { Badge, MockProperty } from '../data/mock';
 import { useFavorites } from '../hooks/use-favorites';
 import { useWhatsapp } from '../hooks/whatsapp-context';
+import { brokerUrls } from '../lib/broker-urls';
 
 interface ListingPropertyCardProps {
   property: MockProperty;
   whatsappNumber?: string;
+  brokerSlug?: string | null;
 }
 
 const BADGE_LABEL: Record<Badge, string> = {
@@ -34,6 +35,7 @@ const BADGE_STYLES: Record<Badge, string> = {
 export function ListingPropertyCard({
   property,
   whatsappNumber,
+  brokerSlug,
 }: ListingPropertyCardProps) {
   const { isFavorite, toggle } = useFavorites();
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -42,16 +44,9 @@ export function ListingPropertyCard({
     property: { title: property.title },
   });
 
-  // Constrói link para detalhes preservando contexto preview/produção
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const inPreview = pathname?.startsWith('/preview-home') ?? false;
-  const broker = searchParams.get('broker');
-  const detailHref = inPreview
-    ? `/preview-home/imovel/${property.id}${broker ? `?broker=${broker}` : ''}`
-    : broker
-      ? `/${broker}/imovel/${property.id}`
-      : '#';
+  const detailHref = brokerSlug
+    ? brokerUrls(brokerSlug).property(property.id)
+    : '#';
 
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();

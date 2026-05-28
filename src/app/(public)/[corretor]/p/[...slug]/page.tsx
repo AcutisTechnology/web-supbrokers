@@ -1,19 +1,17 @@
-"use client";
+'use client';
 
-import { use } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import {
-  fetchPublicSiteMenu,
-  fetchPublicSitePage,
-} from "@/features/dashboard/site/services/site-pages-service";
-import { useBrokerProperties } from "@/features/landing/services/broker-service";
-import { BrokerFooter } from "@/features/landing/components/broker-footer";
-import { SitePageHero } from "@/features/landing/components/site-page-hero";
-import { SitePageContent } from "@/features/landing/components/site-page-content";
-import { SiteDynamicMenu } from "@/features/landing/components/site-dynamic-menu";
+import { use } from 'react';
+import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
+import { fetchPublicSitePage } from '@/features/dashboard/site/services/site-pages-service';
+import { useBrokerHomeData } from '@/features/landing/broker-home/hooks/use-broker-home-data';
+import { PremiumHeader } from '@/features/landing/broker-home/components/premium-header';
+import { PremiumFooter } from '@/features/landing/broker-home/components/premium-footer';
+import { FloatingWhatsapp } from '@/features/landing/broker-home/components/floating-whatsapp';
+import { WhatsappProvider } from '@/features/landing/broker-home/hooks/whatsapp-context';
+import { SitePageHero } from '@/features/landing/components/site-page-hero';
+import { SitePageContent } from '@/features/landing/components/site-page-content';
+import { Loader2 } from 'lucide-react';
 
 interface DynamicPageParams {
   corretor: string;
@@ -25,81 +23,61 @@ export default function DynamicSitePage({
 }: {
   params: Promise<DynamicPageParams>;
 }) {
-  const router = useRouter();
   const { corretor, slug } = use(params);
-  const pageSlug = (slug ?? []).join("/");
+  const pageSlug = (slug ?? []).join('/');
 
-  const { data: broker } = useBrokerProperties(corretor);
-  const site = broker?.data.user.site;
+  const meta = useBrokerHomeData(corretor);
 
-  const { data: page, isLoading: isLoadingPage, error: pageError } = useQuery({
-    queryKey: ["public-site-page", corretor, pageSlug],
+  const {
+    data: page,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['public-site-page', corretor, pageSlug],
     queryFn: () => fetchPublicSitePage(corretor, pageSlug),
     enabled: !!corretor && !!pageSlug,
   });
 
-  const { data: menu = [] } = useQuery({
-    queryKey: ["public-site-menu", corretor],
-    queryFn: () => fetchPublicSiteMenu(corretor),
-    enabled: !!corretor,
-  });
-
-  const primary = site?.primary_color || "#9747FF";
-
-  if (isLoadingPage) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-xl">Carregando...</p>
-      </div>
-    );
-  }
-
-  if (pageError || !page) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3">
-        <p className="text-xl">Página não encontrada.</p>
-        <Link href={`/${corretor}`} className="text-[#9747FF] underline">
-          Voltar para a home
-        </Link>
-      </div>
-    );
-  }
+  const primary = meta.primaryColor;
 
   return (
-    <div className="min-h-screen bg-white">
-      <header
-        className="rounded-xl m-4 md:m-8 p-4 md:px-10 md:py-6"
-        style={{ backgroundColor: primary }}
-      >
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <Link href={`/${corretor}`} className="inline-flex items-center">
-            <Image
-              src={site?.brand_image || "/logo-extendida-roxo.svg"}
-              width={142}
-              alt="logo do corretor"
-              height={42}
-            />
-          </Link>
+    <WhatsappProvider number={meta.whatsappNumber} templates={meta.whatsappTemplates}>
+      <div className="min-h-screen bg-[#FAFAF7] text-[#0F0820]">
+        <PremiumHeader
+          brandName={meta.brandName}
+          brandLogo={meta.brandLogo}
+          brokerSlug={meta.brokerSlug}
+          whatsappNumber={meta.whatsappNumber}
+          menu={meta.menu}
+          theme="light"
+        />
 
-          <SiteDynamicMenu brokerSlug={corretor} pages={menu} />
+        <main className="pt-24 md:pt-28 pb-20">
+          {isLoading ? (
+            <div className="min-h-[40vh] flex items-center justify-center text-[#0F0820]/60">
+              <Loader2 className="w-6 h-6 animate-spin mr-2" />
+              Carregando…
+            </div>
+          ) : error || !page ? (
+            <div className="min-h-[40vh] flex flex-col items-center justify-center gap-3 text-center px-4">
+              <p className="font-display text-2xl text-[#0F0820]">
+                Página não encontrada.
+              </p>
+              <Link href={`/${corretor}`} className="text-[#9747FF] underline">
+                Voltar para a home
+              </Link>
+            </div>
+          ) : (
+            <>
+              <SitePageHero page={page} primaryColor={primary} />
+              <SitePageContent page={page} />
+            </>
+          )}
+        </main>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => router.push("/login")}
-              className="rounded-full border border-white px-4 py-2 text-white text-sm hover:bg-white hover:text-black"
-            >
-              Área do Corretor
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <SitePageHero page={page} primaryColor={primary} />
-
-      <SitePageContent page={page} />
-
-      <BrokerFooter site={site} />
-    </div>
+        <PremiumFooter data={meta.footer} />
+        <FloatingWhatsapp />
+      </div>
+    </WhatsappProvider>
   );
 }

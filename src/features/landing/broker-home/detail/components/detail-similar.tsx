@@ -12,6 +12,7 @@ interface DetailSimilarProps {
   currentType: 'sale' | 'rent';
   allProperties: ApiProperty[];
   whatsappNumber?: string;
+  brokerSlug?: string | null;
 }
 
 export function DetailSimilar({
@@ -20,6 +21,7 @@ export function DetailSimilar({
   currentType,
   allProperties,
   whatsappNumber,
+  brokerSlug,
 }: DetailSimilarProps) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
@@ -87,7 +89,7 @@ export function DetailSimilar({
               key={p.id}
               className="snap-start shrink-0 w-[85%] sm:w-[55%] md:w-[42%] lg:w-[32%]"
             >
-              <ListingPropertyCard property={p} whatsappNumber={whatsappNumber} />
+              <ListingPropertyCard property={p} whatsappNumber={whatsappNumber} brokerSlug={brokerSlug} />
             </div>
           ))}
         </div>

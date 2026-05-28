@@ -4,9 +4,10 @@ import type { BrokerSearchFilters } from '@/features/landing/services/broker-ser
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { mockBrand } from '../data/mock';
 import { useSearchFilters } from '../hooks/use-search-filters';
+import { brokerUrls } from '../lib/broker-urls';
 import { PropertySearchForm } from './property-search-form';
 
 interface PremiumHeroProps {
@@ -36,16 +37,10 @@ export function PremiumHero({
   hero,
 }: PremiumHeroProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const { buildSearchPath } = useSearchFilters();
 
   const handleSubmit = (filters: BrokerSearchFilters) => {
-    // Enquanto a rota /[slug]/imoveis/buscar não existir, mantém tudo no preview.
-    const inPreview = pathname?.startsWith('/preview-home');
-    const basePath =
-      brokerSlug && !inPreview
-        ? `/${brokerSlug}/imoveis/buscar`
-        : `/preview-home/buscar`;
+    const basePath = brokerSlug ? brokerUrls(brokerSlug).listing : '/imoveis';
     router.push(buildSearchPath(basePath, filters));
   };
 

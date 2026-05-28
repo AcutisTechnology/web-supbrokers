@@ -111,8 +111,8 @@ export function PropertyDetail({ brokerSlug, propertySlug }: PropertyDetailProps
     );
   }
 
-  const homeHref = `/preview-home?broker=${brokerSlug}`;
-  const listingHref = `/preview-home/buscar?broker=${brokerSlug}`;
+  const homeHref = `/${brokerSlug}`;
+  const listingHref = `/${brokerSlug}/imoveis`;
 
   return (
     <WhatsappProvider number={meta.whatsappNumber} templates={meta.whatsappTemplates}>
@@ -239,6 +239,7 @@ export function PropertyDetail({ brokerSlug, propertySlug }: PropertyDetailProps
               currentType={propertyType}
               allProperties={allProperties}
               whatsappNumber={meta.whatsappNumber}
+              brokerSlug={brokerSlug}
             />
           </div>
 
@@ -253,7 +254,7 @@ export function PropertyDetail({ brokerSlug, propertySlug }: PropertyDetailProps
         </div>
       </main>
 
-      <PremiumFooter />
+      <PremiumFooter data={meta.footer} />
       <FloatingWhatsapp />
       <DetailMobileCta
         propertyTitle={property.title}

@@ -58,8 +58,8 @@ export function AgentDetailPage({ brokerSlug, agentSlug }: AgentDetailPageProps)
   const propertiesQuery = useBrokerProperties(brokerSlug);
 
   const agent = agentQuery.data;
-  const homeHref = `/preview-home?broker=${brokerSlug}`;
-  const teamHref = `/preview-home/equipe?broker=${brokerSlug}`;
+  const homeHref = `/${brokerSlug}`;
+  const teamHref = `/${brokerSlug}/equipe`;
 
   if (agentQuery.isLoading) {
     return (
@@ -314,6 +314,7 @@ export function AgentDetailPage({ brokerSlug, agentSlug }: AgentDetailPageProps)
                         key={p.slug}
                         property={apiToCardProperty(p)}
                         whatsappNumber={agent.whatsapp ?? meta.whatsappNumber}
+                        brokerSlug={brokerSlug}
                       />
                     ))}
                   </div>
@@ -336,7 +337,7 @@ export function AgentDetailPage({ brokerSlug, agentSlug }: AgentDetailPageProps)
         </div>
       </main>
 
-      <PremiumFooter />
+      <PremiumFooter data={meta.footer} />
       <FloatingWhatsapp />
     </div>
     </WhatsappProvider>

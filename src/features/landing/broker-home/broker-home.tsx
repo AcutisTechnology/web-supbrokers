@@ -112,6 +112,7 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
                   properties={buckets.highlighted}
                   variant="carousel"
                   background="cream"
+                  brokerSlug={data.brokerSlug}
                 />
               ) : null;
             case 'venda':
@@ -125,6 +126,7 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
                   properties={buckets.sale}
                   variant="carousel"
                   background="light"
+                  brokerSlug={data.brokerSlug}
                 />
               ) : null;
             case 'aluguel':
@@ -138,6 +140,7 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
                   properties={buckets.rent}
                   variant="carousel"
                   background="cream"
+                  brokerSlug={data.brokerSlug}
                 />
               ) : null;
             case 'stats':
@@ -176,7 +179,7 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
         <FinalCta />
       </main>
 
-      <PremiumFooter />
+      <PremiumFooter data={data.footer} />
       <FloatingWhatsapp />
     </div>
     </WhatsappProvider>

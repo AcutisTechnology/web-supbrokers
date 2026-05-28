@@ -10,6 +10,7 @@ import {
   type SitePage,
 } from '@/features/dashboard/site/services/site-pages-service';
 import { mockBrand } from '../data/mock';
+import type { PremiumFooterData } from '../components/premium-footer';
 
 export interface NeighborhoodSummary {
   name: string;
@@ -57,19 +58,17 @@ export interface BrokerHomeData {
   homeLayout: { key: string; enabled: boolean }[] | null;
   seo: { title: string | null; description: string | null; ogImage: string | null };
   listing: { pageSize: number | null; defaultSort: string | null };
+  footer: PremiumFooterData;
 }
 
 function defaultMenuItems(brokerSlug: string | null) {
-  // Preview enquanto a rota /[corretor]/equipe não existe em produção.
-  const teamHref = brokerSlug
-    ? `/preview-home/equipe?broker=${brokerSlug}`
-    : '/preview-home/equipe';
+  const base = brokerSlug ? `/${brokerSlug}` : '';
   return [
-    { id: 'comprar', label: 'Comprar', href: '#imoveis-venda' },
-    { id: 'alugar', label: 'Alugar', href: '#imoveis-aluguel' },
+    { id: 'comprar', label: 'Comprar', href: `${base}/imoveis?purpose=sale` },
+    { id: 'alugar', label: 'Alugar', href: `${base}/imoveis?purpose=rent` },
     { id: 'regioes', label: 'Regiões', href: '#regioes' },
     { id: 'sobre', label: 'Sobre', href: '#institucional' },
-    { id: 'equipe', label: 'Equipe', href: teamHref },
+    { id: 'equipe', label: 'Equipe', href: `${base}/equipe` },
   ];
 }
 
@@ -121,6 +120,7 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
       homeLayout: null,
       seo: { title: null, description: null, ogImage: null },
       listing: { pageSize: null, defaultSort: null },
+      footer: { brandName: mockBrand.name },
     };
   }
 
@@ -225,11 +225,46 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
     message: t.message,
   }));
 
+  const brandName = footer?.company_name || data?.user.name || mockBrand.name;
+
+  const footerAddress = [
+    [footer?.address, footer?.address_number].filter(Boolean).join(', '),
+    footer?.district,
+    [footer?.city, footer?.state].filter(Boolean).join('/'),
+  ]
+    .filter(part => part && part.trim() !== '')
+    .join(' — ');
+
+  const footerData: PremiumFooterData = {
+    brandName,
+    brandLogo: site?.brand_image ?? null,
+    footerText: footer?.footer_text ?? null,
+    phone: footer?.phone ?? null,
+    email: footer?.email ?? null,
+    address: footerAddress || null,
+    creci: footer?.creci ?? null,
+    social:
+      footer?.show_social_links === false
+        ? []
+        : (site?.social_links ?? []).map(l => ({
+            id: l.id,
+            platform: l.platform,
+            url: l.url,
+          })),
+    navLinks: brokerSlug
+      ? [
+          { label: 'Comprar Imóvel', href: `/${brokerSlug}/imoveis?purpose=sale` },
+          { label: 'Alugar Imóvel', href: `/${brokerSlug}/imoveis?purpose=rent` },
+          { label: 'Nossa Equipe', href: `/${brokerSlug}/equipe` },
+        ]
+      : undefined,
+  };
+
   return {
     brokerSlug,
     loading,
     error,
-    brandName: footer?.company_name || data?.user.name || mockBrand.name,
+    brandName,
     brandLogo: site?.brand_image ?? null,
     primaryColor: site?.primary_color || mockBrand.primaryColor,
     whatsappNumber,
@@ -253,6 +288,7 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
       pageSize: site?.listing_page_size ?? null,
       defaultSort: site?.listing_default_sort ?? null,
     },
+    footer: footerData,
   };
 }
 

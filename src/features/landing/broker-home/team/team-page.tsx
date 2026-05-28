@@ -54,7 +54,7 @@ export function TeamPage({ brokerSlug }: TeamPageProps) {
     });
   }, [agents, filters]);
 
-  const homeHref = `/preview-home?broker=${brokerSlug}`;
+  const homeHref = `/${brokerSlug}`;
 
   return (
     <WhatsappProvider number={meta.whatsappNumber} templates={meta.whatsappTemplates}>
@@ -150,7 +150,7 @@ export function TeamPage({ brokerSlug }: TeamPageProps) {
                   <StaggerItem key={agent.id}>
                     <TeamAgentCard
                       agent={agent}
-                      detailHref={`/preview-home/equipe/${agent.slug}?broker=${brokerSlug}`}
+                      detailHref={`/${brokerSlug}/equipe/${agent.slug}`}
                     />
                   </StaggerItem>
                 ))}
@@ -165,7 +165,7 @@ export function TeamPage({ brokerSlug }: TeamPageProps) {
         </div>
       </main>
 
-      <PremiumFooter />
+      <PremiumFooter data={meta.footer} />
       <FloatingWhatsapp />
     </div>
     </WhatsappProvider>

@@ -14,6 +14,7 @@ interface PropertySectionProps {
   properties: MockProperty[];
   variant?: 'carousel' | 'grid';
   background?: 'light' | 'dark' | 'cream';
+  brokerSlug?: string | null;
 }
 
 const BG = {
@@ -30,6 +31,7 @@ export function PropertySection({
   properties,
   variant = 'carousel',
   background = 'light',
+  brokerSlug,
 }: PropertySectionProps) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const isDark = background === 'dark';
@@ -105,7 +107,7 @@ export function PropertySection({
         {variant === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
             {properties.map(p => (
-              <PremiumPropertyCard key={p.id} property={p} />
+              <PremiumPropertyCard key={p.id} property={p} brokerSlug={brokerSlug} />
             ))}
           </div>
         ) : (
@@ -121,7 +123,7 @@ export function PropertySection({
                   key={p.id}
                   className="snap-start shrink-0 w-[85%] sm:w-[55%] md:w-[42%] lg:w-[32%] xl:w-[28%]"
                 >
-                  <PremiumPropertyCard property={p} />
+                  <PremiumPropertyCard property={p} brokerSlug={brokerSlug} />
                 </div>
               ))}
             </div>

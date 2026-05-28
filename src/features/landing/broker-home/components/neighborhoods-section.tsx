@@ -4,9 +4,9 @@ import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { mockNeighborhoods } from '../data/mock';
 import type { NeighborhoodSummary } from '../hooks/use-broker-home-data';
+import { brokerUrls } from '../lib/broker-urls';
 import { Reveal, Stagger, StaggerItem } from './primitives/reveal';
 
 interface NeighborhoodsSectionProps {
@@ -33,19 +33,10 @@ function formatAveragePrice(value: number): string {
   return '';
 }
 
-function buildSearchHref(
-  brokerSlug: string | null,
-  neighborhood: string,
-  inPreview: boolean
-): string {
+function buildSearchHref(brokerSlug: string | null, neighborhood: string): string {
   const params = new URLSearchParams();
-  if (brokerSlug) params.set('broker', brokerSlug);
   params.set('neighborhood', neighborhood);
-  // Enquanto a rota /[slug]/imoveis/buscar não existir, mantém tudo no preview.
-  const base =
-    brokerSlug && !inPreview
-      ? `/${brokerSlug}/imoveis/buscar`
-      : `/preview-home/buscar`;
+  const base = brokerSlug ? brokerUrls(brokerSlug).listing : '/imoveis';
   return `${base}?${params.toString()}`;
 }
 
@@ -53,9 +44,6 @@ export function NeighborhoodsSection({
   brokerSlug,
   neighborhoods,
 }: NeighborhoodsSectionProps) {
-  const pathname = usePathname();
-  const inPreview = pathname?.startsWith('/preview-home') ?? false;
-
   // Sem broker: mostra mocks pra demonstração visual
   const items =
     neighborhoods.length > 0
@@ -66,7 +54,7 @@ export function NeighborhoodsSection({
           image: n.image ?? FALLBACK_IMAGES[i % FALLBACK_IMAGES.length],
           propertiesCount: n.count,
           priceLabel: formatAveragePrice(n.averagePrice),
-          href: buildSearchHref(brokerSlug, n.name, inPreview),
+          href: buildSearchHref(brokerSlug, n.name),
         }))
       : !brokerSlug
         ? mockNeighborhoods.map(n => ({
@@ -76,7 +64,7 @@ export function NeighborhoodsSection({
             image: n.image,
             propertiesCount: n.propertiesCount,
             priceLabel: `R$ ${n.averagePrice} médio`,
-            href: buildSearchHref(null, n.name, inPreview),
+            href: buildSearchHref(null, n.name),
           }))
         : [];
 

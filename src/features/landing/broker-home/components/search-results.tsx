@@ -68,7 +68,7 @@ export function SearchResults({ brokerSlug }: SearchResultsProps) {
     return 'Todos os imóveis';
   }, [filters.city, filters.neighborhood, filters.purpose]);
 
-  const homeHref = brokerSlug ? `/${brokerSlug}` : '/preview-home';
+  const homeHref = brokerSlug ? `/${brokerSlug}` : '#';
 
   const seoTitle = `${dynamicTitle}${meta.brandName ? ` · ${meta.brandName}` : ''}`;
 
@@ -193,6 +193,7 @@ export function SearchResults({ brokerSlug }: SearchResultsProps) {
                       key={p.id}
                       property={p}
                       whatsappNumber={meta.whatsappNumber}
+                      brokerSlug={brokerSlug}
                     />
                   ))}
                 </div>
@@ -212,7 +213,7 @@ export function SearchResults({ brokerSlug }: SearchResultsProps) {
         </div>
       </main>
 
-      <PremiumFooter />
+      <PremiumFooter data={meta.footer} />
       <FloatingWhatsapp />
     </div>
     </WhatsappProvider>
