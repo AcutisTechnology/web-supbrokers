@@ -19,6 +19,7 @@ import { useProfile, useUpdateProfile } from "@/features/dashboard/profile/servi
 import { SiteAppearanceForm, type SiteAppearanceFormData } from "@/features/dashboard/site/components/site-appearance-form";
 import { SiteFooterForm, type SiteFooterFormData } from "@/features/dashboard/site/components/site-footer-form";
 import { SiteSocialLinksManager } from "@/features/dashboard/site/components/site-social-links-manager";
+import { AgentProfilesManager } from "@/features/dashboard/site/components/agent-profiles-manager";
 import { SitePreview } from "@/features/dashboard/site/components/site-preview";
 import { SitePagesManager } from "@/features/dashboard/site/components/site-pages-manager";
 import { SitePagePreview } from "@/features/dashboard/site/components/site-page-preview";
@@ -683,7 +684,7 @@ function CompanySection() {
   );
 }
 
-type PageSubTab = "appearance" | "footer" | "social" | "pages";
+type PageSubTab = "appearance" | "footer" | "social" | "pages" | "team";
 
 function PageSection() {
   const [tab, setTab] = useState<PageSubTab>("appearance");
@@ -771,6 +772,7 @@ function PageSection() {
     { key: "footer", label: "Rodapé", description: "Contato, endereço e CRECI" },
     { key: "social", label: "Redes Sociais", description: "Links exibidos no rodapé" },
     { key: "pages", label: "Páginas", description: "Páginas institucionais do site" },
+    { key: "team", label: "Equipe", description: "Corretores da página /equipe" },
   ];
 
   const { pages: sitePages } = useSitePages();
@@ -863,6 +865,15 @@ function PageSection() {
                   onActivePageChange={setActivePage}
                   onDraftChange={setPageDraft}
                 />
+              </SettingsCard>
+            )}
+
+            {tab === "team" && (
+              <SettingsCard
+                title="Equipe / Corretores"
+                description="Gerencie os corretores exibidos na página /equipe do site público."
+              >
+                <AgentProfilesManager />
               </SettingsCard>
             )}
           </div>
