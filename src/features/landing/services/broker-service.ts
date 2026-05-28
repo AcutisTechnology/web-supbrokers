@@ -81,6 +81,11 @@ export interface PublicSiteStat {
   sort_order: number;
 }
 
+export interface PublicWhatsappTemplate {
+  key: string;
+  message: string;
+}
+
 // Interface para os dados do corretor
 export interface User {
   name: string;
@@ -96,6 +101,7 @@ export interface BrokerPropertiesResponse {
     sale: Property[];
     rent: Property[];
     stats: PublicSiteStat[];
+    whatsapp_templates: PublicWhatsappTemplate[];
     user: User;
   };
 }

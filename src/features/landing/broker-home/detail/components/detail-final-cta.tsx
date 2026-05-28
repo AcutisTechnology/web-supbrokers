@@ -1,7 +1,7 @@
 'use client';
 
 import { Calendar, MessageCircle, Sparkles, User } from 'lucide-react';
-import { buildWhatsappUrl } from '../../hooks/use-broker-home-data';
+import { useWhatsapp } from '../../hooks/whatsapp-context';
 import { Reveal } from '../../components/primitives/reveal';
 
 interface DetailFinalCtaProps {
@@ -12,18 +12,17 @@ interface DetailFinalCtaProps {
 
 export function DetailFinalCta({
   propertyTitle,
-  whatsappNumber,
   onOpenForm,
 }: DetailFinalCtaProps) {
-  const openWhats = () => {
-    const m = `Olá! Tenho interesse no imóvel "${propertyTitle}". Pode me passar mais informações?`;
-    window.open(buildWhatsappUrl(whatsappNumber, m), '_blank');
-  };
+  const { url: interestUrl } = useWhatsapp('interest_property', {
+    property: { title: propertyTitle },
+  });
+  const { url: visitUrl } = useWhatsapp('visit_property', {
+    property: { title: propertyTitle },
+  });
 
-  const openSchedule = () => {
-    const m = `Olá! Gostaria de agendar uma visita ao imóvel "${propertyTitle}". Quais os horários disponíveis?`;
-    window.open(buildWhatsappUrl(whatsappNumber, m), '_blank');
-  };
+  const openWhats = () => window.open(interestUrl, '_blank');
+  const openSchedule = () => window.open(visitUrl, '_blank');
 
   return (
     <Reveal>

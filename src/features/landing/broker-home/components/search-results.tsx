@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useBrokerHomeData } from '../hooks/use-broker-home-data';
 import { useSearchFilters } from '../hooks/use-search-filters';
+import { WhatsappProvider } from '../hooks/whatsapp-context';
 import { apiToCardProperty } from '../lib/map-property';
 import { FloatingWhatsapp } from './floating-whatsapp';
 import { ListingPagination } from './listing-pagination';
@@ -59,6 +60,7 @@ export function SearchResults({ brokerSlug }: SearchResultsProps) {
   const homeHref = brokerSlug ? `/${brokerSlug}` : '/preview-home';
 
   return (
+    <WhatsappProvider number={meta.whatsappNumber} templates={meta.whatsappTemplates}>
     <div className="min-h-screen bg-[#FAFAF7] text-[#0F0820]">
       <PremiumHeader
         brandName={meta.brandName}
@@ -195,6 +197,7 @@ export function SearchResults({ brokerSlug }: SearchResultsProps) {
       <PremiumFooter />
       <FloatingWhatsapp />
     </div>
+    </WhatsappProvider>
   );
 }
 

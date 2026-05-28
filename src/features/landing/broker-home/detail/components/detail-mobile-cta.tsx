@@ -2,7 +2,7 @@
 
 import { Calendar, MessageCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { buildWhatsappUrl } from '../../hooks/use-broker-home-data';
+import { useWhatsapp } from '../../hooks/whatsapp-context';
 
 interface DetailMobileCtaProps {
   propertyTitle: string;
@@ -19,9 +19,14 @@ export function DetailMobileCta({
   propertyTitle,
   value,
   type,
-  whatsappNumber,
 }: DetailMobileCtaProps) {
   const [visible, setVisible] = useState(false);
+  const { url: interestUrl } = useWhatsapp('interest_property', {
+    property: { title: propertyTitle },
+  });
+  const { url: visitUrl } = useWhatsapp('visit_property', {
+    property: { title: propertyTitle },
+  });
 
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > 600);
@@ -30,15 +35,8 @@ export function DetailMobileCta({
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const openWhats = () => {
-    const m = `Olá! Tenho interesse no imóvel "${propertyTitle}".`;
-    window.open(buildWhatsappUrl(whatsappNumber, m), '_blank');
-  };
-
-  const openSchedule = () => {
-    const m = `Olá! Gostaria de agendar uma visita ao imóvel "${propertyTitle}".`;
-    window.open(buildWhatsappUrl(whatsappNumber, m), '_blank');
-  };
+  const openWhats = () => window.open(interestUrl, '_blank');
+  const openSchedule = () => window.open(visitUrl, '_blank');
 
   return (
     <div

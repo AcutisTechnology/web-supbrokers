@@ -8,6 +8,7 @@ import { FloatingWhatsapp } from '../components/floating-whatsapp';
 import { PremiumFooter } from '../components/premium-footer';
 import { PremiumHeader } from '../components/premium-header';
 import { useBrokerHomeData } from '../hooks/use-broker-home-data';
+import { WhatsappProvider } from '../hooks/whatsapp-context';
 import { DetailContactForm } from './components/detail-contact-form';
 import { DetailDescription } from './components/detail-description';
 import { DetailFeatures } from './components/detail-features';
@@ -114,6 +115,7 @@ export function PropertyDetail({ brokerSlug, propertySlug }: PropertyDetailProps
   const listingHref = `/preview-home/buscar?broker=${brokerSlug}`;
 
   return (
+    <WhatsappProvider number={meta.whatsappNumber} templates={meta.whatsappTemplates}>
     <div className="min-h-screen bg-[#FAFAF7] text-[#0F0820]">
       <PremiumHeader
         brandName={meta.brandName}
@@ -260,5 +262,6 @@ export function PropertyDetail({ brokerSlug, propertySlug }: PropertyDetailProps
         whatsappNumber={meta.whatsappNumber}
       />
     </div>
+    </WhatsappProvider>
   );
 }

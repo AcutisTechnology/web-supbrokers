@@ -6,10 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import {
-  buildWhatsappUrl,
-  WHATSAPP_MESSAGES,
-} from '../hooks/use-broker-home-data';
+import { useWhatsapp } from '../hooks/whatsapp-context';
 
 export interface PremiumHeaderProps {
   brandName: string;
@@ -43,19 +40,11 @@ export function PremiumHeader({
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const openWhatsapp = () => {
-    window.open(
-      buildWhatsappUrl(whatsappNumber, WHATSAPP_MESSAGES.default),
-      '_blank'
-    );
-  };
+  const { url: defaultUrl } = useWhatsapp('default');
+  const { url: announceUrl } = useWhatsapp('announce');
 
-  const openAnunciar = () => {
-    window.open(
-      buildWhatsappUrl(whatsappNumber, WHATSAPP_MESSAGES.anunciar),
-      '_blank'
-    );
-  };
+  const openWhatsapp = () => window.open(defaultUrl, '_blank');
+  const openAnunciar = () => window.open(announceUrl, '_blank');
 
   const homeHref = brokerSlug ? `/${brokerSlug}` : '#';
   const isLight = theme === 'light';

@@ -3,7 +3,7 @@
 import { Calendar, Check, Copy, Heart, MessageCircle, Share2 } from 'lucide-react';
 import { useState } from 'react';
 import { useFavorites } from '../../hooks/use-favorites';
-import { buildWhatsappUrl } from '../../hooks/use-broker-home-data';
+import { useWhatsapp } from '../../hooks/whatsapp-context';
 
 interface DetailQuickActionsProps {
   propertyId: string;
@@ -21,6 +21,9 @@ export function DetailQuickActions({
   const { isFavorite, toggle } = useFavorites();
   const fav = isFavorite(propertyId);
   const [copied, setCopied] = useState(false);
+  const { url: whatsappUrl } = useWhatsapp('interest_property', {
+    property: { title },
+  });
 
   const handleCopyLink = async () => {
     if (typeof window === 'undefined') return;
@@ -47,10 +50,7 @@ export function DetailQuickActions({
     }
   };
 
-  const handleWhatsapp = () => {
-    const message = `Olá! Tenho interesse no imóvel "${title}". Pode me passar mais informações?`;
-    window.open(buildWhatsappUrl(whatsappNumber, message), '_blank');
-  };
+  const handleWhatsapp = () => window.open(whatsappUrl, '_blank');
 
   return (
     <div className="flex flex-wrap items-center gap-2">

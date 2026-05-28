@@ -15,6 +15,7 @@ import { PropertySection } from './components/property-section';
 import { StatsStrip } from './components/stats-strip';
 import { TestimonialsSection } from './components/testimonials-section';
 import { useBrokerHomeData } from './hooks/use-broker-home-data';
+import { WhatsappProvider } from './hooks/whatsapp-context';
 import { apiToCardProperty } from './lib/map-property';
 
 interface BrokerHomeProps {
@@ -53,6 +54,7 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
   }, [brokerSlug, data.properties]);
 
   return (
+    <WhatsappProvider number={data.whatsappNumber} templates={data.whatsappTemplates}>
     <div className="min-h-screen bg-white text-[#0F0820] antialiased">
       <PremiumHeader
         brandName={data.brandName}
@@ -127,5 +129,6 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
       <PremiumFooter />
       <FloatingWhatsapp />
     </div>
+    </WhatsappProvider>
   );
 }

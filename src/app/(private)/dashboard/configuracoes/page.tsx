@@ -22,6 +22,7 @@ import { SiteSocialLinksManager } from "@/features/dashboard/site/components/sit
 import { AgentProfilesManager } from "@/features/dashboard/site/components/agent-profiles-manager";
 import { HomeHeroForm } from "@/features/dashboard/site/components/home-hero-form";
 import { SiteStatsManager } from "@/features/dashboard/site/components/site-stats-manager";
+import { WhatsappTemplatesManager } from "@/features/dashboard/site/components/whatsapp-templates-manager";
 import { SitePreview } from "@/features/dashboard/site/components/site-preview";
 import { SitePagesManager } from "@/features/dashboard/site/components/site-pages-manager";
 import { SitePagePreview } from "@/features/dashboard/site/components/site-page-preview";
@@ -686,7 +687,14 @@ function CompanySection() {
   );
 }
 
-type PageSubTab = "appearance" | "home" | "footer" | "social" | "pages" | "team";
+type PageSubTab =
+  | "appearance"
+  | "home"
+  | "footer"
+  | "social"
+  | "pages"
+  | "team"
+  | "messages";
 
 function PageSection() {
   const [tab, setTab] = useState<PageSubTab>("appearance");
@@ -776,6 +784,7 @@ function PageSection() {
     { key: "social", label: "Redes Sociais", description: "Links exibidos no rodapé" },
     { key: "pages", label: "Páginas", description: "Páginas institucionais do site" },
     { key: "team", label: "Equipe", description: "Corretores da página /equipe" },
+    { key: "messages", label: "Mensagens", description: "Templates de WhatsApp" },
   ];
 
   const { pages: sitePages } = useSitePages();
@@ -877,6 +886,15 @@ function PageSection() {
                 description="Gerencie os corretores exibidos na página /equipe do site público."
               >
                 <AgentProfilesManager />
+              </SettingsCard>
+            )}
+
+            {tab === "messages" && (
+              <SettingsCard
+                title="Mensagens de WhatsApp"
+                description="Personalize as mensagens pré-preenchidas dos botões de WhatsApp em todo o site."
+              >
+                <WhatsappTemplatesManager />
               </SettingsCard>
             )}
 

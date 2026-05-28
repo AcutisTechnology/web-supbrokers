@@ -51,6 +51,7 @@ export interface BrokerHomeData {
   topNeighborhoods: NeighborhoodSummary[];
   hero: HeroContent;
   stats: HomeStat[];
+  whatsappTemplates: { key: string; message: string }[];
 }
 
 function defaultMenuItems(brokerSlug: string | null) {
@@ -109,6 +110,7 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
         backgroundUrl: null,
       },
       stats: [],
+      whatsappTemplates: [],
     };
   }
 
@@ -208,6 +210,11 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
     icon: s.icon,
   }));
 
+  const whatsappTemplates = (data?.whatsapp_templates ?? []).map(t => ({
+    key: t.key,
+    message: t.message,
+  }));
+
   return {
     brokerSlug,
     loading,
@@ -223,6 +230,7 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
     topNeighborhoods,
     hero,
     stats,
+    whatsappTemplates,
   };
 }
 
@@ -234,6 +242,24 @@ export function buildWhatsappUrl(number: string, message: string): string {
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
+/**
+ * Helper centralizado: aplica template + abre WhatsApp.
+ * Substitui as N variações de "buildWhatsappUrl + mensagem manual" espalhadas
+ * pelos componentes da home/detalhe/equipe.
+ */
+export function whatsappUrlFor(
+  number: string,
+  templates: { key: string; message: string }[] | undefined,
+  key: WhatsappTemplateKey,
+  vars: Record<string, Record<string, string | number | null | undefined>> = {}
+): string {
+  return buildWhatsappUrl(number, resolveWhatsappMessage(templates, key, vars));
+}
+
+/**
+ * @deprecated Use resolveWhatsappMessage(templates, key, vars) com os templates vindos
+ * de useBrokerHomeData().templates — esses constants são apenas fallbacks finais.
+ */
 export const WHATSAPP_MESSAGES = {
   default: 'Olá! Gostaria de mais informações sobre os imóveis disponíveis.',
   anunciar:
@@ -241,3 +267,50 @@ export const WHATSAPP_MESSAGES = {
   visita:
     'Olá! Gostaria de agendar uma visita a um imóvel. Podem me ajudar com os horários?',
 } as const;
+
+/**
+ * Chaves de template conhecidas, alinhadas ao catálogo do backend
+ * (App\Models\Site\WhatsappTemplate::CATALOG).
+ */
+export type WhatsappTemplateKey =
+  | 'default'
+  | 'announce'
+  | 'interest_property'
+  | 'visit_property'
+  | 'interest_agent'
+  | 'work_with_us'
+  | 'send_resume';
+
+/**
+ * Substitui placeholders {{a.b}} pelos valores de `vars`.
+ * Aceita até 2 níveis (`property.title`, `agent.name`, etc).
+ */
+export function resolveWhatsappMessage(
+  templates: { key: string; message: string }[] | undefined,
+  key: WhatsappTemplateKey,
+  vars: Record<string, Record<string, string | number | null | undefined>> = {}
+): string {
+  const template = templates?.find(t => t.key === key);
+  // Fallback: usa o constante hard-coded equivalente (compat)
+  const fallbackMap: Record<WhatsappTemplateKey, string> = {
+    default: WHATSAPP_MESSAGES.default,
+    announce: WHATSAPP_MESSAGES.anunciar,
+    interest_property:
+      'Olá! Tenho interesse no imóvel "{{property.title}}". Pode me passar mais informações?',
+    visit_property:
+      'Olá! Gostaria de agendar uma visita ao imóvel "{{property.title}}". Quais os horários disponíveis?',
+    interest_agent:
+      'Olá {{agent.name}}! Vim do site e gostaria de conversar.',
+    work_with_us:
+      'Olá! Vi a página da equipe e gostaria de saber sobre as vagas abertas.',
+    send_resume:
+      'Olá! Gostaria de enviar meu currículo para ser considerado em futuras oportunidades.',
+  };
+  const raw = template?.message || fallbackMap[key];
+
+  return raw.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, path: string) => {
+    const [a, b] = path.split('.');
+    const value = b ? vars[a]?.[b] : (vars[a] as unknown);
+    return value != null ? String(value) : '';
+  });
+}

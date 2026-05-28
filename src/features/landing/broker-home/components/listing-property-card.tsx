@@ -8,7 +8,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import type { Badge, MockProperty } from '../data/mock';
 import { useFavorites } from '../hooks/use-favorites';
-import { buildWhatsappUrl } from '../hooks/use-broker-home-data';
+import { useWhatsapp } from '../hooks/whatsapp-context';
 
 interface ListingPropertyCardProps {
   property: MockProperty;
@@ -38,6 +38,9 @@ export function ListingPropertyCard({
   const { isFavorite, toggle } = useFavorites();
   const [imageLoaded, setImageLoaded] = useState(false);
   const fav = isFavorite(property.id);
+  const { url: whatsappUrl } = useWhatsapp('interest_property', {
+    property: { title: property.title },
+  });
 
   // Constrói link para detalhes preservando contexto preview/produção
   const pathname = usePathname();
@@ -70,8 +73,7 @@ export function ListingPropertyCard({
     e.preventDefault();
     e.stopPropagation();
     if (!whatsappNumber) return;
-    const message = `Olá! Tenho interesse no imóvel "${property.title}" (${property.neighborhood}). Pode me passar mais informações?`;
-    window.open(buildWhatsappUrl(whatsappNumber, message), '_blank');
+    window.open(whatsappUrl, '_blank');
   };
 
   return (

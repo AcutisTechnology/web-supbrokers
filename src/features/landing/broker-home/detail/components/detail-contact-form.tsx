@@ -5,7 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Check, Loader2, MessageCircle, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { buildWhatsappUrl } from '../../hooks/use-broker-home-data';
+import { useWhatsapp } from '../../hooks/whatsapp-context';
 
 interface DetailContactFormProps {
   propertyTitle: string;
@@ -28,7 +28,6 @@ interface InterestPayload extends InterestFormData {
 export function DetailContactForm({
   propertyTitle,
   propertySlug,
-  whatsappNumber,
   variant = 'sidebar',
 }: DetailContactFormProps) {
   const {
@@ -41,15 +40,17 @@ export function DetailContactForm({
     defaultValues: { name: '', email: '', phone: '', message: '' },
   });
 
+  const { url: whatsappUrl } = useWhatsapp('interest_property', {
+    property: { title: propertyTitle },
+  });
+
   const { mutate, isPending, isSuccess } = useMutation({
     mutationFn: async (data: InterestPayload) =>
       api.post('customers', { json: data }).json(),
     onSuccess: () => {
       toast.success('Recebemos seu contato! O corretor falará com você em instantes.');
       reset();
-      // Abre WhatsApp pra continuidade rápida
-      const message = `Olá! Acabei de enviar meu interesse no imóvel "${propertyTitle}".`;
-      window.open(buildWhatsappUrl(whatsappNumber, message), '_blank');
+      window.open(whatsappUrl, '_blank');
     },
     onError: () => {
       toast.error('Não conseguimos enviar agora. Tente novamente em instantes.');
@@ -149,10 +150,7 @@ export function DetailContactForm({
       </p>
 
       <a
-        href={buildWhatsappUrl(
-          whatsappNumber,
-          `Olá! Tenho interesse no imóvel "${propertyTitle}".`
-        )}
+        href={whatsappUrl}
         target="_blank"
         rel="noreferrer"
         className="w-full inline-flex items-center justify-center gap-2 bg-emerald-500 text-white font-medium text-sm px-5 py-3 rounded-full hover:bg-emerald-400 transition-colors"

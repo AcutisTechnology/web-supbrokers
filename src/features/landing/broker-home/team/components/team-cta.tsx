@@ -1,6 +1,6 @@
 'use client';
 
-import { buildWhatsappUrl } from '@/features/landing/broker-home/hooks/use-broker-home-data';
+import { useWhatsapp } from '@/features/landing/broker-home/hooks/whatsapp-context';
 import { Reveal } from '@/features/landing/broker-home/components/primitives/reveal';
 import { Send, Sparkles } from 'lucide-react';
 
@@ -8,18 +8,12 @@ interface TeamCtaProps {
   whatsappNumber: string;
 }
 
-export function TeamCta({ whatsappNumber }: TeamCtaProps) {
-  const handleVagas = () => {
-    const message =
-      'Olá! Vi a página da equipe e gostaria de saber sobre as vagas abertas.';
-    window.open(buildWhatsappUrl(whatsappNumber, message), '_blank');
-  };
+export function TeamCta({}: TeamCtaProps) {
+  const { url: vagasUrl } = useWhatsapp('work_with_us');
+  const { url: curriculoUrl } = useWhatsapp('send_resume');
 
-  const handleCurriculo = () => {
-    const message =
-      'Olá! Gostaria de enviar meu currículo para ser considerado em futuras oportunidades.';
-    window.open(buildWhatsappUrl(whatsappNumber, message), '_blank');
-  };
+  const handleVagas = () => window.open(vagasUrl, '_blank');
+  const handleCurriculo = () => window.open(curriculoUrl, '_blank');
 
   return (
     <Reveal>

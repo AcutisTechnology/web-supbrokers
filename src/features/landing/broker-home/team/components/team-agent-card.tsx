@@ -1,6 +1,7 @@
 'use client';
 
 import { buildWhatsappUrl } from '@/features/landing/broker-home/hooks/use-broker-home-data';
+import { useWhatsapp } from '@/features/landing/broker-home/hooks/whatsapp-context';
 import type { PublicAgent } from '@/features/landing/services/agents-service';
 import { motion } from 'framer-motion';
 import { ArrowRight, Globe, Mail, MapPin, MessageCircle, Share2, Users } from 'lucide-react';
@@ -37,12 +38,15 @@ function badgeStyle(slug: string): string {
 
 export function TeamAgentCard({ agent, detailHref }: TeamAgentCardProps) {
   const photo = agent.photo_url || PHOTO_FALLBACK;
+  // Mensagem vem do template (interest_agent), mas o número é o do próprio corretor.
+  const { message: agentMessage } = useWhatsapp('interest_agent', {
+    agent: { name: agent.name },
+  });
   const handleWhatsapp = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!agent.whatsapp) return;
-    const message = `Olá ${agent.name}! Encontrei seu perfil e gostaria de conversar.`;
-    window.open(buildWhatsappUrl(agent.whatsapp, message), '_blank');
+    window.open(buildWhatsappUrl(agent.whatsapp, agentMessage), '_blank');
   };
 
   const handleEmail = (e: React.MouseEvent) => {

@@ -3,10 +3,11 @@
 import { motion } from 'framer-motion';
 import { MessageCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { mockBrand } from '../data/mock';
+import { useWhatsapp } from '../hooks/whatsapp-context';
 
 export function FloatingWhatsapp() {
   const [visible, setVisible] = useState(false);
+  const { url } = useWhatsapp('default');
 
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > 400);
@@ -15,12 +16,7 @@ export function FloatingWhatsapp() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const handleClick = () => {
-    const url = `https://wa.me/${mockBrand.whatsapp}?text=${encodeURIComponent(
-      'Olá! Gostaria de mais informações.'
-    )}`;
-    window.open(url, '_blank');
-  };
+  const handleClick = () => window.open(url, '_blank');
 
   return (
     <motion.button

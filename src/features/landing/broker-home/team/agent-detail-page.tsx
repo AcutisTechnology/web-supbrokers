@@ -7,8 +7,10 @@ import { PremiumHeader } from '@/features/landing/broker-home/components/premium
 import { Reveal } from '@/features/landing/broker-home/components/primitives/reveal';
 import {
   buildWhatsappUrl,
+  resolveWhatsappMessage,
   useBrokerHomeData,
 } from '@/features/landing/broker-home/hooks/use-broker-home-data';
+import { WhatsappProvider, useWhatsapp } from '@/features/landing/broker-home/hooks/whatsapp-context';
 import { apiToCardProperty } from '@/features/landing/broker-home/lib/map-property';
 import { useBrokerAgentDetail } from '@/features/landing/services/agents-service';
 import { useBrokerProperties } from '@/features/landing/services/broker-service';
@@ -97,6 +99,7 @@ export function AgentDetailPage({ brokerSlug, agentSlug }: AgentDetailPageProps)
   const allProperties = propertiesQuery.data?.data.all ?? [];
 
   return (
+    <WhatsappProvider number={meta.whatsappNumber} templates={meta.whatsappTemplates}>
     <div className="min-h-screen bg-[#FAFAF7] text-[#0F0820]">
       <PremiumHeader
         brandName={meta.brandName}
@@ -219,7 +222,9 @@ export function AgentDetailPage({ brokerSlug, agentSlug }: AgentDetailPageProps)
                     <a
                       href={buildWhatsappUrl(
                         agent.whatsapp,
-                        `Olá ${agent.name}! Vim do site e gostaria de conversar.`
+                        resolveWhatsappMessage(meta.whatsappTemplates, 'interest_agent', {
+                          agent: { name: agent.name },
+                        })
                       )}
                       target="_blank"
                       rel="noreferrer"
@@ -334,6 +339,7 @@ export function AgentDetailPage({ brokerSlug, agentSlug }: AgentDetailPageProps)
       <PremiumFooter />
       <FloatingWhatsapp />
     </div>
+    </WhatsappProvider>
   );
 }
 
@@ -413,6 +419,9 @@ function ContactCard({
   const [submitting, setSubmitting] = useState(false);
 
   const whats = agent.whatsapp || fallbackWhatsapp;
+  const { message: agentMessage } = useWhatsapp('interest_agent', {
+    agent: { name: agent.name },
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -430,10 +439,7 @@ function ContactCard({
       );
       setForm({ name: '', email: '', phone: '', message: '' });
       window.open(
-        buildWhatsappUrl(
-          whats,
-          `Olá ${agent.name}! Acabei de enviar meu contato pelo site.`
-        ),
+        buildWhatsappUrl(whats, agentMessage),
         '_blank'
       );
     } catch {
@@ -501,10 +507,7 @@ function ContactCard({
         </button>
         {agent.whatsapp && (
           <a
-            href={buildWhatsappUrl(
-              agent.whatsapp,
-              `Olá ${agent.name}! Vim do site e gostaria de conversar.`
-            )}
+            href={buildWhatsappUrl(agent.whatsapp, agentMessage)}
             target="_blank"
             rel="noreferrer"
             className="w-full inline-flex items-center justify-center gap-2 bg-emerald-500 text-white font-medium text-sm px-5 py-3 rounded-full hover:bg-emerald-400 transition-colors"

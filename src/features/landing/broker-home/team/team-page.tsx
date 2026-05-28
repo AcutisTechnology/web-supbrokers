@@ -5,6 +5,7 @@ import { PremiumFooter } from '@/features/landing/broker-home/components/premium
 import { PremiumHeader } from '@/features/landing/broker-home/components/premium-header';
 import { Reveal, Stagger, StaggerItem } from '@/features/landing/broker-home/components/primitives/reveal';
 import { useBrokerHomeData } from '@/features/landing/broker-home/hooks/use-broker-home-data';
+import { WhatsappProvider } from '@/features/landing/broker-home/hooks/whatsapp-context';
 import { useBrokerAgents } from '@/features/landing/services/agents-service';
 import { ChevronRight, Home, Loader2, Users } from 'lucide-react';
 import Link from 'next/link';
@@ -56,6 +57,7 @@ export function TeamPage({ brokerSlug }: TeamPageProps) {
   const homeHref = `/preview-home?broker=${brokerSlug}`;
 
   return (
+    <WhatsappProvider number={meta.whatsappNumber} templates={meta.whatsappTemplates}>
     <div className="min-h-screen bg-[#FAFAF7] text-[#0F0820]">
       <PremiumHeader
         brandName={meta.brandName}
@@ -166,6 +168,7 @@ export function TeamPage({ brokerSlug }: TeamPageProps) {
       <PremiumFooter />
       <FloatingWhatsapp />
     </div>
+    </WhatsappProvider>
   );
 }
 
