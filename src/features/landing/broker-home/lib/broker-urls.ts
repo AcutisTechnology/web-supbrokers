@@ -10,6 +10,8 @@ export function brokerUrls(slug: string) {
     property: (propertySlug: string) => `${base}/imovel/${propertySlug}`,
     team: `${base}/equipe`,
     agent: (agentSlug: string) => `${base}/equipe/${agentSlug}`,
+    blog: `${base}/blog`,
+    article: (postSlug: string) => `${base}/blog/${postSlug}`,
     page: (pageSlug: string) => {
       const normalized = pageSlug.replace(/^\/+/, '');
       return normalized ? `${base}/p/${normalized}` : base;
