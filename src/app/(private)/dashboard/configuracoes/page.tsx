@@ -25,6 +25,7 @@ import { SiteStatsManager } from "@/features/dashboard/site/components/site-stat
 import { InstitutionalForm } from "@/features/dashboard/site/components/institutional-form";
 import { TestimonialsManager } from "@/features/dashboard/site/components/testimonials-manager";
 import { HomeLayoutManager } from "@/features/dashboard/site/components/home-layout-manager";
+import { SeoListingForm } from "@/features/dashboard/site/components/seo-listing-form";
 import { WhatsappTemplatesManager } from "@/features/dashboard/site/components/whatsapp-templates-manager";
 import { SitePreview } from "@/features/dashboard/site/components/site-preview";
 import { SitePagesManager } from "@/features/dashboard/site/components/site-pages-manager";
@@ -837,6 +838,21 @@ function PageSection() {
                     await updateSettings(payload);
                   }}
                   onChange={(data) => setPreviewSettings((prev) => ({ ...prev, ...data }))}
+                  isSubmitting={isUpdatingSettings}
+                />
+              </SettingsCard>
+            )}
+
+            {tab === "appearance" && (
+              <SettingsCard
+                title="SEO & Listagem"
+                description="Meta tags, imagem de compartilhamento e preferências da listagem de imóveis."
+              >
+                <SeoListingForm
+                  initial={settings}
+                  onSubmit={async payload => {
+                    await updateSettings(payload);
+                  }}
                   isSubmitting={isUpdatingSettings}
                 />
               </SettingsCard>

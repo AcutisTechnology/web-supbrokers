@@ -55,6 +55,8 @@ export interface BrokerHomeData {
   institutional: BrokerPropertiesResponse['data']['institutional'] | null;
   testimonials: BrokerPropertiesResponse['data']['testimonials'];
   homeLayout: { key: string; enabled: boolean }[] | null;
+  seo: { title: string | null; description: string | null; ogImage: string | null };
+  listing: { pageSize: number | null; defaultSort: string | null };
 }
 
 function defaultMenuItems(brokerSlug: string | null) {
@@ -117,6 +119,8 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
       institutional: null,
       testimonials: [],
       homeLayout: null,
+      seo: { title: null, description: null, ogImage: null },
+      listing: { pageSize: null, defaultSort: null },
     };
   }
 
@@ -240,6 +244,15 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
     institutional: data?.institutional ?? null,
     testimonials: data?.testimonials ?? [],
     homeLayout: site?.home_layout ?? null,
+    seo: {
+      title: site?.seo_title ?? null,
+      description: site?.seo_description ?? null,
+      ogImage: site?.og_image_url ?? null,
+    },
+    listing: {
+      pageSize: site?.listing_page_size ?? null,
+      defaultSort: site?.listing_default_sort ?? null,
+    },
   };
 }
 

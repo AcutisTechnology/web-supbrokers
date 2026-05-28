@@ -8,6 +8,7 @@ import { useBrokerHomeData } from '../hooks/use-broker-home-data';
 import { useSearchFilters } from '../hooks/use-search-filters';
 import { WhatsappProvider } from '../hooks/whatsapp-context';
 import { apiToCardProperty } from '../lib/map-property';
+import { DynamicSeo } from './dynamic-seo';
 import { FloatingWhatsapp } from './floating-whatsapp';
 import { ListingPagination } from './listing-pagination';
 import { ListingPropertyCard } from './listing-property-card';
@@ -20,13 +21,23 @@ interface SearchResultsProps {
   brokerSlug: string | null;
 }
 
-const PAGE_SIZE = 12;
+const DEFAULT_PAGE_SIZE = 12;
 
 export function SearchResults({ brokerSlug }: SearchResultsProps) {
   const meta = useBrokerHomeData(brokerSlug);
   const { filters, clearFilters, filtersCount } = useSearchFilters();
 
-  const propertiesQuery = useBrokerProperties(brokerSlug ?? '', filters);
+  // Aplica a ordenação default configurada quando o usuário não escolheu uma.
+  const effectiveFilters = useMemo(() => {
+    const fallbackSort = (meta.listing.defaultSort ?? undefined) as
+      | typeof filters.sort
+      | undefined;
+    return { ...filters, sort: filters.sort ?? fallbackSort };
+  }, [filters, meta.listing.defaultSort]);
+
+  const pageSize = meta.listing.pageSize ?? DEFAULT_PAGE_SIZE;
+
+  const propertiesQuery = useBrokerProperties(brokerSlug ?? '', effectiveFilters);
   const data = propertiesQuery.data?.data;
   const items = useMemo(
     () => (data?.all ?? []).map(apiToCardProperty),
@@ -40,10 +51,10 @@ export function SearchResults({ brokerSlug }: SearchResultsProps) {
     setPage(1);
   }, [items.length, filtersCount]);
 
-  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
   const visible = useMemo(
-    () => items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-    [items, page]
+    () => items.slice((page - 1) * pageSize, page * pageSize),
+    [items, page, pageSize]
   );
 
   const isLoading = propertiesQuery.isLoading;
@@ -59,8 +70,15 @@ export function SearchResults({ brokerSlug }: SearchResultsProps) {
 
   const homeHref = brokerSlug ? `/${brokerSlug}` : '/preview-home';
 
+  const seoTitle = `${dynamicTitle}${meta.brandName ? ` · ${meta.brandName}` : ''}`;
+
   return (
     <WhatsappProvider number={meta.whatsappNumber} templates={meta.whatsappTemplates}>
+    <DynamicSeo
+      title={seoTitle}
+      description={meta.seo.description}
+      ogImage={meta.seo.ogImage}
+    />
     <div className="min-h-screen bg-[#FAFAF7] text-[#0F0820]">
       <PremiumHeader
         brandName={meta.brandName}

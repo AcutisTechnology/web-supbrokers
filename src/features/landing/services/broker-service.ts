@@ -68,6 +68,11 @@ export interface PublicSite {
   hero_title_line_2: string | null;
   hero_background_url: string | null;
   home_layout: { key: string; enabled: boolean }[];
+  seo_title: string | null;
+  seo_description: string | null;
+  og_image_url: string | null;
+  listing_page_size: number | null;
+  listing_default_sort: string | null;
   footer: PublicSiteFooter | null;
   social_links: PublicSocialLink[];
 }

@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { mockProperties, type MockProperty } from './data/mock';
 import { BlogSection } from './components/blog-section';
 import { BrokersSection } from './components/brokers-section';
+import { DynamicSeo } from './components/dynamic-seo';
 import { FinalCta } from './components/final-cta';
 import { FloatingWhatsapp } from './components/floating-whatsapp';
 import { InstitutionalSection } from './components/institutional-section';
@@ -76,6 +77,11 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
 
   return (
     <WhatsappProvider number={data.whatsappNumber} templates={data.whatsappTemplates}>
+    <DynamicSeo
+      title={data.seo.title || (brokerSlug ? data.brandName : undefined)}
+      description={data.seo.description}
+      ogImage={data.seo.ogImage}
+    />
     <div className="min-h-screen bg-white text-[#0F0820] antialiased">
       <PremiumHeader
         brandName={data.brandName}
