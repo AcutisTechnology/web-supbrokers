@@ -747,7 +747,14 @@ function PageSection() {
     refetchSocial();
   };
 
-  const [previewSettings, setPreviewSettings] = useState<Partial<SiteAppearanceFormData>>({});
+  const [previewSettings, setPreviewSettings] = useState<
+    Partial<SiteAppearanceFormData> & {
+      hero_eyebrow?: string | null;
+      hero_title_line_1?: string | null;
+      hero_title_line_2?: string | null;
+      hero_background_url?: string | null;
+    }
+  >({});
   const [previewFooter, setPreviewFooter] = useState<Partial<SiteFooterFormData>>({});
 
   useEffect(() => {
@@ -931,12 +938,18 @@ function PageSection() {
                 >
                   <HomeHeroForm
                     initial={settings}
-                    onSubmit={async payload => {
-                      await updateSettings(payload);
+                    onChange={data =>
                       setPreviewSettings(prev => ({
                         ...prev,
-                        site_subtitle: payload.site_subtitle ?? undefined,
-                      }));
+                        hero_eyebrow: data.hero_eyebrow,
+                        hero_title_line_1: data.hero_title_line_1,
+                        hero_title_line_2: data.hero_title_line_2,
+                        hero_background_url: data.hero_background_url,
+                        site_subtitle: data.site_subtitle ?? undefined,
+                      }))
+                    }
+                    onSubmit={async payload => {
+                      await updateSettings(payload);
                     }}
                     isSubmitting={isUpdatingSettings}
                   />

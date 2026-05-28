@@ -32,6 +32,7 @@ export type HomeHeroFormValues = z.infer<typeof schema>;
 interface HomeHeroFormProps {
   initial?: SiteSetting | undefined;
   onSubmit: (payload: UpdateSiteSettingPayload) => Promise<unknown>;
+  onChange?: (data: Partial<UpdateSiteSettingPayload>) => void;
   isSubmitting?: boolean;
 }
 
@@ -57,7 +58,7 @@ function toPayload(values: HomeHeroFormValues): UpdateSiteSettingPayload {
   };
 }
 
-export function HomeHeroForm({ initial, onSubmit, isSubmitting }: HomeHeroFormProps) {
+export function HomeHeroForm({ initial, onSubmit, onChange, isSubmitting }: HomeHeroFormProps) {
   const form = useForm<HomeHeroFormValues>({
     resolver: zodResolver(schema),
     defaultValues: buildInitial(initial),
@@ -68,6 +69,15 @@ export function HomeHeroForm({ initial, onSubmit, isSubmitting }: HomeHeroFormPr
     form.reset(buildInitial(initial));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initial?.id]);
+
+  // Preview ao vivo: propaga as mudanças (com debounce leve) para o pai.
+  const watched = form.watch();
+  useEffect(() => {
+    if (!onChange) return;
+    const id = setTimeout(() => onChange(toPayload(watched)), 250);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watched.hero_eyebrow, watched.hero_title_line_1, watched.hero_title_line_2, watched.site_subtitle, watched.hero_background_url]);
 
   const handleSubmit = async (values: HomeHeroFormValues) => {
     await onSubmit(toPayload(values));
