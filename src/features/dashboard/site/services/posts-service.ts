@@ -6,26 +6,53 @@ export interface SitePost {
   id: number;
   slug: string;
   title: string;
+  subtitle: string | null;
   category: string | null;
+  tags: string[];
   excerpt: string | null;
+  body: string | null;
   image_url: string | null;
+  thumbnail_url: string | null;
   link_url: string | null;
   reading_time: string | null;
   published_at: string | null;
   is_published: boolean;
+  is_featured: boolean;
+  is_visible: boolean;
+  views: number;
+  seo_title: string | null;
+  seo_description: string | null;
+  og_image_url: string | null;
+  agent_profile_id: number | null;
+  author_name: string | null;
   sort_order: number;
+  editable: boolean;
 }
 
 export interface SitePostPayload {
   title: string;
+  subtitle?: string | null;
   category?: string | null;
+  tags?: string[];
   excerpt?: string | null;
+  body?: string | null;
   image_url?: string | null;
+  thumbnail_url?: string | null;
   link_url?: string | null;
   reading_time?: string | null;
   published_at?: string | null;
   is_published?: boolean;
+  is_featured?: boolean;
+  is_visible?: boolean;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  og_image_url?: string | null;
+  agent_profile_id?: number | null;
   sort_order?: number;
+}
+
+export interface SitePostVisibilityPayload {
+  is_visible: boolean;
 }
 
 type ResourceResponse<T> = { data: T };
@@ -42,7 +69,10 @@ export async function createPost(payload: SitePostPayload): Promise<SitePost> {
   return response.data;
 }
 
-export async function updatePost(id: number, payload: SitePostPayload): Promise<SitePost> {
+export async function updatePost(
+  id: number,
+  payload: Partial<SitePostPayload> | SitePostVisibilityPayload,
+): Promise<SitePost> {
   const response = await api.put(`site/posts/${id}`, { json: payload }).json<ResourceResponse<SitePost>>();
   return response.data;
 }
@@ -71,7 +101,13 @@ export function usePosts() {
   });
 
   const update = useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: SitePostPayload }) => updatePost(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: Partial<SitePostPayload> | SitePostVisibilityPayload;
+    }) => updatePost(id, payload),
     onSuccess: () => {
       toast({ title: "Post atualizado." });
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });

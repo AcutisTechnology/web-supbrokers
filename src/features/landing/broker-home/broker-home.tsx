@@ -174,6 +174,7 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
                 <BlogSection
                   key={key}
                   posts={brokerSlug ? data.posts : undefined}
+                  brokerSlug={brokerSlug}
                 />
               );
             default:

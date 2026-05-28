@@ -1,14 +1,17 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Clock } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Clock } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import type { PublicPost } from '@/features/landing/services/broker-service';
 import { mockPosts } from '../data/mock';
+import { brokerUrls } from '../lib/broker-urls';
 import { Reveal, Stagger, StaggerItem } from './primitives/reveal';
 
 interface BlogSectionProps {
   posts?: PublicPost[];
+  brokerSlug?: string | null;
 }
 
 interface PostItem {
@@ -38,7 +41,7 @@ const formatDate = (iso: string | null) => {
   }
 };
 
-export function BlogSection({ posts }: BlogSectionProps) {
+export function BlogSection({ posts, brokerSlug }: BlogSectionProps) {
   // undefined → demo (mock). Array (mesmo vazio) → broker real.
   const isDemo = posts === undefined;
 
@@ -61,7 +64,9 @@ export function BlogSection({ posts }: BlogSectionProps) {
         image: p.image_url || IMAGE_FALLBACK,
         readingTime: p.reading_time,
         publishedAt: p.published_at,
-        href: p.link_url,
+        href:
+          p.link_url ||
+          (brokerSlug ? brokerUrls(brokerSlug).article(p.slug) : null),
       }));
 
   if (items.length === 0) return null;
@@ -82,6 +87,15 @@ export function BlogSection({ posts }: BlogSectionProps) {
                 Conteúdo para quem <span className="italic">vive</span> o luxo.
               </h2>
             </div>
+            {brokerSlug && (
+              <Link
+                href={brokerUrls(brokerSlug).blog}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-[#0F0820]/15 text-[#0F0820] text-sm font-medium hover:bg-[#0F0820] hover:text-white transition-colors whitespace-nowrap"
+              >
+                Ver todos os artigos
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
           </div>
         </Reveal>
 
