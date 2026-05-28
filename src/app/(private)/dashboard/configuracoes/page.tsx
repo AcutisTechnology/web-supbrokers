@@ -19,6 +19,14 @@ import { useProfile, useUpdateProfile } from "@/features/dashboard/profile/servi
 import { SiteAppearanceForm, type SiteAppearanceFormData } from "@/features/dashboard/site/components/site-appearance-form";
 import { SiteFooterForm, type SiteFooterFormData } from "@/features/dashboard/site/components/site-footer-form";
 import { SiteSocialLinksManager } from "@/features/dashboard/site/components/site-social-links-manager";
+import { AgentProfilesManager } from "@/features/dashboard/site/components/agent-profiles-manager";
+import { HomeHeroForm } from "@/features/dashboard/site/components/home-hero-form";
+import { SiteStatsManager } from "@/features/dashboard/site/components/site-stats-manager";
+import { InstitutionalForm } from "@/features/dashboard/site/components/institutional-form";
+import { TestimonialsManager } from "@/features/dashboard/site/components/testimonials-manager";
+import { HomeLayoutManager } from "@/features/dashboard/site/components/home-layout-manager";
+import { SeoListingForm } from "@/features/dashboard/site/components/seo-listing-form";
+import { WhatsappTemplatesManager } from "@/features/dashboard/site/components/whatsapp-templates-manager";
 import { SitePreview } from "@/features/dashboard/site/components/site-preview";
 import { SitePagesManager } from "@/features/dashboard/site/components/site-pages-manager";
 import { SitePagePreview } from "@/features/dashboard/site/components/site-page-preview";
@@ -683,7 +691,14 @@ function CompanySection() {
   );
 }
 
-type PageSubTab = "appearance" | "footer" | "social" | "pages";
+type PageSubTab =
+  | "appearance"
+  | "home"
+  | "footer"
+  | "social"
+  | "pages"
+  | "team"
+  | "messages";
 
 function PageSection() {
   const [tab, setTab] = useState<PageSubTab>("appearance");
@@ -732,7 +747,14 @@ function PageSection() {
     refetchSocial();
   };
 
-  const [previewSettings, setPreviewSettings] = useState<Partial<SiteAppearanceFormData>>({});
+  const [previewSettings, setPreviewSettings] = useState<
+    Partial<SiteAppearanceFormData> & {
+      hero_eyebrow?: string | null;
+      hero_title_line_1?: string | null;
+      hero_title_line_2?: string | null;
+      hero_background_url?: string | null;
+    }
+  >({});
   const [previewFooter, setPreviewFooter] = useState<Partial<SiteFooterFormData>>({});
 
   useEffect(() => {
@@ -768,9 +790,12 @@ function PageSection() {
 
   const subTabs: Array<{ key: PageSubTab; label: string; description: string }> = [
     { key: "appearance", label: "Aparência", description: "Cores, logo e cabeçalho" },
+    { key: "home", label: "Home", description: "Hero e estatísticas" },
     { key: "footer", label: "Rodapé", description: "Contato, endereço e CRECI" },
     { key: "social", label: "Redes Sociais", description: "Links exibidos no rodapé" },
     { key: "pages", label: "Páginas", description: "Páginas institucionais do site" },
+    { key: "team", label: "Equipe", description: "Corretores da página /equipe" },
+    { key: "messages", label: "Mensagens", description: "Templates de WhatsApp" },
   ];
 
   const { pages: sitePages } = useSitePages();
@@ -825,6 +850,21 @@ function PageSection() {
               </SettingsCard>
             )}
 
+            {tab === "appearance" && (
+              <SettingsCard
+                title="SEO & Listagem"
+                description="Meta tags, imagem de compartilhamento e preferências da listagem de imóveis."
+              >
+                <SeoListingForm
+                  initial={settings}
+                  onSubmit={async payload => {
+                    await updateSettings(payload);
+                  }}
+                  isSubmitting={isUpdatingSettings}
+                />
+              </SettingsCard>
+            )}
+
             {tab === "footer" && (
               <SettingsCard title="Rodapé" description="Dados de contato e textos exibidos no rodapé do site público.">
                 <SiteFooterForm
@@ -864,6 +904,75 @@ function PageSection() {
                   onDraftChange={setPageDraft}
                 />
               </SettingsCard>
+            )}
+
+            {tab === "team" && (
+              <SettingsCard
+                title="Equipe / Corretores"
+                description="Gerencie os corretores exibidos na página /equipe do site público."
+              >
+                <AgentProfilesManager />
+              </SettingsCard>
+            )}
+
+            {tab === "messages" && (
+              <SettingsCard
+                title="Mensagens de WhatsApp"
+                description="Personalize as mensagens pré-preenchidas dos botões de WhatsApp em todo o site."
+              >
+                <WhatsappTemplatesManager />
+              </SettingsCard>
+            )}
+
+            {tab === "home" && (
+              <div className="space-y-4">
+                <SettingsCard
+                  title="Seções da Home"
+                  description="Ative, desative e reordene as seções exibidas na home pública."
+                >
+                  <HomeLayoutManager />
+                </SettingsCard>
+                <SettingsCard
+                  title="Hero da Home"
+                  description="Imagem de fundo, eyebrow, título em 2 linhas e subtítulo do hero principal."
+                >
+                  <HomeHeroForm
+                    initial={settings}
+                    onChange={data =>
+                      setPreviewSettings(prev => ({
+                        ...prev,
+                        hero_eyebrow: data.hero_eyebrow,
+                        hero_title_line_1: data.hero_title_line_1,
+                        hero_title_line_2: data.hero_title_line_2,
+                        hero_background_url: data.hero_background_url,
+                        site_subtitle: data.site_subtitle ?? undefined,
+                      }))
+                    }
+                    onSubmit={async payload => {
+                      await updateSettings(payload);
+                    }}
+                    isSubmitting={isUpdatingSettings}
+                  />
+                </SettingsCard>
+                <SettingsCard
+                  title="Estatísticas"
+                  description="Cards numéricos exibidos abaixo do hero (anos de mercado, imóveis vendidos, etc.)."
+                >
+                  <SiteStatsManager />
+                </SettingsCard>
+                <SettingsCard
+                  title="Institucional (Sobre)"
+                  description="Seção 'Sobre' da home: imagem, textos, valores e diferenciais."
+                >
+                  <InstitutionalForm />
+                </SettingsCard>
+                <SettingsCard
+                  title="Depoimentos"
+                  description="Depoimentos de clientes exibidos no slider da home."
+                >
+                  <TestimonialsManager />
+                </SettingsCard>
+              </div>
             )}
           </div>
 

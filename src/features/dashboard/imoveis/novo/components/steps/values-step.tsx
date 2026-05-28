@@ -78,7 +78,7 @@ export function ValuesStep({ form }: ValuesStepProps) {
 
           <FormField
             control={form.control}
-            name="condo_value"
+            name="condominium_value"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-base font-medium flex items-center gap-2">

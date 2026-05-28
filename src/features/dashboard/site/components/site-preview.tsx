@@ -1,6 +1,19 @@
 "use client";
 
-import { Search, Facebook, Instagram, Linkedin, Youtube, MessageCircle, Globe } from "lucide-react";
+import {
+  Bath,
+  BedDouble,
+  Car,
+  Facebook,
+  Globe,
+  Instagram,
+  Linkedin,
+  MapPin,
+  MessageCircle,
+  Search,
+  Sparkles,
+  Youtube,
+} from "lucide-react";
 import type { SiteFooter, SiteSetting, SiteSocialLink, SocialPlatform } from "../services/site-service";
 
 const PLATFORM_ICON: Record<SocialPlatform, React.ComponentType<{ className?: string }>> = {
@@ -20,111 +33,168 @@ interface SitePreviewProps {
   socialLinks?: SiteSocialLink[];
 }
 
+const NAVY = "#0F0820";
+
 export function SitePreview({ settings, footer, socialLinks = [] }: SitePreviewProps) {
-  const primaryColor = settings?.primary_color || "#9747FF";
-  const title = settings?.site_title || "Encontre o imóvel perfeito para você";
-  const subtitle = settings?.site_subtitle || "Confira os melhores imóveis disponíveis";
-  const brandImage = settings?.brand_image || "/logo-extendida-roxo.svg";
+  const brandImage = settings?.brand_image || null;
+  const companyName = footer?.company_name || "LuxuryEstate";
+
+  // Hero: usa os campos novos com fallback elegante
+  const eyebrow = settings?.hero_eyebrow || "Curadoria exclusiva";
+  const titleLine1 = settings?.hero_title_line_1 || settings?.site_title || "Onde o luxo encontra";
+  const titleLine2 = settings?.hero_title_line_2 || "o seu novo lar.";
+  const subtitle =
+    settings?.site_subtitle ||
+    "Curadoria exclusiva de imóveis de alto padrão, com a discrição que sua história merece.";
+  const heroBg = settings?.hero_background_url || null;
 
   const showSocial = footer?.show_social_links !== false;
   const activeSocial = socialLinks.filter((s) => s.is_active);
 
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm scale-[0.9] origin-top-left">
-      <div className="p-4 rounded-t-lg" style={{ backgroundColor: primaryColor }}>
-        <div className="flex justify-between items-center mb-4">
-          <div className="bg-white p-1 rounded-md w-24 h-10 flex items-center justify-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={brandImage} alt="Logo" className="max-h-8 max-w-full object-contain" />
+    <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm bg-white">
+      {/* HERO premium */}
+      <div className="relative" style={{ backgroundColor: NAVY }}>
+        {heroBg && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={heroBg}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover opacity-40"
+          />
+        )}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `linear-gradient(to bottom, ${NAVY}cc, ${NAVY}88, ${NAVY})`,
+          }}
+        />
+
+        <div className="relative p-4">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-5">
+            {brandImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={brandImage} alt="Logo" className="max-h-6 max-w-[90px] object-contain" />
+            ) : (
+              <div className="flex items-center gap-1 text-white">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span className="text-sm font-semibold tracking-wide">{companyName}</span>
+              </div>
+            )}
+            <div className="flex gap-1.5">
+              <span className="text-[9px] text-white/80 px-2 py-1">Falar no WhatsApp</span>
+              <span className="text-[9px] text-[#0F0820] bg-white rounded-full px-2.5 py-1 font-medium">
+                Anunciar Imóvel
+              </span>
+            </div>
           </div>
 
-          <div className="flex gap-2">
-            <button className="bg-white text-xs text-black rounded-full px-2 py-1">Área do Corretor</button>
-            <button className="bg-white text-xs text-black rounded-full px-2 py-1">Falar com o Corretor</button>
-          </div>
-        </div>
+          {/* Eyebrow + título */}
+          <p className="text-[8px] tracking-[0.25em] uppercase text-amber-200/90 mb-1.5">
+            {eyebrow}
+          </p>
+          <h3 className="text-white text-lg font-semibold leading-tight font-display">
+            {titleLine1}
+            {titleLine2 && (
+              <>
+                <br />
+                <span className="bg-gradient-to-r from-amber-200 to-white bg-clip-text text-transparent italic">
+                  {titleLine2}
+                </span>
+              </>
+            )}
+          </h3>
+          <p className="text-white/70 text-[10px] mt-2 line-clamp-2 max-w-[90%]">{subtitle}</p>
 
-        <div className="text-white mb-4">
-          <h3 className="text-lg font-medium">{title}</h3>
-          <p className="text-xs">{subtitle}</p>
-        </div>
-
-        <div className="bg-white p-2 rounded-full flex items-center gap-2">
-          <div className="flex gap-2 bg-gray-100 rounded-full p-1">
-            <button className="bg-white text-xs rounded-full px-2 py-1 shadow-sm">Comprar</button>
-            <button className="text-xs rounded-full px-2 py-1">Alugar</button>
-          </div>
-          <div className="flex-grow flex gap-2">
-            <input
-              type="text"
-              placeholder="Bairro"
-              className="text-xs bg-gray-100 rounded-full px-2 py-1 w-full"
-            />
-            <button className="text-white rounded-full p-1" style={{ backgroundColor: primaryColor }}>
-              <Search className="w-3 h-3" />
-            </button>
+          {/* Tabs + busca glass */}
+          <div className="mt-4">
+            <div className="inline-flex gap-1 p-0.5 rounded-full bg-white/10 border border-white/15 mb-2">
+              <span className="text-[9px] bg-white text-[#0F0820] rounded-full px-2.5 py-0.5">Comprar</span>
+              <span className="text-[9px] text-white/80 rounded-full px-2.5 py-0.5">Alugar</span>
+            </div>
+            <div className="bg-white/10 border border-white/15 rounded-full p-1 flex items-center gap-2 backdrop-blur">
+              <div className="flex items-center gap-1 flex-grow px-2">
+                <MapPin className="w-3 h-3 text-amber-300" />
+                <span className="text-[9px] text-white/60">Cidade ou bairro</span>
+              </div>
+              <span className="bg-gradient-to-r from-amber-300 to-amber-400 text-[#0F0820] rounded-full px-3 py-1 text-[9px] font-medium flex items-center gap-1">
+                <Search className="w-2.5 h-2.5" />
+                Buscar
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="p-4 bg-white">
-        <h4 className="text-sm font-medium">Imóveis à venda</h4>
-        <p className="text-xs text-gray-500 mb-3">Confira os imóveis disponíveis para compra</p>
+      {/* Cards (cream) */}
+      <div className="p-4 bg-[#FAFAF7]">
+        <p className="text-[8px] tracking-[0.2em] uppercase text-[#9747FF] mb-0.5">
+          Portfólio exclusivo
+        </p>
+        <h4 className="text-sm font-semibold text-[#0F0820] font-display mb-3">Imóveis em destaque</h4>
 
         <div className="grid grid-cols-2 gap-2">
-          {[1, 2].map((i) => (
-            <div key={i} className="border rounded-lg overflow-hidden">
-              <div className="bg-gray-200 h-16 w-full" />
+          {[0, 1].map((i) => (
+            <div key={i} className="bg-white rounded-xl overflow-hidden border border-black/5 shadow-sm">
+              <div className="relative h-14 bg-gradient-to-br from-gray-200 to-gray-300">
+                <span className="absolute top-1.5 left-1.5 text-[7px] font-semibold uppercase tracking-wider bg-[#0F0820] text-white px-1.5 py-0.5 rounded">
+                  Venda
+                </span>
+              </div>
               <div className="p-2">
-                <p className="text-xs font-medium truncate">Apartamento Manaíra</p>
-                <p className="text-[10px] text-gray-500">Manaíra, João Pessoa</p>
-                <p className="text-xs font-bold mt-1">R$ 450.000</p>
+                <p className="text-[8px] uppercase tracking-wider text-[#0F0820]/45">Jardins, SP</p>
+                <p className="text-[10px] font-semibold text-[#0F0820] truncate font-display">
+                  Mansão Contemporânea
+                </p>
+                <div className="flex items-center gap-1.5 mt-1 text-[7px] text-[#0F0820]/55">
+                  <span className="inline-flex items-center gap-0.5"><BedDouble className="w-2 h-2" />4</span>
+                  <span className="inline-flex items-center gap-0.5"><Bath className="w-2 h-2" />3</span>
+                  <span className="inline-flex items-center gap-0.5"><Car className="w-2 h-2" />2</span>
+                </div>
+                <p className="text-[11px] font-bold text-[#0F0820] mt-1 font-display">R$ 2.5M</p>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      <footer className="px-4 py-3 bg-gray-900 text-white text-[11px] space-y-2">
+      {/* Footer premium */}
+      <footer className="px-4 py-3 text-white text-[9px] space-y-2" style={{ backgroundColor: "#08040F" }}>
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1 min-w-0">
-            {footer?.company_name && <p className="font-semibold">{footer.company_name}</p>}
-            {footer?.creci && <p className="opacity-80">{footer.creci}</p>}
-            {(footer?.address || footer?.city) && (
-              <p className="opacity-80 truncate">
-                {[footer?.address, footer?.address_number].filter(Boolean).join(", ")}
-                {footer?.district ? ` - ${footer.district}` : ""}
-                {footer?.city ? `, ${footer.city}` : ""}
-                {footer?.state ? `/${footer.state}` : ""}
-              </p>
-            )}
-            <div className="flex flex-wrap gap-x-3 gap-y-1 opacity-80">
+            <div className="flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-amber-300" />
+              <span className="font-semibold">{companyName}</span>
+            </div>
+            {footer?.creci && <p className="opacity-60">{footer.creci}</p>}
+            <div className="flex flex-wrap gap-x-2 gap-y-0.5 opacity-60">
               {footer?.email && <span>{footer.email}</span>}
               {footer?.phone && <span>{footer.phone}</span>}
-              {footer?.whatsapp && <span>WhatsApp: {footer.whatsapp}</span>}
             </div>
           </div>
 
           {showSocial && activeSocial.length > 0 && (
-            <div className="flex gap-2 shrink-0">
-              {activeSocial.slice(0, 6).map((link) => {
+            <div className="flex gap-1.5 shrink-0">
+              {activeSocial.slice(0, 4).map((link) => {
                 const Icon = PLATFORM_ICON[link.platform] ?? Globe;
                 return (
                   <span
                     key={link.id}
-                    className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center"
+                    className="w-5 h-5 rounded-md bg-white/5 flex items-center justify-center"
                     title={link.platform}
                   >
-                    <Icon className="w-3 h-3" />
+                    <Icon className="w-2.5 h-2.5" />
                   </span>
                 );
               })}
             </div>
           )}
         </div>
-
         {footer?.footer_text && (
-          <p className="opacity-70 leading-snug border-t border-white/10 pt-2">{footer.footer_text}</p>
+          <p className="opacity-50 leading-snug border-t border-white/10 pt-1.5 line-clamp-2">
+            {footer.footer_text}
+          </p>
         )}
       </footer>
     </div>

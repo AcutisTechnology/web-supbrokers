@@ -31,7 +31,13 @@ import { useToast } from "@/hooks/use-toast";
 import { FileUpload } from "@/components/ui/file-upload";
 import { PropertyPreview } from "./property-preview";
 import { useCreateProperty, useUpdateProperty } from "../../services/property-service";
-import { PropertyFormValues, defaultValues, propertySchema } from "../schemas/property-schema";
+import {
+  PROPERTY_TYPES,
+  PROPERTY_TYPE_LABELS,
+  PropertyFormValues,
+  defaultValues,
+  propertySchema,
+} from "../schemas/property-schema";
 import { formatCurrency } from "@/lib/utils";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { useQueryClient } from "@tanstack/react-query";
@@ -271,31 +277,32 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                 )}
               />
               
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="street"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Endereço<span className="text-red-500">*</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          className="bg-white"
-                          placeholder="Rua, número, complemento"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="street"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Endereço<span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        className="bg-white"
+                        placeholder="Rua, número, complemento"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-4 sm:grid-cols-4">
                 <FormField
                   control={form.control}
                   name="neighborhood"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="sm:col-span-2">
                       <FormLabel>
                         Bairro<span className="text-red-500">*</span>
                       </FormLabel>
@@ -310,8 +317,102 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cidade</FormLabel>
+                      <FormControl>
+                        <Input
+                          className="bg-white"
+                          placeholder="Cidade"
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>UF</FormLabel>
+                      <FormControl>
+                        <Input
+                          maxLength={2}
+                          className="bg-white uppercase"
+                          placeholder="SP"
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <FormField
+                  control={form.control}
+                  name="zipcode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CEP</FormLabel>
+                      <FormControl>
+                        <Input
+                          className="bg-white"
+                          placeholder="00000-000"
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="property_type"
+                  render={({ field }) => (
+                    <FormItem className="sm:col-span-2">
+                      <FormLabel>Tipo do imóvel</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value ?? undefined}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="bg-white">
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {PROPERTY_TYPES.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {PROPERTY_TYPE_LABELS[type]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
@@ -410,7 +511,7 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                 />
                 <FormField
                   control={form.control}
-                  name="condo_value"
+                  name="condominium_value"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Valor do Condomínio</FormLabel>
@@ -427,14 +528,14 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                 />
               </div>
               
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
                 <FormField
                   control={form.control}
                   name="bedrooms"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Número de quartos<span className="text-red-500">*</span>
+                        Quartos<span className="text-red-500">*</span>
                       </FormLabel>
                       <Select
                         onValueChange={(value) => field.onChange(parseInt(value))}
@@ -450,7 +551,64 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                           <SelectItem value="1">1</SelectItem>
                           <SelectItem value="2">2</SelectItem>
                           <SelectItem value="3">3</SelectItem>
-                          <SelectItem value="4">4+</SelectItem>
+                          <SelectItem value="4">4</SelectItem>
+                          <SelectItem value="5">5+</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="suites"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Suítes</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                        value={field.value?.toString() ?? "0"}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="bg-white">
+                            <SelectValue placeholder="Escolha" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="0">0</SelectItem>
+                          <SelectItem value="1">1</SelectItem>
+                          <SelectItem value="2">2</SelectItem>
+                          <SelectItem value="3">3</SelectItem>
+                          <SelectItem value="4">4</SelectItem>
+                          <SelectItem value="5">5+</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="bathrooms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Banheiros</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                        value={field.value?.toString() ?? "0"}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="bg-white">
+                            <SelectValue placeholder="Escolha" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="0">0</SelectItem>
+                          <SelectItem value="1">1</SelectItem>
+                          <SelectItem value="2">2</SelectItem>
+                          <SelectItem value="3">3</SelectItem>
+                          <SelectItem value="4">4</SelectItem>
+                          <SelectItem value="5">5+</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -463,7 +621,7 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Área(m²)<span className="text-red-500">*</span>
+                        Área (m²)<span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -482,7 +640,7 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                   name="garages"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Vagas na garagem</FormLabel>
+                      <FormLabel>Vagas</FormLabel>
                       <Select
                         onValueChange={(value) => field.onChange(parseInt(value))}
                         defaultValue={field.value?.toString()}
@@ -496,7 +654,8 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                           <SelectItem value="0">0</SelectItem>
                           <SelectItem value="1">1</SelectItem>
                           <SelectItem value="2">2</SelectItem>
-                          <SelectItem value="3">3+</SelectItem>
+                          <SelectItem value="3">3</SelectItem>
+                          <SelectItem value="4">4+</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
