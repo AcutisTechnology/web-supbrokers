@@ -30,8 +30,29 @@ interface Buckets {
 
 const EMPTY_BUCKETS: Buckets = { highlighted: [], sale: [], rent: [] };
 
+const DEFAULT_SECTION_ORDER = [
+  'destaques',
+  'venda',
+  'aluguel',
+  'stats',
+  'regioes',
+  'institucional',
+  'equipe',
+  'depoimentos',
+  'blog',
+];
+
 export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
   const data = useBrokerHomeData(brokerSlug);
+
+  // Ordem + visibilidade das seções: vem do layout configurado (broker)
+  // ou usa a ordem default (modo demo / sem config).
+  const orderedSections = useMemo(() => {
+    if (data.homeLayout && data.homeLayout.length > 0) {
+      return data.homeLayout.filter(s => s.enabled).map(s => s.key);
+    }
+    return DEFAULT_SECTION_ORDER;
+  }, [data.homeLayout]);
 
   const buckets: Buckets = useMemo(() => {
     // Modo broker real → consome a API
@@ -72,56 +93,79 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
           hero={data.hero}
         />
 
-        {buckets.highlighted.length > 0 && (
-          <PropertySection
-            id="destaques"
-            eyebrow="Portfólio exclusivo"
-            title="Imóveis em destaque"
-            description="Seleção do nosso time de curadoria para você."
-            properties={buckets.highlighted}
-            variant="carousel"
-            background="cream"
-          />
-        )}
-
-        {buckets.sale.length > 0 && (
-          <PropertySection
-            id="imoveis-venda"
-            eyebrow="Para você ser dono"
-            title="À venda"
-            description="Imóveis selecionados disponíveis para compra."
-            properties={buckets.sale}
-            variant="carousel"
-            background="light"
-          />
-        )}
-
-        {buckets.rent.length > 0 && (
-          <PropertySection
-            id="imoveis-aluguel"
-            eyebrow="Pronto para morar"
-            title="Para alugar"
-            description="Os melhores imóveis disponíveis para locação."
-            properties={buckets.rent}
-            variant="carousel"
-            background="cream"
-          />
-        )}
-
-        <StatsStrip stats={data.stats} />
-
-        <NeighborhoodsSection
-          brokerSlug={data.brokerSlug}
-          neighborhoods={data.topNeighborhoods}
-        />
-
-        <InstitutionalSection data={brokerSlug ? data.institutional : undefined} />
-
-        <BrokersSection />
-
-        <TestimonialsSection testimonials={brokerSlug ? data.testimonials : undefined} />
-
-        <BlogSection />
+        {orderedSections.map(key => {
+          switch (key) {
+            case 'destaques':
+              return buckets.highlighted.length > 0 ? (
+                <PropertySection
+                  key={key}
+                  id="destaques"
+                  eyebrow="Portfólio exclusivo"
+                  title="Imóveis em destaque"
+                  description="Seleção do nosso time de curadoria para você."
+                  properties={buckets.highlighted}
+                  variant="carousel"
+                  background="cream"
+                />
+              ) : null;
+            case 'venda':
+              return buckets.sale.length > 0 ? (
+                <PropertySection
+                  key={key}
+                  id="imoveis-venda"
+                  eyebrow="Para você ser dono"
+                  title="À venda"
+                  description="Imóveis selecionados disponíveis para compra."
+                  properties={buckets.sale}
+                  variant="carousel"
+                  background="light"
+                />
+              ) : null;
+            case 'aluguel':
+              return buckets.rent.length > 0 ? (
+                <PropertySection
+                  key={key}
+                  id="imoveis-aluguel"
+                  eyebrow="Pronto para morar"
+                  title="Para alugar"
+                  description="Os melhores imóveis disponíveis para locação."
+                  properties={buckets.rent}
+                  variant="carousel"
+                  background="cream"
+                />
+              ) : null;
+            case 'stats':
+              return <StatsStrip key={key} stats={data.stats} />;
+            case 'regioes':
+              return (
+                <NeighborhoodsSection
+                  key={key}
+                  brokerSlug={data.brokerSlug}
+                  neighborhoods={data.topNeighborhoods}
+                />
+              );
+            case 'institucional':
+              return (
+                <InstitutionalSection
+                  key={key}
+                  data={brokerSlug ? data.institutional : undefined}
+                />
+              );
+            case 'equipe':
+              return <BrokersSection key={key} />;
+            case 'depoimentos':
+              return (
+                <TestimonialsSection
+                  key={key}
+                  testimonials={brokerSlug ? data.testimonials : undefined}
+                />
+              );
+            case 'blog':
+              return <BlogSection key={key} />;
+            default:
+              return null;
+          }
+        })}
 
         <FinalCta />
       </main>

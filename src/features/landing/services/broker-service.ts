@@ -67,6 +67,7 @@ export interface PublicSite {
   hero_title_line_1: string | null;
   hero_title_line_2: string | null;
   hero_background_url: string | null;
+  home_layout: { key: string; enabled: boolean }[];
   footer: PublicSiteFooter | null;
   social_links: PublicSocialLink[];
 }

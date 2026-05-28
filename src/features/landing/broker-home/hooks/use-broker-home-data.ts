@@ -54,6 +54,7 @@ export interface BrokerHomeData {
   whatsappTemplates: { key: string; message: string }[];
   institutional: BrokerPropertiesResponse['data']['institutional'] | null;
   testimonials: BrokerPropertiesResponse['data']['testimonials'];
+  homeLayout: { key: string; enabled: boolean }[] | null;
 }
 
 function defaultMenuItems(brokerSlug: string | null) {
@@ -115,6 +116,7 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
       whatsappTemplates: [],
       institutional: null,
       testimonials: [],
+      homeLayout: null,
     };
   }
 
@@ -237,6 +239,7 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
     whatsappTemplates,
     institutional: data?.institutional ?? null,
     testimonials: data?.testimonials ?? [],
+    homeLayout: site?.home_layout ?? null,
   };
 }
 

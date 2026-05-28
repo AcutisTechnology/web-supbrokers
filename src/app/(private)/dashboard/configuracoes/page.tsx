@@ -24,6 +24,7 @@ import { HomeHeroForm } from "@/features/dashboard/site/components/home-hero-for
 import { SiteStatsManager } from "@/features/dashboard/site/components/site-stats-manager";
 import { InstitutionalForm } from "@/features/dashboard/site/components/institutional-form";
 import { TestimonialsManager } from "@/features/dashboard/site/components/testimonials-manager";
+import { HomeLayoutManager } from "@/features/dashboard/site/components/home-layout-manager";
 import { WhatsappTemplatesManager } from "@/features/dashboard/site/components/whatsapp-templates-manager";
 import { SitePreview } from "@/features/dashboard/site/components/site-preview";
 import { SitePagesManager } from "@/features/dashboard/site/components/site-pages-manager";
@@ -902,6 +903,12 @@ function PageSection() {
 
             {tab === "home" && (
               <div className="space-y-4">
+                <SettingsCard
+                  title="Seções da Home"
+                  description="Ative, desative e reordene as seções exibidas na home pública."
+                >
+                  <HomeLayoutManager />
+                </SettingsCard>
                 <SettingsCard
                   title="Hero da Home"
                   description="Imagem de fundo, eyebrow, título em 2 linhas e subtítulo do hero principal."
