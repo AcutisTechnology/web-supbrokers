@@ -28,7 +28,7 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
-import { FileUpload } from "@/components/ui/file-upload";
+import { FileUpload, type UploadItem } from "@/components/ui/file-upload";
 import { PropertyPreview } from "./property-preview";
 import { useCreateProperty, useUpdateProperty } from "../../services/property-service";
 import {
@@ -723,7 +723,7 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                     <FormItem>
                       <FormControl>
                         <FileUpload
-                          value={field.value as File[]}
+                          value={field.value as UploadItem[]}
                           onChange={field.onChange}
                           multiple={true}
                           accept="*"

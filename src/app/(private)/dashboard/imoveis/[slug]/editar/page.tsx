@@ -10,7 +10,7 @@ import {
   PropertyFormValues,
   type PropertyType,
 } from "@/features/dashboard/imoveis/novo/schemas/property-schema";
-import React, { useMemo } from "react";
+import React, { use, useMemo } from "react";
 
 // Componente cliente que recebe o slug como propriedade
 function EditPropertyClient({ slug }: { slug: string }) {
@@ -71,6 +71,7 @@ function EditPropertyClient({ slug }: { slug: string }) {
       qr_code: property.qr_code,
       active: property.active ? 1 : 0,
       characteristics: property.characteristics?.map(c => c.text) || [],
+      attachments: property.attachments || [],
       purpose,
     };
   }, [property]);
@@ -101,10 +102,10 @@ function EditPropertyClient({ slug }: { slug: string }) {
   );
 }
 
-// Componente de página principal (servidor)
-export default async function EditPropertyPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  
+// Componente de página principal (cliente)
+export default function EditPropertyPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
+
   // Renderizar o componente cliente com o slug
   return <EditPropertyClient slug={slug} />;
-} 
+}

@@ -3,12 +3,27 @@ import { Button } from './button';
 import { Upload, X, Image as ImageIcon, Film } from 'lucide-react';
 import Image from 'next/image';
 
+// Anexo já existente no servidor (imóvel em edição)
+export interface ExistingAttachment {
+  url: string;
+  name?: string;
+  original_name?: string;
+}
+
+export type UploadItem = File | ExistingAttachment;
+
 interface FileUploadProps {
-  value: File[];
-  onChange: (files: File[]) => void;
+  value: UploadItem[];
+  onChange: (files: UploadItem[]) => void;
   multiple?: boolean;
   accept?: string;
 }
+
+const isFile = (item: UploadItem): item is File =>
+  typeof File !== 'undefined' && item instanceof File;
+
+const resolveType = (name: string | undefined): 'image' | 'video' =>
+  /\.(mp4|webm|mov|avi|mkv|m4v)$/i.test(name ?? '') ? 'video' : 'image';
 
 export function FileUpload({
   value = [],
@@ -20,29 +35,33 @@ export function FileUpload({
   const [previews, setPreviews] = useState<Array<{ url: string; type: 'image' | 'video' }>>([]);
 
   React.useEffect(() => {
-    // Limpar URLs anteriores para evitar vazamentos de memória
-    previews.forEach(preview => URL.revokeObjectURL(preview.url));
+    // URLs de objeto criadas nesta execução (apenas para arquivos novos)
+    const objectUrls: string[] = [];
 
-    // Criar URLs de preview apenas para novos arquivos
-    if (value.length > 0) {
-      // Verificar se os arquivos já têm previews
-      if (value.length !== previews.length) {
-        const newPreviews = value.map(file => ({
-          url: URL.createObjectURL(file),
-          type: file.type.startsWith('video/') ? ('video' as const) : ('image' as const),
-        }));
-        setPreviews(newPreviews);
+    const newPreviews = value.map(item => {
+      if (isFile(item)) {
+        const url = URL.createObjectURL(item);
+        objectUrls.push(url);
+        return {
+          url,
+          type: item.type.startsWith('video/') ? ('video' as const) : ('image' as const),
+        };
       }
-    } else {
-      // Se não há arquivos, limpar previews
-      setPreviews([]);
-    }
 
-    // Limpar URLs ao desmontar
+      // Anexo existente: usa a URL do servidor diretamente
+      return {
+        url: item.url,
+        type: resolveType(item.original_name ?? item.name ?? item.url),
+      };
+    });
+
+    setPreviews(newPreviews);
+
+    // Revogar somente as URLs de objeto criadas para arquivos novos
     return () => {
-      previews.forEach(preview => URL.revokeObjectURL(preview.url));
+      objectUrls.forEach(url => URL.revokeObjectURL(url));
     };
-  }, [value.length]); // Dependência apenas do comprimento do array de arquivos
+  }, [value]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;

@@ -128,12 +128,13 @@ export function useCreateProperty() {
           formData.append("characteristics[0][text]", "");
         }
 
-        // Adicionar imagens (máximo 5)
-        if (data.attachments && Array.isArray(data.attachments) && data.attachments.length > 0) {
-          // Garantir o máximo de 5 arquivos
-          const limitedAttachments = data.attachments.slice(0, 5);
-          limitedAttachments.forEach((attachment) => {
-            formData.append("attachments[]", attachment);
+        // Adicionar imagens (máximo 5) - apenas novos arquivos
+        if (data.attachments && Array.isArray(data.attachments)) {
+          const newFiles = data.attachments.filter(
+            (a): a is File => a instanceof File
+          );
+          newFiles.slice(0, 5).forEach((file) => {
+            formData.append("attachments[]", file);
           });
         }
 
@@ -194,12 +195,15 @@ export function useUpdateProperty() {
           formData.append("characteristics[0][text]", "");
         }
 
-        // Adicionar imagens (máximo 5)
-        if (data.attachments && Array.isArray(data.attachments) && data.attachments.length > 0) {
-          // Garantir o máximo de 5 arquivos
-          const limitedAttachments = data.attachments.slice(0, 5);
-          limitedAttachments.forEach((attachment) => {
-            formData.append("attachments[]", attachment);
+        // Adicionar imagens (máximo 5) - apenas novos arquivos.
+        // Anexos já existentes vêm como objetos { url, ... } e são preservados
+        // no backend, portanto não devem ser reenviados.
+        if (data.attachments && Array.isArray(data.attachments)) {
+          const newFiles = data.attachments.filter(
+            (a): a is File => a instanceof File
+          );
+          newFiles.slice(0, 5).forEach((file) => {
+            formData.append("attachments[]", file);
           });
         }
 
