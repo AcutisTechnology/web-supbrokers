@@ -75,3 +75,40 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* ---------------- PWA / mobile premium ---------------- */
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+@media (max-width: 1023px) {
+  html {
+    /* Remove o realce azul de toque e melhora o scroll mobile. */
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    overscroll-behavior-y: contain;
+  }
+}
+
+/* Ajustes quando instalado como app (standalone). */
+@media all and (display-mode: standalone) {
+  body {
+    /* Evita seleção acidental de texto em toques longos, como apps nativos. */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  /* Reabilita seleção em conteúdo de leitura (artigos, descrições). */
+  .prose,
+  input,
+  textarea,
+  [contenteditable] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
