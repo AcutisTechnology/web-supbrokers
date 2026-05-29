@@ -1,6 +1,6 @@
 import { defaultCache } from '@serwist/next/worker';
 import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
-import { NetworkFirst, Serwist } from 'serwist';
+import { NetworkFirst, NetworkOnly, Serwist } from 'serwist';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -16,7 +16,17 @@ const serwist = new Serwist({
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: [
-    // APIs dinâmicas: rede primeiro (com timeout) e cache como fallback.
+    // App autenticado e rotas de API same-origin: SEMPRE rede, nunca cache.
+    // O dashboard é dinâmico e protegido por auth — cachear páginas/RSC aqui
+    // causa estados stale e o erro "no-response" em navegações dinâmicas
+    // (ex.: após salvar um imóvel). Deve se comportar como se não houvesse SW.
+    {
+      matcher: ({ url, sameOrigin }) =>
+        sameOrigin &&
+        (url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/api')),
+      handler: new NetworkOnly(),
+    },
+    // API externa do backend (GET): rede primeiro (com timeout) e cache como fallback.
     {
       matcher: ({ url }) => url.pathname.includes('/api/v1/'),
       handler: new NetworkFirst({
@@ -30,7 +40,7 @@ const serwist = new Serwist({
         ],
       }),
     },
-    // Demais recursos (estáticos, fontes, imagens, páginas) usam os defaults do Serwist.
+    // Demais recursos (estáticos, fontes, imagens, páginas públicas) usam os defaults do Serwist.
     ...defaultCache,
   ],
   fallbacks: {
