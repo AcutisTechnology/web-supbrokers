@@ -7,11 +7,26 @@ interface PropertyPreviewProps {
   data: Partial<PropertyFormValues>;
 }
 
+const PLACEHOLDER_IMAGE =
+  "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Supbrokers__C_C3_B3pia_S_C3_A9rgio_-i5IjBZhamqbTXLQvYD1E6xOv8YJ5Vg.png";
+
+// Resolve a URL de exibição de um anexo, que pode ser um File novo
+// (selecionado agora) ou um objeto já existente vindo do servidor ({ url }).
+function resolveAttachmentUrl(attachment: unknown): string | null {
+  if (typeof File !== "undefined" && attachment instanceof File) {
+    return URL.createObjectURL(attachment);
+  }
+  if (attachment && typeof attachment === "object" && "url" in attachment) {
+    return (attachment as { url: string }).url;
+  }
+  return null;
+}
+
 export function PropertyPreview({ data }: PropertyPreviewProps) {
   // Obter a primeira imagem para exibição, se disponível
-  const previewImage = data.attachments && data.attachments.length > 0
-    ? URL.createObjectURL(data.attachments[0] as File)
-    : "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Supbrokers__C_C3_B3pia_S_C3_A9rgio_-i5IjBZhamqbTXLQvYD1E6xOv8YJ5Vg.png";
+  const firstAttachment =
+    data.attachments && data.attachments.length > 0 ? data.attachments[0] : null;
+  const previewImage = resolveAttachmentUrl(firstAttachment) ?? PLACEHOLDER_IMAGE;
 
   // Formatar o valor para exibição
   const formattedValue = data.value ? formatCurrency(data.value) : "R$ 0,00";
