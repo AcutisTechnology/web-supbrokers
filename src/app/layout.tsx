@@ -32,6 +32,9 @@ const appleStartupImages = [
 }));
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.imoobile.app.br'
+  ),
   title: 'Imoobile',
   description: 'Seu ecossistema imobiliário!!',
   applicationName: 'Imoobile',
