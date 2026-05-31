@@ -63,7 +63,7 @@ export const propertySchema = z.object({
   rent: z.coerce.number().default(0),
   code: z.string().min(1, "O código do imóvel é obrigatório"),
   sale: z.coerce.number().default(0),
-  value: z.coerce.number().min(1, "O valor é obrigatório"),
+  value: z.coerce.number().min(0, "O valor é obrigatório"),
   iptu_value: z.coerce.number().default(0),
   condominium_value: z.coerce.number().default(0),
   qr_code: z.string().optional(),

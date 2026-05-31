@@ -70,7 +70,10 @@ function EditPropertyClient({ slug }: { slug: string }) {
       code: property.code,
       qr_code: property.qr_code,
       active: property.active ? 1 : 0,
-      characteristics: property.characteristics?.map(c => c.text) || [],
+      characteristics: property.characteristics?.map(c =>
+        // Normaliza dados antigos salvos com sufixo "Form" (ex: "aquecimentoForm" → "aquecimento")
+        c.text.endsWith('Form') ? c.text.slice(0, -4) : c.text
+      ) || [],
       attachments: property.attachments || [],
       purpose,
     };
