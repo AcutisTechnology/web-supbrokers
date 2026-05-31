@@ -6,6 +6,7 @@ import { ProposalForm } from "./proposal-form";
 import { Property } from "@/features/dashboard/imoveis/services/property-service";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
+import { TopNav } from "@/features/dashboard/imoveis/top-nav";
 
 export function NewProposalPage() {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -13,6 +14,8 @@ export function NewProposalPage() {
 
   if (!selectedProperty) {
     return (
+      <>
+      <TopNav title_secondary="Nova proposta" />
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
         <div className="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mb-6">
           <Search className="w-10 h-10 text-[#4A316A]" />
@@ -37,12 +40,16 @@ export function NewProposalPage() {
           }}
         />
       </div>
+      </>
     );
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto">
-      <ProposalForm property={selectedProperty} />
-    </div>
+    <>
+      <TopNav title_secondary="Nova proposta" />
+      <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <ProposalForm property={selectedProperty} />
+      </div>
+    </>
   );
 }
