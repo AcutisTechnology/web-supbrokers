@@ -26,9 +26,17 @@ const serwist = new Serwist({
         (url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/api')),
       handler: new NetworkOnly(),
     },
+    // API externa do backend — POST/PUT/DELETE passam direto (sem cache),
+    // pois podem ter body com arquivos binários que o SW não deve interceptar.
+    {
+      matcher: ({ url, request }) =>
+        url.pathname.includes('/api/v1/') && request.method !== 'GET',
+      handler: new NetworkOnly(),
+    },
     // API externa do backend (GET): rede primeiro (com timeout) e cache como fallback.
     {
-      matcher: ({ url }) => url.pathname.includes('/api/v1/'),
+      matcher: ({ url, request }) =>
+        url.pathname.includes('/api/v1/') && request.method === 'GET',
       handler: new NetworkFirst({
         cacheName: 'api-v1',
         networkTimeoutSeconds: 5,
