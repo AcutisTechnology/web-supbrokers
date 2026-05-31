@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import { mockProperties, type MockProperty } from './data/mock';
 import { BlogSection } from './components/blog-section';
 import { BrokersSection } from './components/brokers-section';
@@ -43,8 +44,46 @@ const DEFAULT_SECTION_ORDER = [
   'blog',
 ];
 
+function BrokerSiteLoader({ visible }: { visible: boolean }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white transition-opacity duration-500"
+      style={{ opacity: visible ? 1 : 0, pointerEvents: visible ? 'auto' : 'none' }}
+    >
+      <Image
+        src="/logo-extendida-roxo.svg"
+        alt="iMoobile"
+        width={200}
+        height={52}
+        priority
+        className="mb-8"
+      />
+      <div className="flex gap-2">
+        <span className="w-2.5 h-2.5 rounded-full bg-[#9747FF] animate-bounce [animation-delay:0ms]" />
+        <span className="w-2.5 h-2.5 rounded-full bg-[#9747FF] animate-bounce [animation-delay:150ms]" />
+        <span className="w-2.5 h-2.5 rounded-full bg-[#9747FF] animate-bounce [animation-delay:300ms]" />
+      </div>
+    </div>
+  );
+}
+
 export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
   const data = useBrokerHomeData(brokerSlug);
+
+  // Loader: só ativa quando há um slug real (modo demo não precisa carregar da API)
+  const [loaderMounted, setLoaderMounted] = useState(!!brokerSlug);
+  const [loaderVisible, setLoaderVisible] = useState(!!brokerSlug);
+  const didLoad = useRef(false);
+
+  useEffect(() => {
+    if (!brokerSlug || didLoad.current) return;
+    if (!data.loading) {
+      didLoad.current = true;
+      setLoaderVisible(false);
+      const t = setTimeout(() => setLoaderMounted(false), 500);
+      return () => clearTimeout(t);
+    }
+  }, [brokerSlug, data.loading]);
 
   // Ordem + visibilidade das seções: vem do layout configurado (broker)
   // ou usa a ordem default (modo demo / sem config).
@@ -77,6 +116,7 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
 
   return (
     <WhatsappProvider number={data.whatsappNumber} templates={data.whatsappTemplates}>
+    {loaderMounted && <BrokerSiteLoader visible={loaderVisible} />}
     <DynamicSeo
       title={data.seo.title || (brokerSlug ? data.brandName : undefined)}
       description={data.seo.description}

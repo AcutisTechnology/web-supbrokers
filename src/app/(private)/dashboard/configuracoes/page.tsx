@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TopNav } from "@/features/dashboard/imoveis/top-nav";
@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { LoadingState } from "@/components/ui/loading-state";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/shared/hooks/auth/use-auth";
 import { useProfile, useUpdateProfile } from "@/features/dashboard/profile/services/profile-service";
@@ -50,7 +50,7 @@ import {
   type TeamInvitationSent,
 } from "@/features/dashboard/settings/services/team-invitation-service";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle, XCircle, Building2, Calendar, CreditCard, Globe, Mail, PlugZap, Settings2, Shield, ShieldCheck, Users, UserCircle2 } from "lucide-react";
+import { Camera, CheckCircle, XCircle, Building2, Calendar, CreditCard, Globe, Mail, PlugZap, Settings2, Shield, ShieldCheck, Users, UserCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GruposPermissaoFeature } from "@/features/dashboard/grupos-permissao";
 
@@ -357,7 +357,7 @@ function SettingsCard({
 
 function ProfileSection() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { data, isLoading, isError, error, refetch } = useProfile();
   const updateProfile = useUpdateProfile();
   const {
@@ -383,6 +383,32 @@ function ProfileSection() {
   const [didInit, setDidInit] = useState(false);
 
   const [twoFaEnabled, setTwoFaEnabled] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/upload/avatar`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${document.cookie.match(/token=([^;]+)/)?.[1] ?? ""}` },
+        body: formData,
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Erro no upload");
+      updateUser({ avatar_url: json.avatarUrl });
+      toast({ title: "Foto atualizada com sucesso!" });
+    } catch {
+      toast({ title: "Erro ao enviar foto", variant: "destructive" });
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  };
 
   useEffect(() => {
     if (didInit || (!profile && !settings)) return;
@@ -470,14 +496,45 @@ function ProfileSection() {
           >
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
               <div className="flex items-center gap-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarFallback className="bg-[#9747FF]/10 text-[#9747FF] font-semibold">
-                    {getInitials(draft.name)}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative group">
+                  <Avatar className="h-16 w-16">
+                    {user?.user?.avatar_url && (
+                      <AvatarImage src={user.user.avatar_url} alt={draft.name} className="object-cover" />
+                    )}
+                    <AvatarFallback className="bg-[#9747FF]/10 text-[#9747FF] font-semibold text-lg">
+                      {getInitials(draft.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={avatarUploading}
+                    className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  >
+                    {avatarUploading
+                      ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      : <Camera className="h-5 w-5 text-white" />
+                    }
+                  </button>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
+                </div>
                 <div>
                   <div className="text-base font-semibold text-[#141414]">{draft.name || "Usuário"}</div>
                   <div className="text-sm text-[#777777]">{groupName ?? "Sem grupo"}</div>
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={avatarUploading}
+                    className="text-xs text-[#9747FF] hover:underline mt-0.5"
+                  >
+                    {avatarUploading ? "Enviando..." : "Alterar foto"}
+                  </button>
                 </div>
               </div>
             </div>
