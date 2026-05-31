@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import React, { createContext, useState, ReactNode, useEffect } from "react";
 import { useSignUpMutation } from "@/features/signup/hooks/use-sign-up";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/shared/configs/react-query";
 
 interface AuthContextProps {
   user: IAuthenticateUserDTO | null;
@@ -61,6 +62,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         path: "/",
       });
 
+      // Limpa cache do usuário anterior antes de setar o novo
+      queryClient.clear();
+
       // Salva os dados do usuário no localStorage
       localStorage.setItem('@SupBrokers:user', JSON.stringify(userData));
       setUser(userData as IAuthenticateUserDTO);
@@ -106,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     destroyCookie(null, "token");
     localStorage.removeItem('@SupBrokers:user');
     setUser(null);
+    queryClient.clear();
     router.push("/login");
   };
 
