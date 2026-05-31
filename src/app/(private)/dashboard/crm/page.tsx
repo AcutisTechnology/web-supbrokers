@@ -164,23 +164,7 @@ export default function CrmPage() {
       <TopNav title_secondary="CRM" />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
-        <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center mt-0.5">
-            <Filter className="w-5 h-5 text-[#141414]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-3">
-              {headerIsLoading ? (
-                <span className="text-xs bg-gray-100 text-[#777777] px-3 py-1 rounded-full border border-gray-200">Carregando…</span>
-              ) : (
-                <span className="text-xs bg-gray-100 text-[#777777] px-3 py-1 rounded-full border border-gray-200">
-                  {metricsData?.total_leads ?? 0} leads
-                </span>
-              )}
-            </div>
-            <p className="text-[#777777]">Organize seus leads em um pipeline e acompanhe o funil.</p>
-          </div>
-        </div>
+        <div />
 
         <div className="flex items-center gap-3">
           <Button asChild variant="ghost" className="gap-2">
