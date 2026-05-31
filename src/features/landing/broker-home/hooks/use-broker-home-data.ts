@@ -266,11 +266,7 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
             url: l.url,
           })),
     navLinks: brokerSlug
-      ? [
-          { label: 'Comprar Imóvel', href: `/${brokerSlug}/imoveis?purpose=sale` },
-          { label: 'Alugar Imóvel', href: `/${brokerSlug}/imoveis?purpose=rent` },
-          { label: 'Nossa Equipe', href: `/${brokerSlug}/equipe` },
-        ]
+      ? menu.map(item => ({ label: item.label, href: item.href }))
       : undefined,
   };
 
