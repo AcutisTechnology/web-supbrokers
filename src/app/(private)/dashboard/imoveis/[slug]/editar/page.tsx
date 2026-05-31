@@ -68,7 +68,7 @@ function EditPropertyClient({ slug }: { slug: string }) {
       iptu_value: parseMoneyValue(property.iptu_value),
       condominium_value: parseMoneyValue(property.condominium_value),
       code: property.code,
-      qr_code: property.qr_code,
+      qr_code: property.qr_code ?? "",
       active: property.active ? 1 : 0,
       characteristics: property.characteristics?.map(c =>
         // Normaliza dados antigos salvos com sufixo "Form" (ex: "aquecimentoForm" → "aquecimento")
