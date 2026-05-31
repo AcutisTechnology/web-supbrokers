@@ -7,6 +7,7 @@ import {
 } from '@/features/landing/services/broker-service';
 import {
   fetchPublicSiteMenu,
+  PAGE_TYPE_SYSTEM_ROUTES,
   type SitePage,
 } from '@/features/dashboard/site/services/site-pages-service';
 import { mockBrand } from '../data/mock';
@@ -73,8 +74,18 @@ function defaultMenuItems(brokerSlug: string | null) {
   ];
 }
 
-function buildMenuHref(brokerSlug: string, pageSlug: string): string {
+function buildMenuHref(brokerSlug: string, pageSlug: string, pageType?: string): string {
+  // Home
   if (pageSlug === '/' || pageSlug === '') return `/${brokerSlug}`;
+
+  // Tipos com rota de sistema — redirecionam para a rota nativa do site
+  if (pageType && pageType in PAGE_TYPE_SYSTEM_ROUTES) {
+    const systemRoute = PAGE_TYPE_SYSTEM_ROUTES[pageType as keyof typeof PAGE_TYPE_SYSTEM_ROUTES];
+    if (systemRoute === '/') return `/${brokerSlug}`;
+    if (systemRoute) return `/${brokerSlug}/${systemRoute}`;
+  }
+
+  // Páginas de CMS (about, custom) — passam pelo /p/
   const normalized = pageSlug.replace(/^\/+/, '');
   return `/${brokerSlug}/p/${normalized}`;
 }
@@ -151,7 +162,7 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
         .map(p => ({
           id: String(p.id),
           label: p.title,
-          href: buildMenuHref(brokerSlug, p.slug),
+          href: buildMenuHref(brokerSlug, p.slug, p.page_type),
         }))
     : defaultMenuItems(brokerSlug);
 
