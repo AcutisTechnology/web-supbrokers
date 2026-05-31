@@ -36,9 +36,22 @@ import { useSitePages } from "@/features/dashboard/site/hooks/use-site-pages";
 import type { SitePage } from "@/features/dashboard/site/services/site-pages-service";
 import type { SitePageFormValues } from "@/features/dashboard/site/components/site-pages-form";
 import { useSettings } from "@/features/dashboard/settings/hooks/use-settings";
-import type { TeamMemberSetting, UserSettingsData } from "@/features/dashboard/settings/services/settings-service";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { UserSettingsData } from "@/features/dashboard/settings/services/settings-service";
+import {
+  sendTeamInvitation,
+  getReceivedInvitations,
+  acceptInvitation,
+  rejectInvitation,
+  getTeamMembers,
+  removeTeamMember,
+  type TeamInvitationReceived,
+  type TeamMemberReal,
+  type TeamInvitationSent,
+} from "@/features/dashboard/settings/services/team-invitation-service";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { CheckCircle, XCircle, Building2, Calendar, CreditCard, Globe, Mail, PlugZap, Settings2, Shield, ShieldCheck, Users, UserCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Building2, Calendar, CreditCard, Globe, PlugZap, Settings2, Shield, ShieldCheck, Users, UserCircle2 } from "lucide-react";
 import { GruposPermissaoFeature } from "@/features/dashboard/grupos-permissao";
 
 type SectionKey = "profile" | "company" | "page" | "team" | "billing" | "integrations" | "automations" | "permissions";
@@ -320,14 +333,16 @@ function SettingsCard({
   description,
   children,
   right,
+  className,
 }: {
   title: string;
   description?: string;
   children: ReactNode;
   right?: ReactNode;
+  className?: string;
 }) {
   return (
-    <Card className="border border-gray-100 shadow-sm rounded-2xl">
+    <Card className={cn("border border-gray-100 shadow-sm rounded-2xl", className)}>
       <CardHeader className="pb-3 flex flex-row items-start justify-between gap-4">
         <div>
           <CardTitle className="text-base">{title}</CardTitle>
@@ -815,8 +830,8 @@ function PageSection() {
 
       {!isLoading && !isError && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div className="lg:col-span-7 space-y-4">
-            <div className="flex flex-wrap gap-2 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="flex gap-1 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm overflow-x-auto">
               {subTabs.map((item) => {
                 const isActive = item.key === tab;
                 return (
@@ -825,14 +840,13 @@ function PageSection() {
                     type="button"
                     onClick={() => setTab(item.key)}
                     className={cn(
-                      "flex-1 min-w-[120px] rounded-xl px-3 py-2 text-left transition-colors",
+                      "flex-1 whitespace-nowrap rounded-xl px-3 py-2 text-center transition-colors",
                       isActive ? "bg-[#9747FF]/10" : "hover:bg-gray-50"
                     )}
                   >
                     <div className={cn("text-sm font-semibold", isActive ? "text-[#9747FF]" : "text-[#141414]")}>
                       {item.label}
                     </div>
-                    <div className="text-xs text-[#777777]">{item.description}</div>
                   </button>
                 );
               })}
@@ -983,8 +997,8 @@ function PageSection() {
             )}
           </div>
 
-          <div className="lg:col-span-5">
-            <SettingsCard title="Preview" description="Pré-visualização em tempo real.">
+          <div className="lg:col-span-4 lg:pt-16 flex flex-col">
+            <SettingsCard title="Preview" description="Pré-visualização em tempo real." className="flex-1 flex flex-col [&>div:last-child]:flex-1">
               {tab === "pages" ? (
                 <SitePagePreview
                   settings={{ ...settings, ...previewSettings }}
@@ -1010,99 +1024,203 @@ function PageSection() {
 }
 
 function TeamAccessSection() {
-  const { toast } = useToast();
   const { user } = useAuth();
-  const { data, isLoading, isError, error, refetch, updateSettings, isUpdating } = useSettings();
-
-  const [invite, setInvite] = useState({ email: "", role: "corretor" });
-  const [members, setMembers] = useState<TeamMemberSetting[]>([]);
-  const [didInit, setDidInit] = useState(false);
-
-  useEffect(() => {
-    if (!data?.data.team.members || didInit) return;
-    setMembers(data.data.team.members);
-    setDidInit(true);
-  }, [data?.data.team.members, didInit]);
-
-  const ownerMember = useMemo(
-    () => ({
-      id: `owner-${user?.user?.id ?? "current"}`,
-      name: user?.user?.name ?? "Usuário",
-      email: user?.user?.email ?? "email@exemplo.com",
-      role: data?.data.profile.job_title ?? "Administrador",
-      status: "Ativo" as const,
-    }),
-    [data?.data.profile.job_title, user?.user?.email, user?.user?.id, user?.user?.name]
-  );
-
-  const persistMembers = async (nextMembers: TeamMemberSetting[]) => {
-    setMembers(nextMembers);
-
-    try {
-      await updateSettings({
-        team: {
-          members: nextMembers,
-        },
-      });
-      await refetch();
-    } catch {
-      setMembers(members);
-    }
-  };
-
-  const handleInvite = async () => {
-    if (!invite.email.trim()) {
-      toast({
-        title: "Email obrigatório",
-        description: "Informe o email do membro que deseja convidar.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const nextMembers = [
-      ...members,
-      {
-        id: `member-${Date.now()}`,
-        name: invite.email.split("@")[0] || "Novo membro",
-        email: invite.email.trim(),
-        role: invite.role.trim() || "corretor",
-        status: "Convite pendente" as const,
-      },
-    ];
-
-    await persistMembers(nextMembers);
-    setInvite({ email: "", role: "corretor" });
-  };
-
-  const handleRemove = async (memberId: string) => {
-    await persistMembers(members.filter((member) => member.id !== memberId));
-  };
-
-  const tableMembers = [ownerMember, ...members];
+  const userType = user?.user?.user_type;
+  const isCorretor = userType === "corretor";
 
   return (
     <div className="space-y-6">
       <SettingsHeader title="Equipe & Acesso" description="Convide membros e gerencie permissões." />
+      {isCorretor ? <CorretorTeamView /> : <ImobiliariaTeamView />}
+    </div>
+  );
+}
 
-      <LoadingState isLoading={isLoading} isError={isError} error={error as Error} onRetry={() => refetch()} />
+function CorretorTeamView() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-      {!isLoading && !isError && <>
+  const { data: invitationsData, isLoading, isError, refetch } = useQuery({
+    queryKey: ["team-invitations-received"],
+    queryFn: getReceivedInvitations,
+  });
+
+  const acceptMutation = useMutation({
+    mutationFn: acceptInvitation,
+    onSuccess: () => {
+      toast({ title: "Convite aceito!", description: "Você agora faz parte da equipe." });
+      queryClient.invalidateQueries({ queryKey: ["team-invitations-received"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao aceitar convite", variant: "destructive" });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: rejectInvitation,
+    onSuccess: () => {
+      toast({ title: "Convite recusado." });
+      queryClient.invalidateQueries({ queryKey: ["team-invitations-received"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao recusar convite", variant: "destructive" });
+    },
+  });
+
+  const invitations: TeamInvitationReceived[] = invitationsData?.data ?? [];
+  const isMutating = acceptMutation.isPending || rejectMutation.isPending;
+
+  return (
+    <SettingsCard
+      title="Convites recebidos"
+      description="Imobiliárias que convidaram você para fazer parte da equipe."
+    >
+      <LoadingState isLoading={isLoading} isError={isError} onRetry={refetch} />
+
+      {!isLoading && !isError && (
+        <>
+          {invitations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+              <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+                <Mail className="h-6 w-6 text-[#777777]" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-[#141414]">Nenhum convite pendente</p>
+                <p className="text-xs text-[#777777] mt-1">Quando uma imobiliária convidar você, o convite aparecerá aqui.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {invitations.map((inv) => (
+                <div
+                  key={inv.id}
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl border border-[#E2E2E2] bg-white"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#9747FF]/10 flex items-center justify-center flex-shrink-0">
+                      <Building2 className="h-5 w-5 text-[#9747FF]" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-[#141414]">{inv.inviter_name ?? "Imobiliária"}</p>
+                      <p className="text-xs text-[#777777]">{inv.inviter_email}</p>
+                      <p className="text-xs text-[#9747FF] mt-0.5">Cargo: {inv.role}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      size="sm"
+                      className="bg-gradient-to-r from-[#9747FF] to-[#7C3AED] hover:from-[#9747FF]/90 hover:to-[#7C3AED]/90 gap-1.5"
+                      onClick={() => acceptMutation.mutate(inv.id)}
+                      disabled={isMutating}
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Aceitar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 gap-1.5"
+                      onClick={() => rejectMutation.mutate(inv.id)}
+                      disabled={isMutating}
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Recusar
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </SettingsCard>
+  );
+}
+
+function ImobiliariaTeamView() {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const [invite, setInvite] = useState({ email: "", role: "corretor" });
+
+  const { data: teamData, isLoading, isError, refetch } = useQuery({
+    queryKey: ["team-members"],
+    queryFn: getTeamMembers,
+  });
+
+  const inviteMutation = useMutation({
+    mutationFn: ({ email, role }: { email: string; role: string }) => sendTeamInvitation(email, role),
+    onSuccess: () => {
+      toast({ title: "Convite enviado!", description: "O corretor receberá o convite para aceitar." });
+      setInvite({ email: "", role: "corretor" });
+      queryClient.invalidateQueries({ queryKey: ["team-members"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao enviar convite", variant: "destructive" });
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: removeTeamMember,
+    onSuccess: () => {
+      toast({ title: "Membro removido." });
+      queryClient.invalidateQueries({ queryKey: ["team-members"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao remover membro", variant: "destructive" });
+    },
+  });
+
+  const handleInvite = () => {
+    if (!invite.email.trim()) {
+      toast({ title: "Email obrigatório", variant: "destructive" });
+      return;
+    }
+    inviteMutation.mutate({ email: invite.email.trim(), role: invite.role.trim() || "corretor" });
+  };
+
+  const members: TeamMemberReal[] = teamData?.data?.members ?? [];
+  const pendingInvitations: TeamInvitationSent[] = teamData?.data?.invitations ?? [];
+
+  const ownerRow = {
+    id: `owner-${user?.user?.id}`,
+    name: user?.user?.name ?? "Proprietário",
+    email: user?.user?.email ?? "",
+    role: "Proprietário",
+    status: "active" as const,
+    isOwner: true,
+  };
+
+  return (
+    <>
       <SettingsCard title="Convidar membro" description="Envie um convite por email para sua equipe.">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
           <div className="md:col-span-6 space-y-2">
             <Label>Email</Label>
-            <Input value={invite.email} onChange={(e) => setInvite((p) => ({ ...p, email: e.target.value }))} placeholder="email@exemplo.com" />
+            <Input
+              value={invite.email}
+              onChange={(e) => setInvite((p) => ({ ...p, email: e.target.value }))}
+              placeholder="email@exemplo.com"
+              onKeyDown={(e) => e.key === "Enter" && handleInvite()}
+            />
           </div>
           <div className="md:col-span-4 space-y-2">
             <Label>Cargo</Label>
-            <Input value={invite.role} onChange={(e) => setInvite((p) => ({ ...p, role: e.target.value }))} placeholder="corretor" />
+            <Select value={invite.role} onValueChange={(v) => setInvite((p) => ({ ...p, role: v }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o cargo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="corretor">Corretor</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="md:col-span-2 flex items-end">
             <Button
               className="w-full bg-gradient-to-r from-[#9747FF] to-[#7C3AED] hover:from-[#9747FF]/90 hover:to-[#7C3AED]/90"
               onClick={handleInvite}
-              disabled={isUpdating}
+              disabled={inviteMutation.isPending}
             >
               Convidar
             </Button>
@@ -1110,60 +1228,112 @@ function TeamAccessSection() {
         </div>
       </SettingsCard>
 
-      <SettingsCard title="Membros" description="Gerencie acesso e perfis da sua equipe.">
-        <div className="bg-white rounded-xl border border-[#E2E2E2] overflow-hidden shadow-sm">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 border-b border-[#E2E2E2]">
-                <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">NOME</th>
-                <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">EMAIL</th>
-                <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">CARGO</th>
-                <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">STATUS</th>
-                <th className="text-right px-6 py-4 font-semibold text-[#4A316A]">AÇÕES</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tableMembers.map((m) => (
-                <tr key={m.id} className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50">
+      <LoadingState isLoading={isLoading} isError={isError} onRetry={refetch} />
+
+      {!isLoading && !isError && (
+        <SettingsCard title="Membros" description="Gerencie acesso e perfis da sua equipe.">
+          <div className="bg-white rounded-xl border border-[#E2E2E2] overflow-hidden shadow-sm">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-[#E2E2E2]">
+                  <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">NOME</th>
+                  <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">EMAIL</th>
+                  <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">CARGO</th>
+                  <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">STATUS</th>
+                  <th className="text-right px-6 py-4 font-semibold text-[#4A316A]">AÇÕES</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Owner row */}
+                <tr className="border-b border-gray-100 hover:bg-gray-50/50">
                   <td className="px-6 py-4 text-[#141414] font-medium">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
                         <AvatarFallback className="bg-[#9747FF]/10 text-[#9747FF] font-semibold">
-                          {getInitials(m.name)}
+                          {getInitials(ownerRow.name)}
                         </AvatarFallback>
                       </Avatar>
-                      <span>{m.name}</span>
+                      <span>{ownerRow.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-[#141414]">{m.email}</td>
-                  <td className="px-6 py-4 text-[#141414]">{m.role}</td>
+                  <td className="px-6 py-4 text-[#141414]">{ownerRow.email}</td>
+                  <td className="px-6 py-4 text-[#141414]">Imobiliaria</td>
                   <td className="px-6 py-4">
-                    <Badge className={m.status === "Ativo" ? "bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]" : "bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]"}>
-                      {m.status}
-                    </Badge>
+                    <Badge className="bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]">Ativo</Badge>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {m.id !== ownerMember.id ? (
+                    <span className="text-xs text-[#777777]">Proprietário</span>
+                  </td>
+                </tr>
+
+                {/* Active members */}
+                {members.map((m) => (
+                  <tr key={m.id} className="border-b border-gray-100 hover:bg-gray-50/50">
+                    <td className="px-6 py-4 text-[#141414] font-medium">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarFallback className="bg-[#9747FF]/10 text-[#9747FF] font-semibold">
+                            {getInitials(m.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{m.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-[#141414]">{m.email}</td>
+                    <td className="px-6 py-4 text-[#141414]">{m.user_type ?? "corretor"}</td>
+                    <td className="px-6 py-4">
+                      <Badge className="bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]">Ativo</Badge>
+                    </td>
+                    <td className="px-6 py-4 text-right">
                       <Button
                         variant="ghost"
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleRemove(m.id)}
-                        disabled={isUpdating}
+                        onClick={() => removeMutation.mutate(m.id)}
+                        disabled={removeMutation.isPending}
                       >
                         Remover
                       </Button>
-                    ) : (
-                      <span className="text-xs text-[#777777]">Proprietário</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </SettingsCard>
-      </>}
-    </div>
+                    </td>
+                  </tr>
+                ))}
+
+                {/* Pending invitations */}
+                {pendingInvitations.map((inv) => (
+                  <tr key={`inv-${inv.id}`} className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50">
+                    <td className="px-6 py-4 text-[#141414] font-medium">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarFallback className="bg-gray-100 text-[#777777] font-semibold">
+                            {(inv.invitee_email[0] ?? "?").toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-[#777777]">{inv.invitee_email.split("@")[0]}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-[#141414]">{inv.invitee_email}</td>
+                    <td className="px-6 py-4 text-[#141414]">{inv.role}</td>
+                    <td className="px-6 py-4">
+                      <Badge className="bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">Convite pendente</Badge>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <span className="text-xs text-[#777777]">—</span>
+                    </td>
+                  </tr>
+                ))}
+
+                {members.length === 0 && pendingInvitations.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-[#777777]">
+                      Nenhum membro na equipe ainda. Envie um convite acima.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </SettingsCard>
+      )}
+    </>
   );
 }
 
