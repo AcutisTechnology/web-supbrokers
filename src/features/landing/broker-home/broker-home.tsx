@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import Image from 'next/image';
 import { mockProperties, type MockProperty } from './data/mock';
 import { BlogSection } from './components/blog-section';
@@ -44,12 +44,9 @@ const DEFAULT_SECTION_ORDER = [
   'blog',
 ];
 
-function BrokerSiteLoader({ visible }: { visible: boolean }) {
+function BrokerSiteLoader() {
   return (
-    <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white transition-opacity duration-500"
-      style={{ opacity: visible ? 1 : 0, pointerEvents: visible ? 'auto' : 'none' }}
-    >
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
       <Image
         src="/logo-extendida-roxo.svg"
         alt="iMoobile"
@@ -70,20 +67,10 @@ function BrokerSiteLoader({ visible }: { visible: boolean }) {
 export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
   const data = useBrokerHomeData(brokerSlug);
 
-  // Loader: só ativa quando há um slug real (modo demo não precisa carregar da API)
-  const [loaderMounted, setLoaderMounted] = useState(!!brokerSlug);
-  const [loaderVisible, setLoaderVisible] = useState(!!brokerSlug);
-  const didLoad = useRef(false);
-
-  useEffect(() => {
-    if (!brokerSlug || didLoad.current) return;
-    if (!data.loading) {
-      didLoad.current = true;
-      setLoaderVisible(false);
-      const t = setTimeout(() => setLoaderMounted(false), 500);
-      return () => clearTimeout(t);
-    }
-  }, [brokerSlug, data.loading]);
+  // Enquanto carrega um site real, mostra apenas o loader — sem renderizar o site
+  if (brokerSlug && data.loading) {
+    return <BrokerSiteLoader />;
+  }
 
   // Ordem + visibilidade das seções: vem do layout configurado (broker)
   // ou usa a ordem default (modo demo / sem config).
@@ -116,7 +103,6 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
 
   return (
     <WhatsappProvider number={data.whatsappNumber} templates={data.whatsappTemplates}>
-    {loaderMounted && <BrokerSiteLoader visible={loaderVisible} />}
     <DynamicSeo
       title={data.seo.title || (brokerSlug ? data.brandName : undefined)}
       description={data.seo.description}
