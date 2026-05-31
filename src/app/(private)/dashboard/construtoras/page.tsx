@@ -191,7 +191,6 @@ export default function ConstrutorasPage() {
 
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#141414]">Construtoras</h1>
           <p className="text-[#777777]">Gestão de construtoras e empreendimentos vinculados</p>
         </div>
         <Button onClick={openCreate}>

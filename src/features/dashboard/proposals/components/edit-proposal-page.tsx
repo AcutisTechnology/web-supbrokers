@@ -5,6 +5,7 @@ import { ProposalForm } from "./proposal-form";
 import { useParams } from "next/navigation";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Property } from "@/features/dashboard/imoveis/services/property-service";
+import { TopNav } from "@/features/dashboard/imoveis/top-nav";
 
 export function EditProposalPage() {
   const { id } = useParams();
@@ -39,12 +40,15 @@ export function EditProposalPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto">
-      <ProposalForm 
-        property={proposal.property as unknown as Property} 
-        initialData={proposal} 
-        isEditing 
-      />
-    </div>
+    <>
+      <TopNav title_secondary="Editar proposta" />
+      <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <ProposalForm
+          property={proposal.property as unknown as Property}
+          initialData={proposal}
+          isEditing
+        />
+      </div>
+    </>
   );
 }

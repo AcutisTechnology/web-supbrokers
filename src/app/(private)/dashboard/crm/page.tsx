@@ -170,7 +170,7 @@ export default function CrmPage() {
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold text-[#141414]">CRM de Leads</h1>
+              <p className="text-[#777777]">CRM de Leads</p>
               {headerIsLoading ? (
                 <span className="text-xs bg-gray-100 text-[#777777] px-3 py-1 rounded-full border border-gray-200">Carregando…</span>
               ) : (

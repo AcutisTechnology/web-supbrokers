@@ -42,7 +42,7 @@ export default function VisitsListPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-[#141414]">Visitas registradas</h2>
+          <p className="text-[#777777]">Visitas registradas</p>
           <p className="text-sm text-[#777777]">
             {total > 0
               ? `${total} visita${total === 1 ? "" : "s"} ${total === 1 ? "encontrada" : "encontradas"}.`

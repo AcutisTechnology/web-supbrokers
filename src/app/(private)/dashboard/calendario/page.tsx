@@ -273,7 +273,6 @@ export default function CalendarioPage() {
         {/* Header com ações */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#141414] font-display">Calendário</h1>
             <p className="text-[#969696] mt-1 text-sm sm:text-base">Organize seus compromissos e lembretes</p>
           </div>
           <div className="flex items-center gap-3 mt-4 sm:mt-0">

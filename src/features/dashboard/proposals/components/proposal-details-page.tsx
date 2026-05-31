@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Edit, Share2, Printer, MapPin, User, Calendar, Eye } from "lucide-react";
+import { TopNav } from "@/features/dashboard/imoveis/top-nav";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -39,7 +40,9 @@ export function ProposalDetailsPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+    <>
+      <TopNav title_secondary="Detalhes da proposta" />
+      <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4">
         <Button variant="ghost" size="sm" onClick={() => router.back()} className="text-[#969696]">
           <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
@@ -203,5 +206,6 @@ export function ProposalDetailsPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

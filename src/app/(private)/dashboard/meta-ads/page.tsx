@@ -39,7 +39,7 @@ export default function MetaAdsPage() {
             </div>
           </div>
 
-          <h1 className="text-2xl font-semibold text-[#141414] mb-2">Conecte seus anúncios</h1>
+          <p className="text-[#777777] mb-2">Conecte seus anúncios</p>
           <p className="text-[#777777] mb-8">Gerencie suas campanhas do Facebook e Instagram em um só lugar</p>
 
           <Button
