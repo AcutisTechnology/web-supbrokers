@@ -139,7 +139,7 @@ export default function DashboardPage() {
       {/* Cabeçalho com saudação e data */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-gradient-to-r from-[#9747ff]/10 to-white p-4 sm:p-6 rounded-xl">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#141414]">Olá, Corretor</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#141414]">Olá, {user?.user?.name?.split(" ")[0] ?? "Corretor"}</h1>
           <p className="text-[#969696] mt-1 text-sm sm:text-base">{formattedDate}</p>
         </div>
         <div className="mt-4 sm:mt-0 flex items-center gap-2 sm:gap-3">
