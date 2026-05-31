@@ -220,8 +220,7 @@ export function SitePagesManager({ onActivePageChange, onDraftChange }: SitePage
                         onActivePageChange?.(page);
                       }}
                     >
-                      <Pencil className="h-4 w-4 mr-1" />
-                      Editar
+                      <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
                       type="button"
@@ -231,8 +230,7 @@ export function SitePagesManager({ onActivePageChange, onDraftChange }: SitePage
                       onClick={() => setToDelete(page)}
                       disabled={isRemoving || page.is_home}
                     >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Excluir
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </td>
