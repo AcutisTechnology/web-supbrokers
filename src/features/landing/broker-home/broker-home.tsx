@@ -67,13 +67,7 @@ function BrokerSiteLoader() {
 export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
   const data = useBrokerHomeData(brokerSlug);
 
-  // Enquanto carrega um site real, mostra apenas o loader — sem renderizar o site
-  if (brokerSlug && data.loading) {
-    return <BrokerSiteLoader />;
-  }
-
-  // Ordem + visibilidade das seções: vem do layout configurado (broker)
-  // ou usa a ordem default (modo demo / sem config).
+  // Todos os hooks devem ser chamados antes de qualquer return condicional
   const orderedSections = useMemo(() => {
     if (data.homeLayout && data.homeLayout.length > 0) {
       return data.homeLayout.filter(s => s.enabled).map(s => s.key);
@@ -100,6 +94,11 @@ export function BrokerHome({ brokerSlug = null }: BrokerHomeProps) {
       rent: mockProperties.filter(p => p.type === 'rent'),
     };
   }, [brokerSlug, data.properties]);
+
+  // Loader: só após todos os hooks
+  if (brokerSlug && data.loading) {
+    return <BrokerSiteLoader />;
+  }
 
   return (
     <WhatsappProvider number={data.whatsappNumber} templates={data.whatsappTemplates}>
