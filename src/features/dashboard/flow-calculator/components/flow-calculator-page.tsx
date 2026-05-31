@@ -12,6 +12,7 @@ import { FlowPresets, flowPresets, type FlowPresetKey } from "./flow-presets";
 import { PaymentBlock, type PaymentBlockKey, type PaymentCategory } from "./payment-block";
 import { SimulationSummary } from "./simulation-summary";
 import { Calculator, ChevronDown, ChevronUp, RotateCcw, Sparkles } from "lucide-react";
+import { TopNav } from "@/features/dashboard/imoveis/top-nav";
 
 type OptionalFeeKey = "itbi" | "registro" | "escritura" | "banco_seguros";
 
@@ -635,13 +636,10 @@ export function FlowCalculatorPage() {
   }, [state]);
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <>
+    <TopNav title_secondary="Calculadora de Fluxo" />
+    <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#4A316A]">Calculadora de Fluxo</h1>
-          <p className="text-[#969696]">Simule o fluxo de pagamento e copie o resumo para o cliente</p>
-        </div>
-
         <div className="flex flex-col sm:flex-row gap-2">
           <Button variant="outline" className="bg-white border-[#E2E2E2]" onClick={handleAdjustHundred}>
             <Calculator className="w-4 h-4" />
@@ -882,5 +880,6 @@ export function FlowCalculatorPage() {
         Os valores desta simulação são estimativas e podem variar conforme condições comerciais e reajustes contratuais.
       </p>
     </div>
+    </>
   );
 }

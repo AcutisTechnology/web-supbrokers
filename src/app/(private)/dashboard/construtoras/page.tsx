@@ -190,9 +190,6 @@ export default function ConstrutorasPage() {
       <TopNav title_secondary="Construtoras" />
 
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <p className="text-[#777777]">Gestão de construtoras e empreendimentos vinculados</p>
-        </div>
         <Button onClick={openCreate}>
           <Plus className="mr-2 h-4 w-4" />
           Nova construtora

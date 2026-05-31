@@ -77,7 +77,6 @@ export default function FinanceInstallmentsPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <p className="text-[#777777]">Parcelas e recebimentos</p>
           <p className="text-sm text-[#777777]">
             {total > 0
               ? `${total} parcela${total === 1 ? "" : "s"} encontrada${total === 1 ? "" : "s"}.`

@@ -85,7 +85,6 @@ export default function CrmAnalyticsPage() {
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <p className="text-[#777777]">Dashboard CRM</p>
             <p className="text-sm text-[#777777]">Visão analítica do funil, conversão e desempenho da equipe.</p>
           </div>
           <div className="flex items-center gap-2">

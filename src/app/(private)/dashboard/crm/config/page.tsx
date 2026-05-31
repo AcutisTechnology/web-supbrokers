@@ -113,7 +113,6 @@ export default function CrmConfigPage() {
             <Wand2 className="w-5 h-5 text-[#141414]" />
           </div>
           <div>
-            <p className="text-[#777777]">Configurações do CRM</p>
             <p className="text-[#777777]">Personalize etapas e tags do seu pipeline.</p>
           </div>
         </div>

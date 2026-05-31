@@ -88,7 +88,6 @@ export default function FinancePaymentsPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <p className="text-[#777777]">Pagamentos a corretores</p>
           <p className="text-sm text-[#777777]">
             {total > 0
               ? `${total} pagamento${total === 1 ? "" : "s"} registrado${total === 1 ? "" : "s"}.`

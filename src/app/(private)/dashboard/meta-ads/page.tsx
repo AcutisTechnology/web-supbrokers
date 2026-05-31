@@ -39,9 +39,6 @@ export default function MetaAdsPage() {
             </div>
           </div>
 
-          <p className="text-[#777777] mb-2">Conecte seus anúncios</p>
-          <p className="text-[#777777] mb-8">Gerencie suas campanhas do Facebook e Instagram em um só lugar</p>
-
           <Button
             onClick={handleConnect}
             className="bg-[#0866FF] hover:bg-[#0866FF]/90 text-white h-12 px-8 rounded-xl gap-2 shadow-md"

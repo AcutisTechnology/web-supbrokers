@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/shared/hooks/auth/use-auth";
 import { usePathname } from "next/navigation";
 
-// Segmentos de rota conhecidos e seus rótulos legíveis
+// Rótulos dos segmentos de rota para breadcrumbs
 const SEGMENT_LABELS: Record<string, string> = {
   imoveis: "Imóveis",
   crm: "CRM",
@@ -39,6 +39,54 @@ const SEGMENT_LABELS: Record<string, string> = {
   "calculadora-fluxo": "Calculadora de Fluxo",
 };
 
+// Descrições por rota exata. Para rotas dinâmicas, o algoritmo
+// sobe para o pai até encontrar uma descrição.
+const ROUTE_DESCRIPTIONS: Record<string, string> = {
+  "/dashboard/imoveis":                        "Gerencie os seus imóveis",
+  "/dashboard/imoveis/novo":                   "Cadastre um novo imóvel",
+  "/dashboard/crm":                            "Gerencie seus leads e oportunidades",
+  "/dashboard/crm/config":                     "Configurações do CRM",
+  "/dashboard/crm/analytics":                  "Análise de desempenho do CRM",
+  "/dashboard/visitas":                        "Visitas registradas",
+  "/dashboard/visitas/nova":                   "Registre uma nova visita",
+  "/dashboard/financeiro":                     "Visão geral das finanças",
+  "/dashboard/financeiro/vendas":              "Vendas registradas",
+  "/dashboard/financeiro/pagamentos":          "Pagamentos a corretores",
+  "/dashboard/financeiro/minhas-comissoes":    "Suas comissões",
+  "/dashboard/financeiro/extrato":             "Histórico de pagamentos",
+  "/dashboard/financeiro/parcelas":            "Parcelas e recebimentos",
+  "/dashboard/captacoes":                      "Empreendimentos em captação",
+  "/dashboard/captacoes/nova":                 "Cadastre uma nova captação",
+  "/dashboard/alugueis":                       "Gerencie contratos de aluguel",
+  "/dashboard/alugueis/novo":                  "Cadastre um novo aluguel",
+  "/dashboard/construtoras":                   "Gestão de construtoras e empreendimentos",
+  "/dashboard/meta-ads":                       "Gerencie suas campanhas do Facebook e Instagram",
+  "/dashboard/calculadora-fluxo":              "Calcule o fluxo de caixa do seu imóvel",
+  "/dashboard/whatsapp":                       "Integração com WhatsApp Business",
+  "/dashboard/calendario":                     "Agenda e compromissos",
+  "/dashboard/configuracoes":                  "Configurações da sua conta",
+  "/dashboard/clientes":                       "Gestão de clientes e leads",
+  "/dashboard/links-uteis":                    "Links e recursos úteis",
+  "/dashboard/propostas":                      "Gerencie suas propostas",
+  "/dashboard/propostas/nova":                 "Crie uma nova proposta",
+  "/dashboard/disparo-em-massa":               "Envio em massa para clientes",
+  "/dashboard/disparo-em-massa/nova":          "Crie uma nova campanha",
+  "/dashboard/agente-ia":                      "Assistente de IA para corretores",
+  "/dashboard/follow-up":                      "Acompanhamento de negociações",
+  "/dashboard/canal-pro":                      "Canal profissional de vendas",
+  "/dashboard/grupos-permissao":               "Gestão de permissões de usuários",
+  "/dashboard/planos":                         "Planos e assinaturas",
+};
+
+function getDescription(pathname: string): string | undefined {
+  // Exact match
+  if (ROUTE_DESCRIPTIONS[pathname]) return ROUTE_DESCRIPTIONS[pathname];
+  // Sobe para o pai removendo o último segmento
+  const parent = pathname.substring(0, pathname.lastIndexOf("/"));
+  if (parent && parent !== "/dashboard") return getDescription(parent);
+  return undefined;
+}
+
 interface TopNavProps {
   title_secondary: string;
 }
@@ -60,9 +108,9 @@ export function TopNav({ title_secondary }: TopNavProps) {
   const name = user?.user?.name ?? "";
   const firstName = name.split(" ")[0] || "Corretor";
   const initials = getInitials(name);
+  const description = getDescription(pathname);
 
-  // Constrói breadcrumbs automaticamente a partir da URL atual.
-  // Segmentos desconhecidos (IDs, slugs dinâmicos) são ignorados.
+  // Breadcrumbs automáticos — segmentos desconhecidos (IDs/slugs) são ignorados
   const segments = pathname.split("/").filter(Boolean);
   const afterDashboard = segments.slice(segments.indexOf("dashboard") + 1);
 
@@ -76,8 +124,6 @@ export function TopNav({ title_secondary }: TopNavProps) {
     }
   }
 
-  // Remove o último item intermediário se ele aponta para a página atual
-  // (evita "Imóveis > Imóveis" quando o título já representa o módulo)
   const crumbs = intermediates.filter((c) => c.href !== pathname);
 
   return (
@@ -99,6 +145,9 @@ export function TopNav({ title_secondary }: TopNavProps) {
           <span className="text-[#9747FF]">{title_secondary}</span>
         </div>
         <h1 className="text-2xl font-bold text-[#141414]">{title_secondary}</h1>
+        {description && (
+          <p className="text-sm text-[#777777] mt-0.5">{description}</p>
+        )}
       </div>
 
       <div className="mt-4 md:mt-0 flex items-center gap-3">

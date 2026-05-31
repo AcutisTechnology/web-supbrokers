@@ -73,7 +73,6 @@ export default function MyCommissionsPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <p className="text-[#777777]">Suas comissões</p>
           <p className="text-sm text-[#777777]">
             {total > 0
               ? `${total} comissã${total === 1 ? "o" : "es"} ${total === 1 ? "encontrada" : "encontradas"}.`
