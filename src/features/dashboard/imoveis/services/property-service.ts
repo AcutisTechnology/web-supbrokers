@@ -2,6 +2,7 @@ import { PropertyFormValues } from "../novo/schemas/property-schema";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@/shared/configs/api";
 import { useToast } from "@/hooks/use-toast"
+import { PROPERTY_CHARACTERISTICS_LABELS } from "@/lib/property";
 
 // Interface para os dados de um imóvel
 export interface Property {
@@ -67,13 +68,50 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export type PropertiesFilters = {
+  search?: string;
+  neighborhood?: { id: number | null; name: string };
+  city?: { id: number | null; name: string };
+  min_value?: number | null;
+  max_value?: number | null;
+  min_size?: number | null;
+  max_size?: number | null;
+};
+
+const buildFiltersQuery = (filters?: PropertiesFilters): string => {
+  if (!filters) return "";
+
+  const params = new URLSearchParams();
+
+  const search = filters.search?.trim();
+  if (search) params.set("search", search);
+
+  // O modelo Property armazena cidade e bairro como texto simples (sem FK),
+  // portanto sempre enviamos o nome para busca LIKE no backend.
+  const cityName = filters.city?.name?.trim();
+  if (cityName) params.set("city_search", cityName);
+
+  const neighborhoodName = filters.neighborhood?.name?.trim();
+  if (neighborhoodName) params.set("neighborhood_search", neighborhoodName);
+
+  if (filters.min_value != null) params.set("min_value", String(filters.min_value));
+  if (filters.max_value != null) params.set("max_value", String(filters.max_value));
+  if (filters.min_size != null) params.set("min_size", String(filters.min_size));
+  if (filters.max_size != null) params.set("max_size", String(filters.max_size));
+
+  const qs = params.toString();
+  return qs ? `&${qs}` : "";
+};
+
 // Hook para buscar imóveis com paginação
-export function useProperties(page = 1) {
+export function useProperties(page = 1, filters?: PropertiesFilters) {
+  const filtersQuery = buildFiltersQuery(filters);
+
   return useQuery({
-    queryKey: ["properties", page],
+    queryKey: ["properties", page, filters ?? {}],
     queryFn: async () => {
       const response = await api
-        .get(`properties?page=${page}`)
+        .get(`properties?page=${page}${filtersQuery}`)
         .json<PaginatedResponse<Property>>();
       return response;
     },
@@ -117,14 +155,12 @@ export function useCreateProperty() {
           }
         });
 
-        // Adicionar características no formato correto com o campo "text"
         if (data.characteristics && data.characteristics.length > 0) {
           data.characteristics.forEach((characteristic, index) => {
-            // Garantir que não haja problemas de codificação
-            formData.append(`characteristics[${index}][text]`, characteristic);
+            const label = PROPERTY_CHARACTERISTICS_LABELS[characteristic] ?? characteristic;
+            formData.append(`characteristics[${index}][text]`, label);
           });
         } else {
-          // Garantir que pelo menos uma característica vazia seja enviada
           formData.append("characteristics[0][text]", "");
         }
 
