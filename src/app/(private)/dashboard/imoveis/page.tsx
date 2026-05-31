@@ -82,10 +82,7 @@ export default function PropertiesPage() {
     <>
       <TopNav title_secondary="Seus imóveis" />
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-[#141414]">Imóveis</h1>
-          <p className="text-[#777777]">Gerencie os seus imóveis</p>
-        </div>
+        <p className="text-[#777777]">Gerencie os seus imóveis</p>
         <Button onClick={handleCreateProperty}>
           <Plus className="mr-2 h-4 w-4" />
           Criar novo imóvel
