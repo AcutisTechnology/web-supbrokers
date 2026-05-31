@@ -251,6 +251,7 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
   const footerData: PremiumFooterData = {
     brandName,
     brandLogo: site?.brand_image ?? null,
+    footerLogo: footer?.footer_logo ?? null,
     footerText: footer?.footer_text ?? null,
     phone: footer?.phone ?? null,
     email: footer?.email ?? null,

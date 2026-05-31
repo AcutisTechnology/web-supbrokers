@@ -19,9 +19,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import type { SiteFooter, UpdateSiteFooterPayload } from "../services/site-service";
+import { ImageUpload } from "@/features/dashboard/site/components/image-upload";
 
 const schema = z.object({
   company_name: z.string().max(255).optional().or(z.literal("")),
+  footer_logo: z.string().max(1000).optional().nullable(),
   email: z.string().email("E-mail inválido").max(255).optional().or(z.literal("")),
   phone: z.string().max(50).optional().or(z.literal("")),
   whatsapp: z.string().max(50).optional().or(z.literal("")),
@@ -48,6 +50,7 @@ interface SiteFooterFormProps {
 function buildInitial(initial: SiteFooter | undefined): SiteFooterFormData {
   return {
     company_name: initial?.company_name ?? "",
+    footer_logo: initial?.footer_logo ?? null,
     email: initial?.email ?? "",
     phone: initial?.phone ?? "",
     whatsapp: initial?.whatsapp ?? "",
@@ -109,6 +112,26 @@ export function SiteFooterForm({ initial, onSubmit, onChange, isSubmitting }: Si
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="footer_logo"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-sm font-medium text-gray-700">Logo do rodapé</FormLabel>
+              <FormControl>
+                <ImageUpload
+                  value={field.value ?? ""}
+                  onChange={(url) => field.onChange(url || null)}
+                />
+              </FormControl>
+              <FormDescription className="text-xs text-gray-500">
+                Logo exibida no rodapé do site público. Se não definida, usa a logo principal da Aparência.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}

@@ -29,6 +29,7 @@ export interface PremiumFooterSocial {
 export interface PremiumFooterData {
   brandName?: string;
   brandLogo?: string | null;
+  footerLogo?: string | null;
   footerText?: string | null;
   phone?: string | null;
   email?: string | null;
@@ -59,7 +60,8 @@ export function PremiumFooter({ data }: PremiumFooterProps) {
   const [email, setEmail] = useState('');
 
   const brandName = data?.brandName || mockBrand.name;
-  const brandLogo = data?.brandLogo || null;
+  // footer_logo tem prioridade; fallback para brand_image (logo principal)
+  const brandLogo = data?.footerLogo || data?.brandLogo || null;
   const footerText =
     data?.footerText ||
     'Elevando o padrão imobiliário com exclusividade, tecnologia e transparência.';
