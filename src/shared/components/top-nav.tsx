@@ -4,15 +4,43 @@ import { ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 import { useAuth } from "@/shared/hooks/auth/use-auth";
+import { usePathname } from "next/navigation";
 
-interface BreadcrumbItem {
-  label: string;
-  href?: string;
-}
+// Segmentos de rota conhecidos e seus rótulos legíveis
+const SEGMENT_LABELS: Record<string, string> = {
+  imoveis: "Imóveis",
+  crm: "CRM",
+  leads: "Leads",
+  analytics: "Analytics",
+  config: "Configurações",
+  visitas: "Visitas",
+  captacoes: "Captações",
+  alugueis: "Aluguéis",
+  financeiro: "Financeiro",
+  vendas: "Vendas",
+  parcelas: "Parcelas",
+  pagamentos: "Pagamentos",
+  extrato: "Extrato",
+  "minhas-comissoes": "Minhas Comissões",
+  configuracoes: "Configurações",
+  whatsapp: "WhatsApp",
+  "disparo-em-massa": "Disparo em Massa",
+  "meta-ads": "Meta ADS",
+  "links-uteis": "Links Úteis",
+  construtoras: "Construtoras",
+  clientes: "Clientes",
+  "follow-up": "Follow-up",
+  "canal-pro": "Canal PRO",
+  calendario: "Calendário",
+  "agente-ia": "Agente de IA",
+  "grupos-permissao": "Grupos de Permissão",
+  planos: "Planos",
+  propostas: "Propostas",
+  "calculadora-fluxo": "Calculadora de Fluxo",
+};
 
 interface TopNavProps {
   title_secondary: string;
-  breadcrumbs?: BreadcrumbItem[];
 }
 
 function getInitials(name: string | undefined): string {
@@ -25,34 +53,51 @@ function getInitials(name: string | undefined): string {
     .toUpperCase();
 }
 
-export function TopNav({ title_secondary, breadcrumbs }: TopNavProps) {
+export function TopNav({ title_secondary }: TopNavProps) {
   const { user } = useAuth();
+  const pathname = usePathname();
+
   const name = user?.user?.name ?? "";
   const firstName = name.split(" ")[0] || "Corretor";
   const initials = getInitials(name);
 
-  const crumbs: BreadcrumbItem[] = breadcrumbs ?? [
-    { label: "Home", href: "/dashboard" },
-    { label: title_secondary },
-  ];
+  // Constrói breadcrumbs automaticamente a partir da URL atual.
+  // Segmentos desconhecidos (IDs, slugs dinâmicos) são ignorados.
+  const segments = pathname.split("/").filter(Boolean);
+  const afterDashboard = segments.slice(segments.indexOf("dashboard") + 1);
+
+  const intermediates: { label: string; href: string }[] = [];
+  let cumulativePath = "/dashboard";
+
+  for (const segment of afterDashboard) {
+    cumulativePath += `/${segment}`;
+    if (SEGMENT_LABELS[segment]) {
+      intermediates.push({ label: SEGMENT_LABELS[segment], href: cumulativePath });
+    }
+  }
+
+  // Remove o último item intermediário se ele aponta para a página atual
+  // (evita "Imóveis > Imóveis" quando o título já representa o módulo)
+  const crumbs = intermediates.filter((c) => c.href !== pathname);
 
   return (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between bg-gradient-to-r from-[#9747FF]/10 to-white p-6 rounded-xl mb-7">
       <div>
         <h1 className="text-2xl font-bold text-[#141414]">{title_secondary}</h1>
         <div className="flex items-center gap-2 text-sm text-[#777777] mt-1">
-          {crumbs.map((crumb, i) => (
-            <span key={i} className="flex items-center gap-2">
-              {i > 0 && <ChevronRight className="h-3 w-3" />}
-              {crumb.href ? (
-                <Link href={crumb.href} className="hover:text-[#9747FF] transition-colors">
-                  {crumb.label}
-                </Link>
-              ) : (
-                <span className="text-[#9747FF]">{crumb.label}</span>
-              )}
+          <Link href="/dashboard" className="hover:text-[#9747FF] transition-colors">
+            Home
+          </Link>
+          {crumbs.map((crumb) => (
+            <span key={crumb.href} className="flex items-center gap-2">
+              <ChevronRight className="h-3 w-3" />
+              <Link href={crumb.href} className="hover:text-[#9747FF] transition-colors">
+                {crumb.label}
+              </Link>
             </span>
           ))}
+          <ChevronRight className="h-3 w-3" />
+          <span className="text-[#9747FF]">{title_secondary}</span>
         </div>
       </div>
 
