@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { useAuth } from "@/shared/hooks/auth/use-auth";
 import { usePathname } from "next/navigation";
@@ -108,6 +108,7 @@ export function TopNav({ title_secondary }: TopNavProps) {
   const name = user?.user?.name ?? "";
   const firstName = name.split(" ")[0] || "Corretor";
   const initials = getInitials(name);
+  const avatarUrl = user?.user?.avatar_url ?? null;
   const description = getDescription(pathname);
 
   // Breadcrumbs automáticos — segmentos desconhecidos (IDs/slugs) são ignorados
@@ -156,6 +157,7 @@ export function TopNav({ title_secondary }: TopNavProps) {
           <p className="text-xs text-[#777777]">Corretor Imobiliário</p>
         </div>
         <Avatar className="h-10 w-10 border-2 border-[#9747FF]/20">
+          {avatarUrl && <AvatarImage src={avatarUrl} alt={name} className="object-cover" />}
           <AvatarFallback className="bg-[#9747FF]/10 text-[#9747FF] font-medium">
             {initials}
           </AvatarFallback>

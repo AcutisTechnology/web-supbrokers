@@ -26,6 +26,7 @@ interface AuthContextProps {
   }) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  updateUser: (patch: Partial<IAuthenticateUserDTO["user"]>) => void;
 }
 
 export const AuthContext = createContext<AuthContextProps>(
@@ -106,6 +107,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateUser = (patch: Partial<IAuthenticateUserDTO["user"]>) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const next = { ...prev, user: { ...prev.user, ...patch } };
+      localStorage.setItem('@SupBrokers:user', JSON.stringify(next));
+      return next;
+    });
+  };
+
   const logout = () => {
     destroyCookie(null, "token");
     localStorage.removeItem('@SupBrokers:user');
@@ -123,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signup,
         logout,
         loading,
+        updateUser,
       }}
     >
       {children}
