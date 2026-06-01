@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/shared/configs/api";
+import { useCurrentUser } from "@/shared/hooks/use-current-user";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, CalendarCheck, CalendarClock, CheckCircle2, FileText, FileUp, History, Home, ListTodo, MessageCircle, MessageSquareText, Phone, Tag, User2, XCircle } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
@@ -65,6 +66,7 @@ export default function CrmLeadDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { toast } = useToast();
+  const { isBroker } = useCurrentUser();
 
   const leadId = Number(params.id);
   const { data: lead, isLoading } = useCrmLead(leadId);
@@ -293,22 +295,28 @@ export default function CrmLeadDetailPage() {
 
               <div className="space-y-2">
                 <Label>Responsável</Label>
-                <Select
-                  value={lead?.assigned_user_id ? String(lead.assigned_user_id) : "none"}
-                  onValueChange={(v) => updateLeadMutation.mutate({ assigned_user_id: v === "none" ? null : Number(v) })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Sem responsável</SelectItem>
-                    {brokers.map((b) => (
-                      <SelectItem key={b.id} value={String(b.id)}>
-                        {b.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {isBroker ? (
+                  <div className="flex h-9 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
+                    {lead?.assigned_user?.name ?? "—"}
+                  </div>
+                ) : (
+                  <Select
+                    value={lead?.assigned_user_id ? String(lead.assigned_user_id) : "none"}
+                    onValueChange={(v) => updateLeadMutation.mutate({ assigned_user_id: v === "none" ? null : Number(v) })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem responsável</SelectItem>
+                      {brokers.map((b) => (
+                        <SelectItem key={b.id} value={String(b.id)}>
+                          {b.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div className="space-y-2">

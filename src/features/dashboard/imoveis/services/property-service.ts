@@ -2,7 +2,7 @@ import { PropertyFormValues } from "../novo/schemas/property-schema";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@/shared/configs/api";
 import { useToast } from "@/hooks/use-toast"
-import { PROPERTY_CHARACTERISTICS_LABELS } from "@/lib/property";
+import { PROPERTY_CHARACTERISTICS_LABELS } from "@/lib/property"
 
 // Interface para os dados de um imóvel
 export interface Property {
@@ -35,6 +35,8 @@ export interface Property {
   characteristics: { text: string }[];
   attachments: { name: string; url: string }[];
   created_at: string;
+  user_id?: number | null;
+  responsible_user?: { id: number; name: string } | null;
 }
 
 // Interface para a resposta da API ao criar um imóvel
@@ -86,8 +88,6 @@ const buildFiltersQuery = (filters?: PropertiesFilters): string => {
   const search = filters.search?.trim();
   if (search) params.set("search", search);
 
-  // O modelo Property armazena cidade e bairro como texto simples (sem FK),
-  // portanto sempre enviamos o nome para busca LIKE no backend.
   const cityName = filters.city?.name?.trim();
   if (cityName) params.set("city_search", cityName);
 
@@ -148,6 +148,7 @@ export function useCreateProperty() {
             key !== "attachments" &&
             key !== "characteristics" &&
             key !== "purpose" &&
+            key !== "responsible_user_id" &&
             value !== undefined &&
             value !== null
           ) {
@@ -155,6 +156,11 @@ export function useCreateProperty() {
           }
         });
 
+        if (data.responsible_user_id != null) {
+          formData.append("user_id", String(data.responsible_user_id));
+        }
+
+        // Adicionar características no formato correto com o campo "text"
         if (data.characteristics && data.characteristics.length > 0) {
           data.characteristics.forEach((characteristic, index) => {
             const label = PROPERTY_CHARACTERISTICS_LABELS[characteristic] ?? characteristic;
@@ -214,12 +220,17 @@ export function useUpdateProperty() {
             key !== "attachments" &&
             key !== "characteristics" &&
             key !== "purpose" &&
+            key !== "responsible_user_id" &&
             value !== undefined &&
             value !== null
           ) {
             formData.append(key, String(value));
           }
         });
+
+        if (data.responsible_user_id != null) {
+          formData.append("user_id", String(data.responsible_user_id));
+        }
 
         // Adicionar características no formato correto com o campo "text"
         if (data.characteristics && data.characteristics.length > 0) {

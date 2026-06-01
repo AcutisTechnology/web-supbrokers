@@ -454,6 +454,12 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
                       Publicado em {new Date(property.created_at).toLocaleDateString('pt-BR')}
                     </span>
                   </div>
+                  {property.responsible_user?.name && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Users className="h-4 w-4" />
+                      <span>Responsável: <strong>{property.responsible_user.name}</strong></span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Loader2, RefreshCw, Film } from "lucide-react";
-import { useState, useLayoutEffect } from "react";
+import { useState, useLayoutEffect, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -40,7 +40,11 @@ import {
 } from "../schemas/property-schema";
 import { formatCurrency } from "@/lib/utils";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useCurrentUser } from "@/shared/hooks/use-current-user";
+import { api } from "@/shared/configs/api";
+
+type Broker = { id: number; name: string; user_type?: string | null };
 
 interface PropertyFormProps {
   initialValues?: Partial<PropertyFormValues>;
@@ -54,6 +58,17 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
   const queryClient = useQueryClient();
   const createPropertyMutation = useCreateProperty();
   const updatePropertyMutation = useUpdateProperty();
+  const { isBroker, isManager, user, userId } = useCurrentUser();
+
+  const { data: brokersData } = useQuery({
+    queryKey: ["brokers", "list"],
+    queryFn: () => api.get("users").json<{ data: Broker[] }>(),
+    enabled: isManager,
+  });
+
+  const brokers = (brokersData?.data ?? []).filter(
+    (b) => b.user_type === "corretor" || b.user_type === "admin"
+  );
 
   const form = useForm<PropertyFormValues>({
     resolver: zodResolver(propertySchema),
@@ -61,6 +76,13 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
   });
 
   const watchedValues = form.watch();
+  const selectedResponsibleId = form.watch("responsible_user_id");
+
+  useEffect(() => {
+    if (isBroker && userId && !form.getValues("responsible_user_id")) {
+      form.setValue("responsible_user_id", userId);
+    }
+  }, [isBroker, userId, form]);
 
   // Invalidar consultas quando o componente for montado para garantir dados atualizados ao retornar
   useLayoutEffect(() => {
@@ -450,7 +472,7 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                       </FormLabel>
                       <FormControl>
                         <div className="flex gap-2">
-                          <Button 
+                          <Button
                             type="button"
                             variant="outline"
                             size="icon"
@@ -471,7 +493,43 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                   )}
                 />
               </div>
-              
+
+              {(isBroker || isManager) && (
+                <FormItem>
+                  <FormLabel>Responsável</FormLabel>
+                  <FormControl>
+                    {isBroker ? (
+                      <div className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                        {user?.name ?? "—"}
+                      </div>
+                    ) : (
+                      <Select
+                        value={selectedResponsibleId != null ? String(selectedResponsibleId) : "none"}
+                        onValueChange={(val) =>
+                          form.setValue(
+                            "responsible_user_id",
+                            val === "none" ? null : Number(val)
+                          )
+                        }
+                      >
+                        <SelectTrigger className="bg-white">
+                          <SelectValue placeholder="Selecione o responsável" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Nenhum</SelectItem>
+                          {brokers.map((b) => (
+                            <SelectItem key={b.id} value={String(b.id)}>
+                              {b.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+
               <div className="grid gap-4 sm:grid-cols-3">
                 <FormField
                   control={form.control}
