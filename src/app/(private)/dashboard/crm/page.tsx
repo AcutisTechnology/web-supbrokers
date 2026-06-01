@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/shared/configs/api";
+import { useCurrentUser } from "@/shared/hooks/use-current-user";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart3, Filter, Plus, Search, Settings2 } from "lucide-react";
@@ -61,6 +62,8 @@ const formatCurrency = (value: string | null | undefined) => {
 
 
 export default function CrmPage() {
+  const { isBroker, user: currentUser, userId: currentUserId } = useCurrentUser();
+
   const { data: stagesData, isLoading: isLoadingStages } = useCrmPipelineStages();
   const { data: tagsData } = useCrmTags();
 
@@ -99,6 +102,7 @@ export default function CrmPage() {
 
   const brokers = useMemo(() => brokersData ?? [], [brokersData]);
 
+  const [createLeadOpen, setCreateLeadOpen] = useState(false);
   const createLeadMutation = useCreateCrmLead();
   const form = useForm<CreateLeadFormValues>({
     resolver: zodResolver(createLeadSchema),
@@ -123,6 +127,13 @@ export default function CrmPage() {
     }
   }, [form, stages]);
 
+  // Corretor sempre é o próprio responsável
+  useEffect(() => {
+    if (isBroker && currentUserId && createLeadOpen) {
+      form.setValue("assigned_user_id", String(currentUserId));
+    }
+  }, [isBroker, currentUserId, createLeadOpen, form]);
+
   const selectedTagIds = useMemo(() => filters.tag_ids ?? [], [filters.tag_ids]);
   const selectedTags = useMemo(() => tags.filter((t) => selectedTagIds.includes(t.id)), [selectedTagIds, tags]);
 
@@ -143,18 +154,26 @@ export default function CrmPage() {
       return Number.isFinite(number) ? number : null;
     };
 
-    createLeadMutation.mutate({
-      name: values.name.trim(),
-      phone: values.phone.trim(),
-      email: values.email?.trim() || null,
-      source_id: values.source_id ? Number(values.source_id) : null,
-      value: parseValue(),
-      priority: Number(values.priority) as 1 | 2 | 3,
-      assigned_user_id: values.assigned_user_id ? Number(values.assigned_user_id) : null,
-      pipeline_stage_id: Number(values.pipeline_stage_id),
-      notes: values.notes?.trim() || null,
-      tag_ids: values.tag_ids ?? [],
-    });
+    createLeadMutation.mutate(
+      {
+        name: values.name.trim(),
+        phone: values.phone.trim(),
+        email: values.email?.trim() || null,
+        source_id: values.source_id ? Number(values.source_id) : null,
+        value: parseValue(),
+        priority: Number(values.priority) as 1 | 2 | 3,
+        assigned_user_id: values.assigned_user_id ? Number(values.assigned_user_id) : null,
+        pipeline_stage_id: Number(values.pipeline_stage_id),
+        notes: values.notes?.trim() || null,
+        tag_ids: values.tag_ids ?? [],
+      },
+      {
+        onSuccess: () => {
+          setCreateLeadOpen(false);
+          form.reset();
+        },
+      }
+    );
   });
 
   const headerIsLoading = isLoadingStages || isLoadingLeads;
@@ -180,7 +199,7 @@ export default function CrmPage() {
             </Link>
           </Button>
 
-          <Dialog>
+          <Dialog open={createLeadOpen} onOpenChange={setCreateLeadOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
@@ -285,22 +304,28 @@ export default function CrmPage() {
 
                   <div className="space-y-2">
                     <Label>Responsável</Label>
-                    <Select
-                      value={form.watch("assigned_user_id") || "none"}
-                      onValueChange={(v) => form.setValue("assigned_user_id", v === "none" ? "" : v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Sem responsável</SelectItem>
-                        {brokers.map((b) => (
-                          <SelectItem key={b.id} value={String(b.id)}>
-                            {b.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {isBroker ? (
+                      <div className="flex h-9 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
+                        {currentUser?.name ?? "Você"}
+                      </div>
+                    ) : (
+                      <Select
+                        value={form.watch("assigned_user_id") || "none"}
+                        onValueChange={(v) => form.setValue("assigned_user_id", v === "none" ? "" : v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Sem responsável</SelectItem>
+                          {brokers.map((b) => (
+                            <SelectItem key={b.id} value={String(b.id)}>
+                              {b.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                 </div>
 

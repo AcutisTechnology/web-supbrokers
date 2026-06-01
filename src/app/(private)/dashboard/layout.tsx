@@ -1,10 +1,8 @@
 'use client';
 
-import { useEffect, useState } from "react";
 import { Building2, LayoutDashboard, Settings, Users, Wallet } from "lucide-react";
 import { Sidebar } from "@/shared/components/sidebar";
-import { useAuth } from "@/shared/hooks/auth/use-auth";
-import { SubscriptionModal } from "@/shared/components/subscription-modal";
+// import { SubscriptionModal } from "@/shared/components/subscription-modal";
 import { MobileBottomNav, type BottomNavItem } from "@/shared/pwa/mobile-bottom-nav";
 
 const ADMIN_NAV: BottomNavItem[] = [
@@ -20,14 +18,14 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [showModal, setShowModal] = useState(false);
-  const { user } = useAuth();
+  // TODO: reativar modal de planos após período de teste
+  // const [showModal, setShowModal] = useState(false);
 
-  useEffect(() => {
-    if (user?.user?.subscription?.status === "NO_SUBSCRIPTION") {
-      setShowModal(true);
-    }
-  }, [user]);
+  // useEffect(() => {
+  //   if (user?.user?.subscription?.status === "NO_SUBSCRIPTION") {
+  //     setShowModal(true);
+  //   }
+  // }, [user]);
 
   return (
     <div className="flex min-h-screen bg-[#f6f6f6]">
@@ -36,10 +34,10 @@ export default function RootLayout({
         {children}
       </main>
       <MobileBottomNav items={ADMIN_NAV} theme="light" />
-      <SubscriptionModal
+      {/* <SubscriptionModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-      />
+      /> */}
     </div>
   );
 }
