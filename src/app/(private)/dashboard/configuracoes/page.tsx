@@ -15,6 +15,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/shared/hooks/auth/use-auth";
+import { useCurrentUser } from "@/shared/hooks/use-current-user";
 import { useProfile, useUpdateProfile } from "@/features/dashboard/profile/services/profile-service";
 import { SiteAppearanceForm, type SiteAppearanceFormData } from "@/features/dashboard/site/components/site-appearance-form";
 import { SiteFooterForm, type SiteFooterFormData } from "@/features/dashboard/site/components/site-footer-form";
@@ -57,59 +58,72 @@ import { GruposPermissaoFeature } from "@/features/dashboard/grupos-permissao";
 
 type SectionKey = "profile" | "company" | "page" | "team" | "billing" | "integrations" | "automations" | "permissions";
 
+/**
+ * permissionKey: chave necessária para ver a aba.
+ * null = sempre visível (sem restrição de permissão).
+ */
 const settingsSections: Array<{
   key: SectionKey;
   label: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
+  permissionKey: string | null;
 }> = [
   {
     key: "profile",
     label: "Meu Perfil",
     description: "Dados pessoais e segurança",
     icon: UserCircle2,
+    permissionKey: null,
   },
   {
     key: "company",
     label: "Imobiliária",
     description: "Dados, contato e endereço",
     icon: Building2,
+    permissionKey: "settings.company",
   },
   {
     key: "page",
     label: "Página",
     description: "Aparência da sua página pública",
     icon: Globe,
+    permissionKey: "settings.page",
   },
   {
     key: "team",
     label: "Equipe & Acesso",
     description: "Convidar e gerenciar membros",
     icon: Users,
+    permissionKey: "settings.team",
   },
   {
     key: "billing",
     label: "Planos & Faturas",
     description: "Assinaturas e pagamentos",
     icon: CreditCard,
+    permissionKey: "settings.billing",
   },
   {
     key: "integrations",
     label: "Integrações",
     description: "Conectar serviços externos",
     icon: PlugZap,
+    permissionKey: "settings.integrations",
   },
   {
     key: "automations",
     label: "Automações (Cobrança)",
     description: "Fluxos e regras de cobrança",
     icon: Settings2,
+    permissionKey: "settings.automations",
   },
   {
     key: "permissions",
     label: "Grupos de Permissão",
     description: "Gerenciar grupos e acessos",
     icon: ShieldCheck,
+    permissionKey: "settings.permissions",
   },
 ];
 
@@ -187,8 +201,25 @@ export default function ConfiguracoesPage() {
 function ConfiguracoesPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { hasPermission } = useCurrentUser();
+
+  // Filtra seções pelas permissões do usuário (null = sem restrição)
+  const visibleSections = settingsSections.filter(
+    (s) => s.permissionKey === null || hasPermission(s.permissionKey)
+  );
+
   const sectionParam = (searchParams.get("sec") ?? "profile") as SectionKey;
-  const section: SectionKey = settingsSections.some((s) => s.key === sectionParam) ? sectionParam : "profile";
+  const isAllowed = visibleSections.some((s) => s.key === sectionParam);
+  const section: SectionKey = isAllowed ? sectionParam : "profile";
+
+  // Redireciona se a seção não é permitida para este usuário
+  useEffect(() => {
+    if (!isAllowed && sectionParam !== "profile") {
+      const params = new URLSearchParams(Array.from(searchParams.entries()));
+      params.set("sec", "profile");
+      router.replace(`/dashboard/configuracoes?${params.toString()}`);
+    }
+  }, [isAllowed, sectionParam, router, searchParams]);
 
   const setSection = (next: SectionKey) => {
     const params = new URLSearchParams(Array.from(searchParams.entries()));
@@ -196,7 +227,7 @@ function ConfiguracoesPageContent() {
     router.replace(`/dashboard/configuracoes?${params.toString()}`);
   };
 
-  const active = settingsSections.find((s) => s.key === section) ?? settingsSections[0];
+  const active = visibleSections.find((s) => s.key === section) ?? visibleSections[0];
 
   return (
     <>
@@ -204,7 +235,7 @@ function ConfiguracoesPageContent() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-4 xl:col-span-3">
-          <SettingsSidebar activeKey={section} onSelect={setSection} />
+          <SettingsSidebar activeKey={section} onSelect={setSection} sections={visibleSections} />
         </div>
 
         <div className="lg:col-span-8 xl:col-span-9 space-y-6">
@@ -261,9 +292,11 @@ function SettingsPageSkeleton() {
 function SettingsSidebar({
   activeKey,
   onSelect,
+  sections,
 }: {
   activeKey: SectionKey;
   onSelect: (key: SectionKey) => void;
+  sections: typeof settingsSections;
 }) {
   return (
     <Card className="border border-gray-100 shadow-sm rounded-2xl sticky top-24">
@@ -272,7 +305,7 @@ function SettingsSidebar({
         <CardDescription>Gerencie preferências e dados</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
-        {settingsSections.map((item) => {
+        {sections.map((item) => {
           const Icon = item.icon;
           const isActive = item.key === activeKey;
           return (
