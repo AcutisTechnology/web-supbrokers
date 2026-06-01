@@ -29,6 +29,8 @@ import { ImageUpload } from "@/features/dashboard/site/components/image-upload";
 import {
   PAGE_TYPES,
   PAGE_TYPE_LABELS,
+  PAGE_TYPE_DEFAULT_SLUGS,
+  PAGE_TYPE_SYSTEM_ROUTES,
   type SitePage,
   type SitePageType,
 } from "../services/site-pages-service";
@@ -115,6 +117,17 @@ export function SitePageForm({
   }, [form, onChange]);
 
   const isHomeLocked = initial?.is_home === true;
+  const watchedType = form.watch("page_type");
+  const isSystemRoute = watchedType in PAGE_TYPE_SYSTEM_ROUTES;
+  const systemRoute = PAGE_TYPE_SYSTEM_ROUTES[watchedType as keyof typeof PAGE_TYPE_SYSTEM_ROUTES];
+
+  const handleTypeChange = (value: SitePageType) => {
+    form.setValue("page_type", value);
+    const defaultSlug = PAGE_TYPE_DEFAULT_SLUGS[value];
+    if (defaultSlug) {
+      form.setValue("slug", defaultSlug, { shouldValidate: true });
+    }
+  };
 
   const handleTitleBlur = () => {
     const title = form.getValues("title");
@@ -181,7 +194,7 @@ export function SitePageForm({
             <FormItem>
               <FormLabel>Tipo da página</FormLabel>
               <Select
-                onValueChange={field.onChange}
+                onValueChange={(v) => handleTypeChange(v as SitePageType)}
                 value={field.value}
                 disabled={isHomeLocked}
               >
@@ -198,6 +211,21 @@ export function SitePageForm({
                   ))}
                 </SelectContent>
               </Select>
+              {isSystemRoute && systemRoute && (
+                <FormDescription className="text-[#9747FF]">
+                  Redireciona para: <span className="font-mono">/{"{seu-slug}"}/<span>{systemRoute === "/" ? "" : systemRoute}</span></span>
+                </FormDescription>
+              )}
+              {!isSystemRoute && watchedType === "about" && (
+                <FormDescription>
+                  Página de CMS — conteúdo editável pelo editor abaixo.
+                </FormDescription>
+              )}
+              {!isSystemRoute && watchedType === "custom" && (
+                <FormDescription>
+                  Página totalmente personalizada — slug e conteúdo livres.
+                </FormDescription>
+              )}
               <FormMessage />
             </FormItem>
           )}

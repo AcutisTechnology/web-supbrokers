@@ -1,7 +1,33 @@
 import { api } from "@/shared/configs/api";
 
-export const PAGE_TYPES = ["home", "about", "team", "contact", "privacy", "custom"] as const;
+export const PAGE_TYPES = ["home", "properties", "blog", "about", "team", "contact", "privacy", "custom"] as const;
 export type SitePageType = (typeof PAGE_TYPES)[number];
+
+/**
+ * Slug padrão sugerido ao selecionar o tipo (usado no formulário).
+ */
+export const PAGE_TYPE_DEFAULT_SLUGS: Partial<Record<SitePageType, string>> = {
+  home: "/",
+  properties: "imoveis",
+  blog: "blog",
+  about: "quem-somos",
+  team: "equipe",
+  contact: "contato",
+  privacy: "politica-de-privacidade",
+};
+
+/**
+ * Tipos que redirecionam para rotas de sistema do site público
+ * (não passam pelo /p/…).
+ */
+export const PAGE_TYPE_SYSTEM_ROUTES: Partial<Record<SitePageType, string>> = {
+  home: "/",
+  properties: "imoveis",
+  blog: "blog",
+  team: "equipe",
+  contact: "contato",
+  privacy: "politica-de-privacidade",
+};
 
 export interface SitePage {
   id: number;
@@ -108,6 +134,8 @@ export async function fetchPublicSitePage(brokerSlug: string, pageSlug: string):
 
 export const PAGE_TYPE_LABELS: Record<SitePageType, string> = {
   home: "Home",
+  properties: "Imóveis",
+  blog: "Blog",
   about: "Quem Somos",
   team: "Equipe",
   contact: "Contato",

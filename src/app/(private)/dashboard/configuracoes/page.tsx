@@ -37,6 +37,7 @@ import type { SitePage } from "@/features/dashboard/site/services/site-pages-ser
 import type { SitePageFormValues } from "@/features/dashboard/site/components/site-pages-form";
 import { useSettings } from "@/features/dashboard/settings/hooks/use-settings";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { api } from "@/shared/configs/api";
 import type { UserSettingsData } from "@/features/dashboard/settings/services/settings-service";
 import {
   sendTeamInvitation,
@@ -393,13 +394,7 @@ function ProfileSection() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/upload/avatar`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${document.cookie.match(/token=([^;]+)/)?.[1] ?? ""}` },
-        body: formData,
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Erro no upload");
+      const json = await api.post("upload/avatar", { body: formData }).json<{ avatarUrl: string }>();
       updateUser({ avatar_url: json.avatarUrl });
       toast({ title: "Foto atualizada com sucesso!" });
     } catch {

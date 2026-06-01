@@ -17,6 +17,7 @@ export interface SiteFooter {
   id: number;
   site_setting_id: number;
   company_name: string | null;
+  footer_logo: string | null;
   email: string | null;
   phone: string | null;
   whatsapp: string | null;
@@ -88,6 +89,7 @@ export interface UpdateSiteSettingPayload {
 
 export interface UpdateSiteFooterPayload {
   company_name?: string | null;
+  footer_logo?: string | null;
   email?: string | null;
   phone?: string | null;
   whatsapp?: string | null;

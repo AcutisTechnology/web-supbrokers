@@ -34,6 +34,7 @@ export interface Property {
 
 export interface PublicSiteFooter {
   company_name: string | null;
+  footer_logo: string | null;
   email: string | null;
   phone: string | null;
   whatsapp: string | null;

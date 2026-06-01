@@ -142,9 +142,7 @@ export function SitePagesManager({ onActivePageChange, onDraftChange }: SitePage
             <tr className="bg-gray-50 border-b border-[#E2E2E2]">
               <th className="text-left px-4 py-3 font-semibold text-[#4A316A]">TÍTULO</th>
               <th className="text-left px-4 py-3 font-semibold text-[#4A316A]">SLUG</th>
-              <th className="text-left px-4 py-3 font-semibold text-[#4A316A]">TIPO</th>
               <th className="text-left px-4 py-3 font-semibold text-[#4A316A]">PUBLICADA</th>
-              <th className="text-left px-4 py-3 font-semibold text-[#4A316A]">MENU</th>
               <th className="text-left px-4 py-3 font-semibold text-[#4A316A]">ORDEM</th>
               <th className="text-right px-4 py-3 font-semibold text-[#4A316A]">AÇÕES</th>
             </tr>
@@ -152,14 +150,14 @@ export function SitePagesManager({ onActivePageChange, onDraftChange }: SitePage
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-[#777777]">
+                <td colSpan={5} className="px-4 py-6 text-center text-[#777777]">
                   Carregando...
                 </td>
               </tr>
             )}
             {!isLoading && sortedPages.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-[#777777]">
+                <td colSpan={5} className="px-4 py-6 text-center text-[#777777]">
                   Nenhuma página cadastrada.
                 </td>
               </tr>
@@ -179,7 +177,6 @@ export function SitePagesManager({ onActivePageChange, onDraftChange }: SitePage
                 <td className="px-4 py-3 text-[#141414]">
                   <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{page.slug}</code>
                 </td>
-                <td className="px-4 py-3 text-[#141414]">{PAGE_TYPE_LABELS[page.page_type]}</td>
                 <td className="px-4 py-3">
                   {page.is_published ? (
                     <Badge className="bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]">Sim</Badge>
@@ -187,7 +184,6 @@ export function SitePagesManager({ onActivePageChange, onDraftChange }: SitePage
                     <Badge className="bg-gray-100 text-[#777777] border border-gray-200">Não</Badge>
                   )}
                 </td>
-                <td className="px-4 py-3 text-[#141414]">{page.show_in_menu ? "Sim" : "Não"}</td>
                 <td className="px-4 py-3 text-[#141414]">{page.menu_order}</td>
                 <td className="px-4 py-3 text-right">
                   <div className="inline-flex items-center gap-1">
@@ -217,7 +213,7 @@ export function SitePagesManager({ onActivePageChange, onDraftChange }: SitePage
                       type="button"
                       variant="ghost"
                       size="sm"
-                      title="Editar"
+                      className="text-[#9747FF] hover:text-[#7C3AED] hover:bg-[#9747FF]/10"
                       onClick={() => {
                         setEditing(page);
                         setCreating(false);
@@ -230,8 +226,7 @@ export function SitePagesManager({ onActivePageChange, onDraftChange }: SitePage
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="text-red-600 hover:text-red-700"
-                      title="Excluir"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       onClick={() => setToDelete(page)}
                       disabled={isRemoving || page.is_home}
                     >
