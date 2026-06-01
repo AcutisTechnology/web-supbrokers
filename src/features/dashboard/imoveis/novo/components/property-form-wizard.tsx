@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { PropertyFormValues, defaultValues, propertySchema } from "../schemas/property-schema";
 import { useCreateProperty, useUpdateProperty } from "../../services/property-service";
+import { useCurrentUser } from "@/shared/hooks/use-current-user";
 
 // Importar os steps
 import { BasicInfoStep } from "./steps/basic-info-step";
@@ -105,12 +106,19 @@ export function PropertyFormWizard({ initialValues, isEditing = false, propertyS
   const queryClient = useQueryClient();
   const createPropertyMutation = useCreateProperty();
   const updatePropertyMutation = useUpdateProperty();
+  const { isBroker, userId } = useCurrentUser();
 
   const form = useForm<PropertyFormValues>({
     resolver: zodResolver(propertySchema),
     defaultValues: initialValues || defaultValues,
     mode: "onChange",
   });
+
+  useEffect(() => {
+    if (isBroker && userId && !form.getValues("responsible_user_id")) {
+      form.setValue("responsible_user_id", userId);
+    }
+  }, [isBroker, userId, form]);
 
   const currentStepData = STEPS.find(step => step.id === currentStep);
   const progress = (currentStep / STEPS.length) * 100;

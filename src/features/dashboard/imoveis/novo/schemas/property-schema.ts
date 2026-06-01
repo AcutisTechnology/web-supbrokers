@@ -71,6 +71,7 @@ export const propertySchema = z.object({
   characteristics: z.array(z.string()).default([]),
   attachments: z.array(z.any()).default([]),
   purpose: z.enum(["sell", "rent"]).default("sell"),
+  responsible_user_id: z.number().optional().nullable(),
 });
 
 export type PropertyFormValues = z.infer<typeof propertySchema>;
@@ -100,4 +101,5 @@ export const defaultValues: Partial<PropertyFormValues> = {
   characteristics: [],
   attachments: [],
   purpose: "sell",
+  responsible_user_id: null,
 };

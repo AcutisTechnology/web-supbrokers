@@ -24,12 +24,31 @@ import {
   PROPERTY_TYPE_LABELS,
   PropertyFormValues,
 } from "../../schemas/property-schema";
+import { useCurrentUser } from "@/shared/hooks/use-current-user";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/shared/configs/api";
+
+type Broker = { id: number; name: string; user_type?: string | null };
 
 interface BasicInfoStepProps {
   form: UseFormReturn<PropertyFormValues>;
 }
 
 export function BasicInfoStep({ form }: BasicInfoStepProps) {
+  const { isBroker, isManager, user } = useCurrentUser();
+
+  const { data: brokersData } = useQuery({
+    queryKey: ["brokers", "list"],
+    queryFn: () => api.get("users").json<{ data: Broker[] }>(),
+    enabled: isManager,
+  });
+
+  const brokers = (brokersData?.data ?? []).filter(
+    (b) => b.user_type === "corretor" || b.user_type === "admin"
+  );
+
+  const selectedResponsibleId = form.watch("responsible_user_id");
+
   // Função para gerar código aleatório
   const generateRandomCode = () => {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -170,7 +189,7 @@ export function BasicInfoStep({ form }: BasicInfoStepProps) {
                       placeholder="Ex: AB123"
                       {...field}
                     />
-                    <Button 
+                    <Button
                       type="button"
                       variant="outline"
                       size="icon"
@@ -186,6 +205,42 @@ export function BasicInfoStep({ form }: BasicInfoStepProps) {
               </FormItem>
             )}
           />
+
+          {(isBroker || isManager) && (
+            <FormItem>
+              <FormLabel className="text-base font-medium">Responsável</FormLabel>
+              <FormControl>
+                {isBroker ? (
+                  <div className="flex h-10 w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                    {user?.name ?? "—"}
+                  </div>
+                ) : (
+                  <Select
+                    value={selectedResponsibleId != null ? String(selectedResponsibleId) : "none"}
+                    onValueChange={(val) =>
+                      form.setValue(
+                        "responsible_user_id",
+                        val === "none" ? null : Number(val)
+                      )
+                    }
+                  >
+                    <SelectTrigger className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                      <SelectValue placeholder="Selecione o responsável" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhum</SelectItem>
+                      {brokers.map((b) => (
+                        <SelectItem key={b.id} value={String(b.id)}>
+                          {b.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         </div>
       </div>
 
