@@ -20,6 +20,8 @@ export function PersonalDataStep({
   form,
   cpfAvailable,
   onCpfAvailableChange,
+  usernameAvailable,
+  onUsernameAvailableChange,
 }: PersonalDataStepProps) {
   const { register, setValue, watch } = form;
   const phone = watch("phone");
@@ -31,6 +33,11 @@ export function PersonalDataStep({
   );
   const [cpfMessage, setCpfMessage] = useState<string | null>(null);
 
+  const [usernameState, setUsernameState] = useState<CheckState>(
+    usernameAvailable === true ? "available" : usernameAvailable === false ? "taken" : "idle"
+  );
+  const [usernameMessage, setUsernameMessage] = useState<string | null>(null);
+
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const sanitizedValue = value
@@ -39,6 +46,49 @@ export function PersonalDataStep({
       .replace(/^-+|-+$/g, "")
       .replace(/-{2,}/g, "-");
     setValue("username", sanitizedValue);
+    if (usernameState !== "idle") {
+      setUsernameState("idle");
+      onUsernameAvailableChange?.(null);
+    }
+  };
+
+  const handleUsernameBlur = async () => {
+    const value = (username ?? "").trim();
+    if (!value) {
+      setUsernameState("idle");
+      setUsernameMessage(null);
+      onUsernameAvailableChange?.(null);
+      return;
+    }
+    if (!/^[a-z0-9-]{3,30}$/.test(value)) {
+      setUsernameState("invalid");
+      setUsernameMessage("Use apenas letras minúsculas, números e hífens (3–30 caracteres).");
+      onUsernameAvailableChange?.(false);
+      return;
+    }
+
+    setUsernameState("checking");
+    setUsernameMessage(null);
+
+    try {
+      const res = await api
+        .get("check-unique", { searchParams: { field: "username", value } })
+        .json<{ available: boolean; message?: string }>();
+
+      if (res.available) {
+        setUsernameState("available");
+        setUsernameMessage(null);
+        onUsernameAvailableChange?.(true);
+      } else {
+        setUsernameState("taken");
+        setUsernameMessage(res.message ?? "Este link já está em uso.");
+        onUsernameAvailableChange?.(false);
+      }
+    } catch {
+      setUsernameState("idle");
+      setUsernameMessage(null);
+      onUsernameAvailableChange?.(null);
+    }
   };
 
   const handleCpfBlur = async () => {
@@ -81,6 +131,13 @@ export function PersonalDataStep({
       ? "border-red-400 focus:border-red-500"
       : "border-[#D8D8D8] focus:border-[#9747FF]";
 
+  const usernameBorderClass =
+    usernameState === "available"
+      ? "border-green-500"
+      : usernameState === "taken" || usernameState === "invalid"
+      ? "border-red-400"
+      : "border-[#D8D8D8]";
+
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
@@ -120,7 +177,7 @@ export function PersonalDataStep({
           <label htmlFor="username" className="text-[#141414] text-sm font-medium">
             Link do seu site
           </label>
-          <div className="flex items-center h-12 border border-[#D8D8D8] rounded-md focus-within:border-[#9747FF] focus-within:ring-1 focus-within:ring-[#9747FF]/20 transition-colors">
+          <div className={`flex items-center h-12 border rounded-md focus-within:ring-1 focus-within:ring-[#9747FF]/20 transition-colors ${usernameBorderClass}`}>
             <span className="pl-3 text-[#989898] text-sm font-medium whitespace-nowrap mt-0.5">
               imoobile.com.br/
             </span>
@@ -130,12 +187,30 @@ export function PersonalDataStep({
               placeholder="seu-nome"
               value={username || ""}
               onChange={handleUsernameChange}
-              className="flex-1 h-full bg-transparent border-0 outline-none text-sm"
+              onBlur={handleUsernameBlur}
+              className="flex-1 h-full bg-transparent border-0 outline-none text-sm px-1"
             />
+            <div className="pr-3">
+              {usernameState === "checking" && (
+                <Loader2 className="w-4 h-4 text-[#9747FF] animate-spin" />
+              )}
+              {usernameState === "available" && (
+                <CheckCircle className="w-4 h-4 text-green-500" />
+              )}
+              {(usernameState === "taken" || usernameState === "invalid") && (
+                <XCircle className="w-4 h-4 text-red-500" />
+              )}
+            </div>
           </div>
-          <p className="text-xs text-[#989898]">
-            Este será o endereço público do seu site. Apenas letras, números e hífens. Máximo 30 caracteres.
-          </p>
+          {usernameMessage ? (
+            <p className="text-xs text-red-500">{usernameMessage}</p>
+          ) : usernameState === "available" ? (
+            <p className="text-xs text-green-600">Link disponível!</p>
+          ) : (
+            <p className="text-xs text-[#989898]">
+              Este será o endereço público do seu site. Apenas letras, números e hífens. Máximo 30 caracteres.
+            </p>
+          )}
         </motion.div>
 
         {/* CPF */}

@@ -39,6 +39,8 @@ export interface StepSharedProps {
   onCpfAvailableChange?: (val: boolean | null) => void;
   emailAvailable?: boolean | null;
   onEmailAvailableChange?: (val: boolean | null) => void;
+  usernameAvailable?: boolean | null;
+  onUsernameAvailableChange?: (val: boolean | null) => void;
 }
 
 const STEPS = [
@@ -54,6 +56,7 @@ export function SignupWizard() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [cpfAvailable, setCpfAvailable] = useState<boolean | null>(null);
   const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const { signup, loading } = useAuth();
   const router = useRouter();
 
@@ -113,7 +116,7 @@ export function SignupWizard() {
       case 1:
         return data.userType !== '';
       case 2:
-        return !!(data.name && data.username && data.phone && data.cpf) && cpfAvailable === true;
+        return !!(data.name && data.username && data.phone && data.cpf) && usernameAvailable === true && cpfAvailable === true;
       case 3:
         return (
           !!data.email &&
@@ -234,6 +237,8 @@ export function SignupWizard() {
                     onCpfAvailableChange={setCpfAvailable}
                     emailAvailable={emailAvailable}
                     onEmailAvailableChange={setEmailAvailable}
+                    usernameAvailable={usernameAvailable}
+                    onUsernameAvailableChange={setUsernameAvailable}
                   />
                 )}
               </motion.div>
