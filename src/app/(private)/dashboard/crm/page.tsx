@@ -14,7 +14,7 @@ import { api } from "@/shared/configs/api";
 import { useCurrentUser } from "@/shared/hooks/use-current-user";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart3, Filter, Plus, Search, Settings2 } from "lucide-react";
+import { BarChart3, Filter, Plus, Search, Settings2, Upload } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -32,6 +32,7 @@ import {
 import { KanbanBoard } from "@/features/dashboard/crm/components/kanban-board";
 import { KanbanSkeleton } from "@/features/dashboard/crm/components/kanban-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ImportLeadsModal } from "@/features/dashboard/crm/components/import-leads-modal";
 import { Users } from "lucide-react";
 
 type Broker = {
@@ -62,7 +63,8 @@ const formatCurrency = (value: string | null | undefined) => {
 
 
 export default function CrmPage() {
-  const { isBroker, user: currentUser, userId: currentUserId } = useCurrentUser();
+  const { isBroker, user: currentUser, userId: currentUserId, hasPermission } = useCurrentUser();
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data: stagesData, isLoading: isLoadingStages } = useCrmPipelineStages();
   const { data: tagsData } = useCrmTags();
@@ -198,6 +200,13 @@ export default function CrmPage() {
               Configurações
             </Link>
           </Button>
+
+          {hasPermission("crm.import") && (
+            <Button variant="outline" className="gap-2" onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4" />
+              Importar
+            </Button>
+          )}
 
           <Dialog open={createLeadOpen} onOpenChange={setCreateLeadOpen}>
             <DialogTrigger asChild>
@@ -616,6 +625,12 @@ export default function CrmPage() {
           </div>
         </CardContent>
       </Card>
+
+      <ImportLeadsModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        stages={stages}
+      />
 
       {isLoadingStages || isLoadingLeads ? (
         <KanbanSkeleton columns={Math.max(stages.length || 5, 4)} />

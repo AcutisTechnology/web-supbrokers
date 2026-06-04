@@ -41,6 +41,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { api } from "@/shared/configs/api";
 import type { UserSettingsData } from "@/features/dashboard/settings/services/settings-service";
 import {
+  cancelInvitation,
   sendTeamInvitation,
   getReceivedInvitations,
   acceptInvitation,
@@ -1228,6 +1229,27 @@ function ImobiliariaTeamView() {
   const queryClient = useQueryClient();
 
   const [invite, setInvite] = useState({ email: "", role: "corretor" });
+  const [emailInput, setEmailInput] = useState("");   // valor imediato do input
+  const [emailQuery, setEmailQuery] = useState("");   // valor debounced (dispara API)
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Debounce: atualiza emailQuery 400ms após parar de digitar
+  useEffect(() => {
+    const timer = setTimeout(() => setEmailQuery(emailInput), 400);
+    return () => clearTimeout(timer);
+  }, [emailInput]);
+
+  const { data: emailSuggestions } = useQuery({
+    queryKey: ["users", "search-email", emailQuery],
+    queryFn: async () => {
+      const res = await api.get("users/search-email", {
+        searchParams: { q: emailQuery },
+      }).json<{ data: { id: number; name: string; email: string }[] }>();
+      return res.data;
+    },
+    enabled: emailQuery.length >= 4,
+    staleTime: 5000,
+  });
 
   const { data: teamData, isLoading, isError, refetch } = useQuery({
     queryKey: ["team-members"],
@@ -1257,6 +1279,17 @@ function ImobiliariaTeamView() {
     },
   });
 
+  const cancelInviteMutation = useMutation({
+    mutationFn: cancelInvitation,
+    onSuccess: () => {
+      toast({ title: "Convite cancelado." });
+      queryClient.invalidateQueries({ queryKey: ["team-members"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao cancelar convite", variant: "destructive" });
+    },
+  });
+
   const handleInvite = () => {
     if (!invite.email.trim()) {
       toast({ title: "Email obrigatório", variant: "destructive" });
@@ -1283,12 +1316,47 @@ function ImobiliariaTeamView() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
           <div className="md:col-span-6 space-y-2">
             <Label>Email</Label>
-            <Input
-              value={invite.email}
-              onChange={(e) => setInvite((p) => ({ ...p, email: e.target.value }))}
-              placeholder="email@exemplo.com"
-              onKeyDown={(e) => e.key === "Enter" && handleInvite()}
-            />
+            <div className="relative">
+              <Input
+                value={invite.email}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setInvite((p) => ({ ...p, email: val }));
+                  setEmailInput(val);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => emailInput.length >= 4 && setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                placeholder="email@exemplo.com"
+                onKeyDown={(e) => e.key === "Enter" && handleInvite()}
+                autoComplete="off"
+              />
+              {showSuggestions && emailSuggestions && emailSuggestions.length > 0 && (
+                <div className="absolute z-50 top-full mt-1 w-full bg-white border border-[#E2E2E2] rounded-xl shadow-lg overflow-hidden">
+                  {emailSuggestions.map((u) => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-[#9747FF]/5 transition-colors text-left"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setInvite((p) => ({ ...p, email: u.email }));
+                        setEmailInput(u.email);
+                        setShowSuggestions(false);
+                      }}
+                    >
+                      <div className="w-7 h-7 rounded-full bg-[#9747FF]/10 flex items-center justify-center text-xs font-semibold text-[#9747FF] flex-shrink-0">
+                        {u.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-[#141414] truncate">{u.name}</p>
+                        <p className="text-xs text-[#777777] truncate">{u.email}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <div className="md:col-span-4 space-y-2">
             <Label>Cargo</Label>
@@ -1317,8 +1385,8 @@ function ImobiliariaTeamView() {
 
       {!isLoading && !isError && (
         <SettingsCard title="Membros" description="Gerencie acesso e perfis da sua equipe.">
-          <div className="bg-white rounded-xl border border-[#E2E2E2] overflow-hidden shadow-sm">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-xl border border-[#E2E2E2] shadow-sm">
+            <table className="w-full text-sm min-w-[600px]">
               <thead>
                 <tr className="bg-gray-50 border-b border-[#E2E2E2]">
                   <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">NOME</th>
@@ -1401,7 +1469,15 @@ function ImobiliariaTeamView() {
                       <Badge className="bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">Convite pendente</Badge>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span className="text-xs text-[#777777]">—</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 gap-1.5"
+                        onClick={() => cancelInviteMutation.mutate(inv.id)}
+                        disabled={cancelInviteMutation.isPending}
+                      >
+                        Cancelar convite
+                      </Button>
                     </td>
                   </tr>
                 ))}

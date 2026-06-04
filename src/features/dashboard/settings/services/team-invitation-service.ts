@@ -57,3 +57,7 @@ export async function getTeamMembers() {
 export async function removeTeamMember(memberUserId: number) {
   return api.delete("team/members", { json: { member_user_id: memberUserId } }).json<{ success: boolean }>();
 }
+
+export async function cancelInvitation(id: number) {
+  return api.delete(`team/invitations/${id}`).json<{ success: boolean }>();
+}
