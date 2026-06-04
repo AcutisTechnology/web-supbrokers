@@ -5,22 +5,80 @@ import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
-import { SignupFormData } from "../signup-wizard";
+import { SignupFormData, StepSharedProps } from "../signup-wizard";
 import { useState } from "react";
+import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { api } from "@/shared/configs/api";
 
-interface CredentialsStepProps {
+interface CredentialsStepProps extends StepSharedProps {
   form: UseFormReturn<SignupFormData>;
   onNext: () => void;
 }
 
-export function CredentialsStep({ form }: CredentialsStepProps) {
-  const { register, watch } = form;
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const password = watch('password');
-  const passwordConfirmation = watch('password_confirmation');
+type CheckState = "idle" | "checking" | "available" | "taken" | "invalid";
 
-  const passwordsMatch = password && passwordConfirmation && password === passwordConfirmation;
-  const passwordValid = password && password.length >= 8;
+export function CredentialsStep({
+  form,
+  agreedToTerms = false,
+  onTermsChange,
+  emailAvailable,
+  onEmailAvailableChange,
+}: CredentialsStepProps) {
+  const { register, watch } = form;
+  const password = watch("password");
+  const passwordConfirmation = watch("password_confirmation");
+  const email = watch("email");
+
+  const [emailState, setEmailState] = useState<CheckState>(
+    emailAvailable === true ? "available" : emailAvailable === false ? "taken" : "idle"
+  );
+  const [emailMessage, setEmailMessage] = useState<string | null>(null);
+
+  const passwordsMatch =
+    password && passwordConfirmation && password === passwordConfirmation;
+
+  const handleEmailBlur = async () => {
+    const value = (email ?? "").trim();
+    if (!value) return;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) {
+      setEmailState("invalid");
+      setEmailMessage("E-mail inválido.");
+      onEmailAvailableChange?.(false);
+      return;
+    }
+
+    setEmailState("checking");
+    setEmailMessage(null);
+
+    try {
+      const res = await api
+        .get("check-unique", { searchParams: { field: "email", value } })
+        .json<{ available: boolean; message?: string }>();
+
+      if (res.available) {
+        setEmailState("available");
+        setEmailMessage(null);
+        onEmailAvailableChange?.(true);
+      } else {
+        setEmailState("taken");
+        setEmailMessage(res.message ?? "Este e-mail já está cadastrado.");
+        onEmailAvailableChange?.(false);
+      }
+    } catch {
+      setEmailState("idle");
+      setEmailMessage(null);
+      onEmailAvailableChange?.(null);
+    }
+  };
+
+  const emailBorderClass =
+    emailState === "available"
+      ? "border-green-500 focus:border-green-500"
+      : emailState === "taken" || emailState === "invalid"
+      ? "border-red-400 focus:border-red-500"
+      : "border-[#D8D8D8] focus:border-[#9747FF]";
 
   return (
     <div className="space-y-6">
@@ -34,6 +92,7 @@ export function CredentialsStep({ form }: CredentialsStepProps) {
       </div>
 
       <div className="space-y-4">
+        {/* Email */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -43,15 +102,42 @@ export function CredentialsStep({ form }: CredentialsStepProps) {
           <label htmlFor="email" className="text-[#141414] text-sm font-medium">
             Email
           </label>
-          <Input
-            {...register("email")}
-            id="email"
-            type="email"
-            placeholder="imoobile@email.com"
-            className="h-12 border-[#D8D8D8] focus:border-[#9747FF] focus:ring-[#9747FF]/20"
-          />
+          <div className="relative">
+            <Input
+              {...register("email", {
+                onChange: () => {
+                  if (emailState !== "idle") {
+                    setEmailState("idle");
+                    onEmailAvailableChange?.(null);
+                  }
+                },
+              })}
+              id="email"
+              type="email"
+              placeholder="imoobile@email.com"
+              onBlur={handleEmailBlur}
+              className={`h-12 pr-10 ${emailBorderClass} focus:ring-[#9747FF]/20`}
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              {emailState === "checking" && (
+                <Loader2 className="w-4 h-4 text-[#9747FF] animate-spin" />
+              )}
+              {emailState === "available" && (
+                <CheckCircle className="w-4 h-4 text-green-500" />
+              )}
+              {(emailState === "taken" || emailState === "invalid") && (
+                <XCircle className="w-4 h-4 text-red-500" />
+              )}
+            </div>
+          </div>
+          {emailMessage ? (
+            <p className="text-xs text-red-500">{emailMessage}</p>
+          ) : emailState === "available" ? (
+            <p className="text-xs text-green-600">E-mail disponível.</p>
+          ) : null}
         </motion.div>
 
+        {/* Senha */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -73,13 +159,17 @@ export function CredentialsStep({ form }: CredentialsStepProps) {
           </p>
         </motion.div>
 
+        {/* Confirmar senha */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.3 }}
           className="space-y-2"
         >
-          <label htmlFor="password_confirmation" className="text-[#141414] text-sm font-medium">
+          <label
+            htmlFor="password_confirmation"
+            className="text-[#141414] text-sm font-medium"
+          >
             Confirmar senha
           </label>
           <Input
@@ -88,16 +178,17 @@ export function CredentialsStep({ form }: CredentialsStepProps) {
             type="password"
             placeholder="••••••••"
             className={`h-12 border-[#D8D8D8] focus:border-[#9747FF] focus:ring-[#9747FF]/20 ${
-              passwordConfirmation && !passwordsMatch ? 'border-red-300 focus:border-red-500' : ''
+              passwordConfirmation && !passwordsMatch
+                ? "border-red-300 focus:border-red-500"
+                : ""
             }`}
           />
           {passwordConfirmation && !passwordsMatch && (
-            <p className="text-xs text-red-500">
-              As senhas não coincidem
-            </p>
+            <p className="text-xs text-red-500">As senhas não coincidem</p>
           )}
         </motion.div>
 
+        {/* Termos */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -108,7 +199,7 @@ export function CredentialsStep({ form }: CredentialsStepProps) {
             <Checkbox
               id="terms"
               checked={agreedToTerms}
-              onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+              onCheckedChange={(checked) => onTermsChange?.(checked as boolean)}
               className="mt-1"
             />
             <label htmlFor="terms" className="text-sm text-[#989898] leading-relaxed">
@@ -122,6 +213,11 @@ export function CredentialsStep({ form }: CredentialsStepProps) {
               </Link>
             </label>
           </div>
+          {!agreedToTerms && (
+            <p className="text-xs text-[#989898]">
+              Você precisa aceitar os termos para continuar.
+            </p>
+          )}
         </motion.div>
       </div>
     </div>

@@ -32,6 +32,15 @@ export interface SignupFormData {
   discoverySource: string;
 }
 
+export interface StepSharedProps {
+  agreedToTerms?: boolean;
+  onTermsChange?: (val: boolean) => void;
+  cpfAvailable?: boolean | null;
+  onCpfAvailableChange?: (val: boolean | null) => void;
+  emailAvailable?: boolean | null;
+  onEmailAvailableChange?: (val: boolean | null) => void;
+}
+
 const STEPS = [
   { id: 1, title: "Tipo de usuário", component: UserTypeStep },
   { id: 2, title: "Dados pessoais", component: PersonalDataStep },
@@ -42,6 +51,9 @@ const STEPS = [
 
 export function SignupWizard() {
   const [currentStep, setCurrentStep] = useState(1);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [cpfAvailable, setCpfAvailable] = useState<boolean | null>(null);
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
   const { signup, loading } = useAuth();
   const router = useRouter();
 
@@ -101,14 +113,16 @@ export function SignupWizard() {
       case 1:
         return data.userType !== '';
       case 2:
-        return data.name && data.username && data.phone && data.cpf;
+        return !!(data.name && data.username && data.phone && data.cpf) && cpfAvailable === true;
       case 3:
         return (
           !!data.email &&
           !!data.password &&
           !!data.password_confirmation &&
           data.password.length >= 8 &&
-          data.password === data.password_confirmation
+          data.password === data.password_confirmation &&
+          emailAvailable === true &&
+          agreedToTerms
         );
       case 4:
         return data.discoverySource !== '';
@@ -211,7 +225,16 @@ export function SignupWizard() {
                 transition={{ duration: 0.3 }}
               >
                 {CurrentStepComponent && (
-                  <CurrentStepComponent form={form} onNext={handleNext} />
+                  <CurrentStepComponent
+                    form={form}
+                    onNext={handleNext}
+                    agreedToTerms={agreedToTerms}
+                    onTermsChange={setAgreedToTerms}
+                    cpfAvailable={cpfAvailable}
+                    onCpfAvailableChange={setCpfAvailable}
+                    emailAvailable={emailAvailable}
+                    onEmailAvailableChange={setEmailAvailable}
+                  />
                 )}
               </motion.div>
             </AnimatePresence>
