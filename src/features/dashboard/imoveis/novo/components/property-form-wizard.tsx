@@ -123,7 +123,20 @@ export function PropertyFormWizard({ initialValues, isEditing = false, propertyS
   const currentStepData = STEPS.find(step => step.id === currentStep);
   const progress = (currentStep / STEPS.length) * 100;
 
-  const handleNext = () => {
+  // Campos obrigatórios por etapa — devem passar pela validação do Zod antes de avançar
+  const STEP_REQUIRED_FIELDS: Partial<Record<number, (keyof PropertyFormValues)[]>> = {
+    1: ["title", "description", "code"],
+    2: ["street", "neighborhood"],
+    3: ["size"],
+    4: ["value"],
+  };
+
+  const handleNext = async () => {
+    const fieldsToValidate = STEP_REQUIRED_FIELDS[currentStep];
+    if (fieldsToValidate && fieldsToValidate.length > 0) {
+      const isValid = await form.trigger(fieldsToValidate);
+      if (!isValid) return;
+    }
     if (currentStep < STEPS.length) {
       setCurrentStep(currentStep + 1);
     }
