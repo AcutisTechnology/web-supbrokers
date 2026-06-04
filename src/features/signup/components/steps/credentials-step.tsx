@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
 import { SignupFormData, StepSharedProps } from "../signup-wizard";
 import { useState } from "react";
-import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, Eye, EyeOff } from "lucide-react";
 import { api } from "@/shared/configs/api";
 
 interface CredentialsStepProps extends StepSharedProps {
@@ -33,6 +33,8 @@ export function CredentialsStep({
     emailAvailable === true ? "available" : emailAvailable === false ? "taken" : "idle"
   );
   const [emailMessage, setEmailMessage] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
 
   const passwordsMatch =
     password && passwordConfirmation && password === passwordConfirmation;
@@ -147,13 +149,23 @@ export function CredentialsStep({
           <label htmlFor="password" className="text-[#141414] text-sm font-medium">
             Senha
           </label>
-          <Input
-            {...register("password")}
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            className="h-12 border-[#D8D8D8] focus:border-[#9747FF] focus:ring-[#9747FF]/20"
-          />
+          <div className="relative">
+            <Input
+              {...register("password")}
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              className="h-12 pr-10 border-[#D8D8D8] focus:border-[#9747FF] focus:ring-[#9747FF]/20"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#989898] hover:text-[#141414] transition-colors"
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
           <p className="text-xs text-[#989898]">
             A senha deve conter pelo menos 8 caracteres.
           </p>
@@ -172,17 +184,27 @@ export function CredentialsStep({
           >
             Confirmar senha
           </label>
-          <Input
-            {...register("password_confirmation")}
-            id="password_confirmation"
-            type="password"
-            placeholder="••••••••"
-            className={`h-12 border-[#D8D8D8] focus:border-[#9747FF] focus:ring-[#9747FF]/20 ${
-              passwordConfirmation && !passwordsMatch
-                ? "border-red-300 focus:border-red-500"
-                : ""
-            }`}
-          />
+          <div className="relative">
+            <Input
+              {...register("password_confirmation")}
+              id="password_confirmation"
+              type={showPasswordConfirmation ? "text" : "password"}
+              placeholder="••••••••"
+              className={`h-12 pr-10 border-[#D8D8D8] focus:border-[#9747FF] focus:ring-[#9747FF]/20 ${
+                passwordConfirmation && !passwordsMatch
+                  ? "border-red-300 focus:border-red-500"
+                  : ""
+              }`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPasswordConfirmation((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#989898] hover:text-[#141414] transition-colors"
+              tabIndex={-1}
+            >
+              {showPasswordConfirmation ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
           {passwordConfirmation && !passwordsMatch && (
             <p className="text-xs text-red-500">As senhas não coincidem</p>
           )}
