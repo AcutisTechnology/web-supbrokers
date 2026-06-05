@@ -14,7 +14,7 @@ const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
-  navigationPreload: true,
+  navigationPreload: false,
   runtimeCaching: [
     // App autenticado e rotas de API same-origin: SEMPRE rede, nunca cache.
     // O dashboard é dinâmico e protegido por auth — cachear páginas/RSC aqui
@@ -93,3 +93,13 @@ self.addEventListener('notificationclick', event => {
 });
 
 serwist.addEventListeners();
+
+// Suppresses uncaught "no-response" rejections that occur when Next.js cancels
+// in-flight prefetch requests (AbortError). These are harmless — the page still
+// loads normally via its own navigation fetch.
+self.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+  const msg: string = event.reason?.message ?? '';
+  if (msg.startsWith('no-response')) {
+    event.preventDefault();
+  }
+});
