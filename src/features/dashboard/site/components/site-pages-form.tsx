@@ -321,27 +321,36 @@ export function SitePageForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="content"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Conteúdo principal</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  value={field.value ?? ""}
-                  placeholder="Você pode escrever texto ou HTML simples."
-                  className="min-h-[260px] font-mono text-sm"
-                />
-              </FormControl>
-              <FormDescription>
-                Suporta HTML simples (parágrafos, listas, links). Builder visual será adicionado em uma fase futura.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {watchedType === "contact" ? (
+          <div className="rounded-xl border border-[#9747FF]/20 bg-[#9747FF]/5 px-4 py-3 text-sm text-[#4A316A] space-y-1">
+            <p className="font-semibold">Dados de contato automáticos</p>
+            <p className="text-[#4A316A]/70">
+              Telefone, WhatsApp, e-mail, endereço e redes sociais são exibidos automaticamente a partir das configurações de <strong>Rodapé</strong>. Não é necessário preencher conteúdo aqui.
+            </p>
+          </div>
+        ) : (
+          <FormField
+            control={form.control}
+            name="content"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Conteúdo principal</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    value={field.value ?? ""}
+                    placeholder="Você pode escrever texto ou HTML simples."
+                    className="min-h-[260px] font-mono text-sm"
+                  />
+                </FormControl>
+                <FormDescription>
+                  Suporta HTML simples (parágrafos, listas, links). Builder visual será adicionado em uma fase futura.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <FormField
