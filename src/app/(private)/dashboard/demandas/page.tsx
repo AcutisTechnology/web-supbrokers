@@ -1,3 +1,5 @@
+"use client";
+
 import dynamic from "next/dynamic";
 
 // Desativa SSR para evitar hydration mismatch com Select (Radix) + React Query cache.
