@@ -157,25 +157,25 @@ export default function DashboardPage() {
       {/* Card do Link Público */}
       <Card className="bg-gradient-to-r from-[#9747ff]/5 to-transparent">
         <CardContent className="p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#9747ff]/10 rounded-full flex items-center justify-center">
-                <LinkIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#9747ff]" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="w-10 h-10 bg-[#9747ff]/10 rounded-full flex items-center justify-center">
+                <LinkIcon className="w-5 h-5 text-[#9747ff]" />
               </div>
               <div>
-                <h3 className="font-medium text-base sm:text-lg">Seu Link Público</h3>
-                <p className="text-xs sm:text-sm text-[#969696]">Compartilhe este link com seus clientes</p>
+                <h3 className="font-medium text-sm sm:text-base">Seu Link Público</h3>
+                <p className="text-xs text-[#969696]">Compartilhe este link com seus clientes</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <div className="bg-white px-3 sm:px-4 py-2 rounded-lg border flex items-center gap-2 flex-1 sm:flex-none sm:min-w-[200px]">
-                <span className="text-xs sm:text-sm text-[#141414] truncate">{publicUrl}</span>
+            <div className="min-w-0 flex-1 sm:max-w-xs">
+              <div className="bg-white px-3 py-2 rounded-lg border flex items-center gap-1 w-full min-w-0">
+                <span className="text-xs text-[#141414] truncate flex-1 min-w-0">{publicUrl}</span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleCopyLink}
                   disabled={!publicUrl}
-                  className="h-8 w-8 p-0 hover:bg-transparent"
+                  className="h-7 w-7 p-0 shrink-0 hover:bg-transparent"
                 >
                   {isCopied ? (
                     <Check className="w-4 h-4 text-green-500" />
@@ -183,13 +183,12 @@ export default function DashboardPage() {
                     <Copy className="w-4 h-4 text-[#9747ff]" />
                   )}
                 </Button>
-
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleNavigateToLink}
                   disabled={!publicUrl}
-                  className="h-8 p-0 hover:bg-transparent cursor-pointer"
+                  className="h-7 w-7 p-0 shrink-0 hover:bg-transparent"
                 >
                   <Navigation className="w-4 h-4 text-[#9747ff]" />
                 </Button>
@@ -289,16 +288,23 @@ export default function DashboardPage() {
                     <Building2 className="w-5 h-5 text-[#9747ff]" />
                     <CardTitle className="text-base sm:text-lg font-medium">Imóveis</CardTitle>
                   </div>
-                  <Link href="/dashboard/imoveis">
-                    <Button variant="ghost" size="sm" className="gap-1">
-                      <span className="hidden sm:inline">Ver todos</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </Link>
+                  <div className="flex items-center gap-1">
+                    <Link href="/dashboard/imoveis/novo">
+                      <Button size="sm" className="bg-[#9747ff] hover:bg-[#9747ff]/90 h-8 text-xs px-3 gap-1">
+                        <span className="hidden sm:inline">Cadastrar</span>
+                        <span className="sm:hidden">+</span>
+                      </Button>
+                    </Link>
+                    <Link href="/dashboard/imoveis">
+                      <Button variant="ghost" size="sm" className="gap-1 h-8">
+                        <span className="hidden sm:inline">Ver todos</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
                 <CardDescription className="text-xs sm:text-sm">
-                  <span className="font-medium text-[#141414]">{totalProperties}/{propertyLimit}</span> imóveis
-                  cadastrados
+                  <span className="font-medium text-[#141414]">{totalProperties}</span> imóveis cadastrados
                 </CardDescription>
               </CardHeader>
 
@@ -452,8 +458,8 @@ export default function DashboardPage() {
         </>
       )}
 
-      {/* Seção Primeiros Passos */}
-      <Card className="bg-gradient-to-r from-[#9747ff]/5 to-transparent border-[#9747ff]/20">
+      {/* Seção Primeiros Passos — oculta */}
+      {false && <Card className="bg-gradient-to-r from-[#9747ff]/5 to-transparent border-[#9747ff]/20">
         <CardHeader className="p-4 sm:p-6">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-[#9747ff]/10 rounded-full flex items-center justify-center">
@@ -506,7 +512,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card>}
 
       <Card className="overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-[#9747ff]/5 to-transparent p-4 sm:p-6">
