@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Eye, Pencil, Copy, Trash2 } from "lucide-react";
@@ -26,11 +26,13 @@ import {
 } from "@/features/dashboard/demandas/types/demanda";
 
 const ALL_STATUSES = Object.entries(DEMANDA_STATUS_LABELS) as [DemandaStatus, string][];
+const EMPTY = "_all";
 
 export default function DemandasPage() {
   const queryClient = useQueryClient();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [page, setPage] = useState(1);
-  const EMPTY = "_all";
   const [draft, setDraft] = useState({ search: "", status: EMPTY, property_type: EMPTY });
   const [filters, setFilters] = useState<DemandasFilters>({});
 
@@ -68,45 +70,47 @@ export default function DemandasPage() {
           </Button>
         </div>
 
-        {/* Filtros */}
-        <Card className="p-4 mb-6 shadow-sm">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Input
-              placeholder="Buscar por título ou cidade..."
-              value={draft.search ?? ""}
-              onChange={e => setDraft(d => ({ ...d, search: e.target.value }))}
-            />
-            <Select
-              value={draft.status}
-              onValueChange={v => setDraft(d => ({ ...d, status: v }))}
-            >
-              <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value={EMPTY}>Todos os status</SelectItem>
-                {ALL_STATUSES.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select
-              value={draft.property_type}
-              onValueChange={v => setDraft(d => ({ ...d, property_type: v }))}
-            >
-              <SelectTrigger><SelectValue placeholder="Tipo de imóvel" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value={EMPTY}>Todos os tipos</SelectItem>
-                {PROPERTY_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex justify-end gap-2 mt-3">
-            <Button variant="outline" size="sm" onClick={clearFilters}>Limpar</Button>
-            <Button size="sm" onClick={applyFilters} className="bg-[#9747ff] hover:bg-[#7c2ae8] text-white">
-              Filtrar
-            </Button>
-          </div>
-        </Card>
+        {/* Filtros — só renderiza no client para evitar hydration mismatch com o Select */}
+        {mounted && (
+          <Card className="p-4 mb-6 shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Input
+                placeholder="Buscar por título ou cidade..."
+                value={draft.search ?? ""}
+                onChange={e => setDraft(d => ({ ...d, search: e.target.value }))}
+              />
+              <Select
+                value={draft.status}
+                onValueChange={v => setDraft(d => ({ ...d, status: v }))}
+              >
+                <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EMPTY}>Todos os status</SelectItem>
+                  {ALL_STATUSES.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select
+                value={draft.property_type}
+                onValueChange={v => setDraft(d => ({ ...d, property_type: v }))}
+              >
+                <SelectTrigger><SelectValue placeholder="Tipo de imóvel" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EMPTY}>Todos os tipos</SelectItem>
+                  {PROPERTY_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 mt-3">
+              <Button variant="outline" size="sm" onClick={clearFilters}>Limpar</Button>
+              <Button size="sm" onClick={applyFilters} className="bg-[#9747ff] hover:bg-[#7c2ae8] text-white">
+                Filtrar
+              </Button>
+            </div>
+          </Card>
+        )}
 
-        {/* Tabela */}
-        {isLoading ? (
+        {/* Tabela — guard de montagem evita mismatch com cache do React Query */}
+        {!mounted || isLoading ? (
           <div className="text-center py-12 text-gray-400">Carregando...</div>
         ) : !data?.data?.length ? (
           <div className="text-center py-16">
