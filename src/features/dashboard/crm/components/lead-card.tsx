@@ -27,10 +27,12 @@ const formatCurrency = (value: string | null | undefined) => {
 const normalizePhoneDigits = (phone: string) => phone.replace(/\D/g, "");
 
 export function LeadCard({ lead, draggable = true }: LeadCardProps) {
+  const [logCallOpen, setLogCallOpen] = useState(false);
+
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `lead-${lead.id}`,
     data: { leadId: lead.id, fromStageId: lead.pipeline_stage_id },
-    disabled: !draggable,
+    disabled: !draggable || logCallOpen,
   });
 
   const style = {
@@ -38,7 +40,6 @@ export function LeadCard({ lead, draggable = true }: LeadCardProps) {
     opacity: isDragging ? 0.4 : 1,
   };
 
-  const [logCallOpen, setLogCallOpen] = useState(false);
   const phoneDigits = normalizePhoneDigits(lead.phone);
 
   return (
