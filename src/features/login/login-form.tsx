@@ -56,13 +56,16 @@ export function LoginForm() {
         >
           Senha
         </label>
-        <div className="relative">
+        {/* suppressHydrationWarning: gerenciadores de senha (1Password, LastPass, etc.)
+            injetam wrappers no campo password antes do React hidratar, causando mismatch. */}
+        <div className="relative" suppressHydrationWarning>
           <Input
             {...register("password")}
             id="password"
             type={showPassword ? "text" : "password"}
             placeholder="********"
             required
+            suppressHydrationWarning
             className="w-full px-3 py-2 pr-10 border border-[#d8d8d8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9747ff]"
           />
           <button
@@ -70,6 +73,7 @@ export function LoginForm() {
             onClick={() => setShowPassword((v) => !v)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-[#989898] hover:text-[#141414] transition-colors"
             tabIndex={-1}
+            suppressHydrationWarning
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
