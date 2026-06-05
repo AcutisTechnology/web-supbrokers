@@ -20,7 +20,7 @@ export const demandaSchema = z.object({
   required_characteristics: z.array(z.string()).default([]),
   desired_characteristics: z.array(z.string()).default([]),
   description: z.string().nullable().optional(),
-  status: z.string().default('nova'),
+  status: z.enum(['nova','em_busca','imoveis_enviados','negociacao','fechada','perdida']).default('nova'),
 });
 
 export type DemandaFormValues = z.infer<typeof demandaSchema>;

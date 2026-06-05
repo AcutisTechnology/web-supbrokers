@@ -83,7 +83,7 @@ export function DemandaForm({ demandaId }: DemandaFormProps) {
       required_characteristics: d.required_characteristics ?? [],
       desired_characteristics: d.desired_characteristics ?? [],
       description: d.description ?? null,
-      status: d.status,
+      status: (d.status as DemandaFormValues['status']) || 'nova',
     });
     setClientSearch(d.client?.name ?? "");
   }, [demandaResp?.data, isEditing, form]);
