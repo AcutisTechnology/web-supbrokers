@@ -11,7 +11,11 @@ import {
   useHomeLayout,
 } from "../services/home-layout-service";
 
-export function HomeLayoutManager() {
+interface HomeLayoutManagerProps {
+  onChange?: (sections: HomeSection[]) => void;
+}
+
+export function HomeLayoutManager({ onChange }: HomeLayoutManagerProps) {
   const { sections, isLoading, isError, error, refetch, save, isSaving } = useHomeLayout();
   const [draft, setDraft] = useState<HomeSection[]>([]);
   const [didInit, setDidInit] = useState(false);
@@ -21,6 +25,11 @@ export function HomeLayoutManager() {
     setDraft(sections);
     setDidInit(true);
   }, [sections, didInit]);
+
+  useEffect(() => {
+    if (draft.length === 0) return;
+    onChange?.(draft);
+  }, [draft, onChange]);
 
   const move = (index: number, dir: "up" | "down") => {
     const target = dir === "up" ? index - 1 : index + 1;

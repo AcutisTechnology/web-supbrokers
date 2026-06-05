@@ -27,7 +27,9 @@ import { InstitutionalForm } from "@/features/dashboard/site/components/institut
 import { TestimonialsManager } from "@/features/dashboard/site/components/testimonials-manager";
 import { PostsManager } from "@/features/dashboard/site/components/posts-manager";
 import { HomeLayoutManager } from "@/features/dashboard/site/components/home-layout-manager";
+import { type HomeSection } from "@/features/dashboard/site/services/home-layout-service";
 import { SeoListingForm } from "@/features/dashboard/site/components/seo-listing-form";
+import { ListingForm } from "@/features/dashboard/site/components/listing-form";
 import { WhatsappTemplatesManager } from "@/features/dashboard/site/components/whatsapp-templates-manager";
 import { SitePreview } from "@/features/dashboard/site/components/site-preview";
 import { SitePagesManager } from "@/features/dashboard/site/components/site-pages-manager";
@@ -859,6 +861,7 @@ function PageSection() {
     }
   >({});
   const [previewFooter, setPreviewFooter] = useState<Partial<SiteFooterFormData>>({});
+  const [previewLayout, setPreviewLayout] = useState<HomeSection[]>([]);
 
   useEffect(() => {
     if (settings) {
@@ -896,11 +899,11 @@ function PageSection() {
   }, [footer]);
 
   const subTabs: Array<{ key: PageSubTab; label: string; description: string }> = [
-    { key: "appearance", label: "Aparência", description: "Cores, logo e cabeçalho" },
     { key: "home", label: "Home", description: "Hero e estatísticas" },
     { key: "footer", label: "Rodapé", description: "Contato, redes sociais e CRECI" },
-    { key: "pages", label: "Menu", description: "Links e páginas do menu superior" },
+    { key: "pages", label: "Menu", description: "Logo, links e páginas do menu" },
     { key: "messages", label: "Mensagens", description: "Templates de WhatsApp" },
+    { key: "appearance", label: "SEO", description: "Meta tags e imagem de compartilhamento" },
   ];
 
   const { pages: sitePages } = useSitePages();
@@ -942,22 +945,9 @@ function PageSection() {
             </div>
 
             {tab === "appearance" && (
-              <SettingsCard title="Aparência" description="Logomarca e textos do cabeçalho.">
-                <SiteAppearanceForm
-                  initial={settings}
-                  onSubmit={async (payload) => {
-                    await updateSettings(payload);
-                  }}
-                  onChange={(data) => setPreviewSettings((prev) => ({ ...prev, ...data }))}
-                  isSubmitting={isUpdatingSettings}
-                />
-              </SettingsCard>
-            )}
-
-            {tab === "appearance" && (
               <SettingsCard
-                title="SEO & Listagem"
-                description="Meta tags, imagem de compartilhamento e preferências da listagem de imóveis."
+                title="SEO"
+                description="Meta tags e imagem de compartilhamento do site público."
               >
                 <SeoListingForm
                   initial={settings}
@@ -998,15 +988,27 @@ function PageSection() {
             )}
 
             {tab === "pages" && (
-              <SettingsCard
-                title="Menu"
-                description="Gerencie os itens exibidos no menu superior do site. Cada página adicionada aqui aparece como um link na navegação principal."
-              >
-                <SitePagesManager
-                  onActivePageChange={setActivePage}
-                  onDraftChange={setPageDraft}
-                />
-              </SettingsCard>
+              <>
+                <SettingsCard title="Logo da Marca" description="Logomarca exibida no menu e no rodapé do site.">
+                  <SiteAppearanceForm
+                    initial={settings}
+                    onSubmit={async (payload) => {
+                      await updateSettings(payload);
+                    }}
+                    onChange={(data) => setPreviewSettings((prev) => ({ ...prev, ...data }))}
+                    isSubmitting={isUpdatingSettings}
+                  />
+                </SettingsCard>
+                <SettingsCard
+                  title="Menu"
+                  description="Gerencie os itens exibidos no menu superior do site. Cada página adicionada aqui aparece como um link na navegação principal."
+                >
+                  <SitePagesManager
+                    onActivePageChange={setActivePage}
+                    onDraftChange={setPageDraft}
+                  />
+                </SettingsCard>
+              </>
             )}
 
             {tab === "messages" && (
@@ -1020,12 +1022,6 @@ function PageSection() {
 
             {tab === "home" && (
               <div className="space-y-4">
-                <SettingsCard
-                  title="Seções da Home"
-                  description="Ative, desative e reordene as seções exibidas na home pública."
-                >
-                  <HomeLayoutManager />
-                </SettingsCard>
                 <SettingsCard
                   title="Hero da Home"
                   description="Imagem de fundo, eyebrow, título em 2 linhas e subtítulo do hero principal."
@@ -1049,6 +1045,24 @@ function PageSection() {
                     }}
                     isSubmitting={isUpdatingSettings}
                   />
+                </SettingsCard>
+                <SettingsCard
+                  title="Listagem de imóveis"
+                  description="Quantidade de imóveis por página e ordenação padrão da listagem."
+                >
+                  <ListingForm
+                    initial={settings}
+                    onSubmit={async payload => {
+                      await updateSettings(payload);
+                    }}
+                    isSubmitting={isUpdatingSettings}
+                  />
+                </SettingsCard>
+                <SettingsCard
+                  title="Seções da Home"
+                  description="Ative, desative e reordene as seções exibidas na home pública."
+                >
+                  <HomeLayoutManager onChange={setPreviewLayout} />
                 </SettingsCard>
                 <SettingsCard
                   title="Estatísticas"
@@ -1100,6 +1114,7 @@ function PageSection() {
                   settings={{ ...settings, ...previewSettings }}
                   footer={{ ...footer, ...previewFooter }}
                   socialLinks={socialLinks}
+                  homeLayout={previewLayout}
                 />
               )}
             </SettingsCard>
