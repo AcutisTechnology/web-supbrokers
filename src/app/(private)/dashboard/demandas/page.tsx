@@ -30,17 +30,26 @@ const ALL_STATUSES = Object.entries(DEMANDA_STATUS_LABELS) as [DemandaStatus, st
 export default function DemandasPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
-  const [draft, setDraft] = useState<DemandasFilters>({ search: "", status: "", property_type: "" });
+  const EMPTY = "_all";
+  const [draft, setDraft] = useState({ search: "", status: EMPTY, property_type: EMPTY });
   const [filters, setFilters] = useState<DemandasFilters>({});
 
   const { data, isLoading } = useDemandasList(page, filters);
   const deleteMutation = useDeleteDemanda();
   const duplicateMutation = useDuplicateDemanda();
 
-  const applyFilters = () => { setPage(1); setFilters({ ...draft }); };
+  const applyFilters = () => {
+    setPage(1);
+    setFilters({
+      search: draft.search || undefined,
+      status: draft.status !== EMPTY ? draft.status : undefined,
+      property_type: draft.property_type !== EMPTY ? draft.property_type : undefined,
+    });
+  };
   const clearFilters = () => {
-    const empty: DemandasFilters = { search: "", status: "", property_type: "" };
-    setDraft(empty); setFilters({}); setPage(1);
+    setDraft({ search: "", status: EMPTY, property_type: EMPTY });
+    setFilters({});
+    setPage(1);
   };
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["demandas"] });
@@ -68,22 +77,22 @@ export default function DemandasPage() {
               onChange={e => setDraft(d => ({ ...d, search: e.target.value }))}
             />
             <Select
-              value={draft.status ?? ""}
+              value={draft.status}
               onValueChange={v => setDraft(d => ({ ...d, status: v }))}
             >
               <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os status</SelectItem>
+                <SelectItem value={EMPTY}>Todos os status</SelectItem>
                 {ALL_STATUSES.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select
-              value={draft.property_type ?? ""}
+              value={draft.property_type}
               onValueChange={v => setDraft(d => ({ ...d, property_type: v }))}
             >
               <SelectTrigger><SelectValue placeholder="Tipo de imóvel" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os tipos</SelectItem>
+                <SelectItem value={EMPTY}>Todos os tipos</SelectItem>
                 {PROPERTY_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
               </SelectContent>
             </Select>

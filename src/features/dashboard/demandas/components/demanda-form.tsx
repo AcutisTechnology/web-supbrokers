@@ -216,14 +216,14 @@ export function DemandaForm({ demandaId }: DemandaFormProps) {
             <FormField name="property_type" control={form.control} render={({ field }) => (
               <FormItem>
                 <FormLabel>Tipo do imóvel</FormLabel>
-                <Select value={field.value ?? ""} onValueChange={v => field.onChange(v || null)}>
+                <Select value={field.value ?? "_none"} onValueChange={v => field.onChange(v === "_none" ? null : v)}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecionar tipo" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Qualquer</SelectItem>
+                    <SelectItem value="_none">Qualquer</SelectItem>
                     {PROPERTY_TYPES.map(t => (
                       <SelectItem key={t} value={t}>{t}</SelectItem>
                     ))}
