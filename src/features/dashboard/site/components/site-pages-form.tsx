@@ -143,53 +143,6 @@ export function SitePageForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="title"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Título</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="Ex: Quem Somos"
-                    onBlur={(e) => {
-                      field.onBlur();
-                      handleTitleBlur();
-                      e.target.blur();
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="slug"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Slug</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="quem-somos"
-                    disabled={isHomeLocked}
-                  />
-                </FormControl>
-                <FormDescription>
-                  {isHomeLocked
-                    ? "O slug da home é fixo (/)."
-                    : "Apenas letras minúsculas, números, hífen e /"}
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
         <FormField
           control={form.control}
           name="page_type"
@@ -267,11 +220,6 @@ export function SitePageForm({
                   })()}
                 </div>
               )}
-              {!isSystemRoute && watchedType === "about" && (
-                <FormDescription>
-                  Página de CMS — conteúdo editável pelo editor abaixo.
-                </FormDescription>
-              )}
               {!isSystemRoute && watchedType === "custom" && (
                 <FormDescription>
                   Página totalmente personalizada — slug e conteúdo livres.
@@ -281,6 +229,53 @@ export function SitePageForm({
             </FormItem>
           )}
         />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Título</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Ex: Contato"
+                    onBlur={(e) => {
+                      field.onBlur();
+                      handleTitleBlur();
+                      e.target.blur();
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="slug"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Slug</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="contato"
+                    disabled={isHomeLocked}
+                  />
+                </FormControl>
+                <FormDescription>
+                  {isHomeLocked
+                    ? "O slug da home é fixo (/)."
+                    : "Apenas letras minúsculas, números, hífen e /"}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
