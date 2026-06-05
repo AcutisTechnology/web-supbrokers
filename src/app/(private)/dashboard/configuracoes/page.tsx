@@ -863,7 +863,6 @@ function PageSection() {
   useEffect(() => {
     if (settings) {
       setPreviewSettings({
-        primary_color: settings.primary_color ?? undefined,
         site_subtitle: settings.site_subtitle ?? undefined,
         brand_image: settings.brand_image ?? undefined,
         hero_eyebrow: settings.hero_eyebrow ?? undefined,
@@ -943,7 +942,7 @@ function PageSection() {
             </div>
 
             {tab === "appearance" && (
-              <SettingsCard title="Aparência" description="Cor primária, logomarca e textos do cabeçalho.">
+              <SettingsCard title="Aparência" description="Logomarca e textos do cabeçalho.">
                 <SiteAppearanceForm
                   initial={settings}
                   onSubmit={async (payload) => {

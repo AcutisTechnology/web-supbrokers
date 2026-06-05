@@ -45,7 +45,7 @@ export function SitePagePreview({
         }
       : null;
 
-  const primaryColor = settings?.primary_color || "#9747FF";
+  const primaryColor = "#9747FF";
 
   return (
     <div className="space-y-4">

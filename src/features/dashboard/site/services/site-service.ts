@@ -48,7 +48,6 @@ export interface SiteSocialLink {
 export interface SiteSetting {
   id: number;
   user_id: number;
-  primary_color: string | null;
   secondary_color: string | null;
   brand_image: string | null;
   favicon: string | null;
@@ -72,7 +71,6 @@ export interface SiteSetting {
 }
 
 export interface UpdateSiteSettingPayload {
-  primary_color?: string | null;
   secondary_color?: string | null;
   brand_image?: string | null;
   favicon?: string | null;

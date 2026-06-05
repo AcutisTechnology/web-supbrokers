@@ -282,7 +282,7 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
     error,
     brandName,
     brandLogo: site?.brand_image ?? null,
-    primaryColor: site?.primary_color || mockBrand.primaryColor,
+    primaryColor: mockBrand.primaryColor,
     whatsappNumber,
     menu,
     properties: data,

@@ -58,7 +58,6 @@ export interface PublicSocialLink {
 }
 
 export interface PublicSite {
-  primary_color: string | null;
   secondary_color: string | null;
   brand_image: string | null;
   favicon: string | null;

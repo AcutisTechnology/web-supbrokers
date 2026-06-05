@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -16,12 +15,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { ColorPicker } from "./color-picker";
 import { ImageUpload } from "./image-upload";
 import type { SiteSetting, UpdateSiteSettingPayload } from "../services/site-service";
 
 const schema = z.object({
-  primary_color: z.string().min(1, "A cor primária é obrigatória"),
   brand_image: z.string().min(1, "A logomarca é obrigatória"),
 });
 
@@ -35,13 +32,11 @@ interface SiteAppearanceFormProps {
 }
 
 const DEFAULTS: SiteAppearanceFormData = {
-  primary_color: "#9747FF",
   brand_image: "/logo-extendida-roxo.svg",
 };
 
 function buildInitialValues(initial: SiteSetting | undefined): SiteAppearanceFormData {
   return {
-    primary_color: initial?.primary_color ?? DEFAULTS.primary_color,
     brand_image: initial?.brand_image ?? DEFAULTS.brand_image,
   };
 }
@@ -81,23 +76,6 @@ export function SiteAppearanceForm({ initial, onSubmit, onChange, isSubmitting }
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="primary_color"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-sm font-medium text-gray-700">Cor Primária</FormLabel>
-              <FormControl>
-                <ColorPicker value={field.value} onChange={field.onChange} />
-              </FormControl>
-              <FormDescription className="text-xs text-gray-500">
-                Esta cor será usada como tema principal da sua página.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <FormField
           control={form.control}
           name="brand_image"
