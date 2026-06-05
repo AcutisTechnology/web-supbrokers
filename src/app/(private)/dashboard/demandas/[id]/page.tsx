@@ -215,7 +215,11 @@ export default function DemandaDetalhePage({ params }: { params: Promise<{ id: s
                             <td className="py-3 pr-3 text-gray-500 text-xs font-mono">{p.code ?? "—"}</td>
                             <td className="py-3 pr-3">
                               <Link
-                                href={`/dashboard/imoveis/${p.slug}`}
+                                href={p.owner_slug
+                                  ? `/${p.owner_slug}/imovel/${p.slug}`
+                                  : `/dashboard/imoveis/${p.slug}`}
+                                target={p.owner_slug ? "_blank" : undefined}
+                                rel={p.owner_slug ? "noopener noreferrer" : undefined}
                                 className="font-medium text-gray-900 hover:text-[#9747ff] transition-colors line-clamp-1"
                               >
                                 {p.title}

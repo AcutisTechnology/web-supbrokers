@@ -51,6 +51,7 @@ export interface DemandaMatchProperty {
   size?: number;
   property_type?: string;
   photo_url?: string | null;
+  owner_slug?: string | null;
 }
 
 export interface DemandaMatch {
