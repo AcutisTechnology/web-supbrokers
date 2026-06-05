@@ -39,13 +39,10 @@ export function SitePreview({ settings, footer, socialLinks = [] }: SitePreviewP
   const brandImage = settings?.brand_image || null;
   const companyName = footer?.company_name || "LuxuryEstate";
 
-  // Hero: usa os campos novos com fallback elegante
-  const eyebrow = settings?.hero_eyebrow || "Curadoria exclusiva";
-  const titleLine1 = settings?.hero_title_line_1 || settings?.site_title || "Onde o luxo encontra";
-  const titleLine2 = settings?.hero_title_line_2 || "o seu novo lar.";
-  const subtitle =
-    settings?.site_subtitle ||
-    "Curadoria exclusiva de imóveis de alto padrão, com a discrição que sua história merece.";
+  const eyebrow = settings?.hero_eyebrow || null;
+  const titleLine1 = settings?.hero_title_line_1 || null;
+  const titleLine2 = settings?.hero_title_line_2 || null;
+  const subtitle = settings?.site_subtitle || null;
   const heroBg = settings?.hero_background_url || null;
 
   const showSocial = footer?.show_social_links !== false;
@@ -91,21 +88,27 @@ export function SitePreview({ settings, footer, socialLinks = [] }: SitePreviewP
           </div>
 
           {/* Eyebrow + título */}
-          <p className="text-[8px] tracking-[0.25em] uppercase text-amber-200/90 mb-1.5">
-            {eyebrow}
-          </p>
-          <h3 className="text-white text-lg font-semibold leading-tight font-display">
-            {titleLine1}
-            {titleLine2 && (
-              <>
-                <br />
-                <span className="bg-gradient-to-r from-amber-200 to-white bg-clip-text text-transparent italic">
-                  {titleLine2}
-                </span>
-              </>
-            )}
-          </h3>
-          <p className="text-white/70 text-[10px] mt-2 line-clamp-2 max-w-[90%]">{subtitle}</p>
+          {eyebrow && (
+            <p className="text-[8px] tracking-[0.25em] uppercase text-amber-200/90 mb-1.5">
+              {eyebrow}
+            </p>
+          )}
+          {(titleLine1 || titleLine2) && (
+            <h3 className="text-white text-lg font-semibold leading-tight font-display">
+              {titleLine1}
+              {titleLine2 && (
+                <>
+                  {titleLine1 && <br />}
+                  <span className="bg-gradient-to-r from-amber-200 to-white bg-clip-text text-transparent italic">
+                    {titleLine2}
+                  </span>
+                </>
+              )}
+            </h3>
+          )}
+          {subtitle && (
+            <p className="text-white/70 text-[10px] mt-2 line-clamp-2 max-w-[90%]">{subtitle}</p>
+          )}
 
           {/* Tabs + busca glass */}
           <div className="mt-4">

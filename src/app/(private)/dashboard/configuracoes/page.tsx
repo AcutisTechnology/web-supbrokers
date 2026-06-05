@@ -851,6 +851,7 @@ function PageSection() {
 
   const [previewSettings, setPreviewSettings] = useState<
     Partial<SiteAppearanceFormData> & {
+      site_subtitle?: string | null;
       hero_eyebrow?: string | null;
       hero_title_line_1?: string | null;
       hero_title_line_2?: string | null;
@@ -863,7 +864,6 @@ function PageSection() {
     if (settings) {
       setPreviewSettings({
         primary_color: settings.primary_color ?? undefined,
-        site_title: settings.site_title ?? undefined,
         site_subtitle: settings.site_subtitle ?? undefined,
         brand_image: settings.brand_image ?? undefined,
       });

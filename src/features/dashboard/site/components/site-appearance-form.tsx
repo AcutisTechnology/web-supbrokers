@@ -22,8 +22,6 @@ import type { SiteSetting, UpdateSiteSettingPayload } from "../services/site-ser
 
 const schema = z.object({
   primary_color: z.string().min(1, "A cor primária é obrigatória"),
-  site_title: z.string().min(1, "O título é obrigatório"),
-  site_subtitle: z.string().min(1, "O subtítulo é obrigatório"),
   brand_image: z.string().min(1, "A logomarca é obrigatória"),
 });
 
@@ -38,16 +36,12 @@ interface SiteAppearanceFormProps {
 
 const DEFAULTS: SiteAppearanceFormData = {
   primary_color: "#9747FF",
-  site_title: "Encontre o imóvel perfeito para você",
-  site_subtitle: "Confira os melhores imóveis disponíveis",
   brand_image: "/logo-extendida-roxo.svg",
 };
 
 function buildInitialValues(initial: SiteSetting | undefined): SiteAppearanceFormData {
   return {
     primary_color: initial?.primary_color ?? DEFAULTS.primary_color,
-    site_title: initial?.site_title ?? DEFAULTS.site_title,
-    site_subtitle: initial?.site_subtitle ?? DEFAULTS.site_subtitle,
     brand_image: initial?.brand_image ?? DEFAULTS.brand_image,
   };
 }
@@ -115,48 +109,6 @@ export function SiteAppearanceForm({ initial, onSubmit, onChange, isSubmitting }
               </FormControl>
               <FormDescription className="text-xs text-gray-500">
                 Recomendamos uma imagem de pelo menos 150x50 pixels.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="site_title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-sm font-medium text-gray-700">Título da Página</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder="Ex: Encontre o imóvel perfeito para você"
-                  className="border-gray-300 focus:border-[#9747FF] focus:ring-[#9747FF]"
-                />
-              </FormControl>
-              <FormDescription className="text-xs text-gray-500">
-                Este título será exibido em destaque na sua página.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="site_subtitle"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-sm font-medium text-gray-700">Subtítulo da Página</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder="Ex: Confira os melhores imóveis disponíveis"
-                  className="border-gray-300 focus:border-[#9747FF] focus:ring-[#9747FF]"
-                />
-              </FormControl>
-              <FormDescription className="text-xs text-gray-500">
-                Uma breve descrição que aparecerá abaixo do título.
               </FormDescription>
               <FormMessage />
             </FormItem>

@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { mockBrand } from '../data/mock';
 import { useSearchFilters } from '../hooks/use-search-filters';
 import { brokerUrls } from '../lib/broker-urls';
 import { PropertySearchForm } from './property-search-form';
@@ -45,10 +44,10 @@ export function PremiumHero({
   };
 
   const bgUrl = hero?.backgroundUrl || DEFAULT_HERO_BG;
-  const titleLine1 = hero?.titleLine1 || brandTagline || 'Onde o luxo encontra';
-  const titleLine2 = hero?.titleLine2 || 'o seu novo lar.';
-  const subtitle = hero?.subtitle || brandSubtitle || mockBrand.subtitle;
-  const eyebrow = hero?.eyebrow;
+  const titleLine1 = hero?.titleLine1 || brandTagline || null;
+  const titleLine2 = hero?.titleLine2 || null;
+  const subtitle = hero?.subtitle || brandSubtitle || null;
+  const eyebrow = hero?.eyebrow || null;
 
   return (
     <section className="relative min-h-[100vh] flex items-center overflow-hidden">
@@ -80,31 +79,35 @@ export function PremiumHero({
               {eyebrow}
             </motion.p>
           )}
-          <motion.h1
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="font-display text-white text-5xl md:text-7xl leading-[1.05] tracking-tight"
-          >
-            {titleLine1}
-            {titleLine2 && (
-              <>
-                <br />
-                <span className="bg-gradient-to-r from-amber-200 via-amber-100 to-white bg-clip-text text-transparent italic">
-                  {titleLine2}
-                </span>
-              </>
-            )}
-          </motion.h1>
+          {(titleLine1 || titleLine2) && (
+            <motion.h1
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+              className="font-display text-white text-5xl md:text-7xl leading-[1.05] tracking-tight"
+            >
+              {titleLine1}
+              {titleLine2 && (
+                <>
+                  {titleLine1 && <br />}
+                  <span className="bg-gradient-to-r from-amber-200 via-amber-100 to-white bg-clip-text text-transparent italic">
+                    {titleLine2}
+                  </span>
+                </>
+              )}
+            </motion.h1>
+          )}
 
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.35 }}
-            className="mt-6 text-lg md:text-xl text-white/70 max-w-2xl leading-relaxed"
-          >
-            {subtitle}
-          </motion.p>
+          {subtitle && (
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.35 }}
+              className="mt-6 text-lg md:text-xl text-white/70 max-w-2xl leading-relaxed"
+            >
+              {subtitle}
+            </motion.p>
+          )}
         </div>
 
         {/* Search */}

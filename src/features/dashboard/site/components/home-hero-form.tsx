@@ -20,10 +20,10 @@ import { ImageUpload } from "./image-upload";
 import type { SiteSetting, UpdateSiteSettingPayload } from "../services/site-service";
 
 const schema = z.object({
+  site_subtitle: z.string().max(500).optional().nullable().or(z.literal("")),
   hero_eyebrow: z.string().max(80).optional().nullable().or(z.literal("")),
   hero_title_line_1: z.string().max(255).optional().nullable().or(z.literal("")),
   hero_title_line_2: z.string().max(255).optional().nullable().or(z.literal("")),
-  site_subtitle: z.string().max(500).optional().nullable().or(z.literal("")),
   hero_background_url: z.string().max(1000).optional().nullable().or(z.literal("")),
 });
 
@@ -38,10 +38,10 @@ interface HomeHeroFormProps {
 
 function buildInitial(initial?: SiteSetting): HomeHeroFormValues {
   return {
-    hero_eyebrow: initial?.hero_eyebrow ?? "",
-    hero_title_line_1: initial?.hero_title_line_1 ?? "",
-    hero_title_line_2: initial?.hero_title_line_2 ?? "",
-    site_subtitle: initial?.site_subtitle ?? "",
+    site_subtitle: initial?.site_subtitle ?? "Curadoria exclusiva de imóveis de alto padrão, com a discrição que sua história merece.",
+    hero_eyebrow: initial?.hero_eyebrow ?? "Curadoria exclusiva",
+    hero_title_line_1: initial?.hero_title_line_1 ?? "Onde o luxo encontra",
+    hero_title_line_2: initial?.hero_title_line_2 ?? "o seu novo lar.",
     hero_background_url: initial?.hero_background_url ?? "",
   };
 }
@@ -50,10 +50,10 @@ function toPayload(values: HomeHeroFormValues): UpdateSiteSettingPayload {
   const normalize = (v: string | null | undefined) =>
     v && v.trim() !== "" ? v.trim() : null;
   return {
+    site_subtitle: normalize(values.site_subtitle),
     hero_eyebrow: normalize(values.hero_eyebrow),
     hero_title_line_1: normalize(values.hero_title_line_1),
     hero_title_line_2: normalize(values.hero_title_line_2),
-    site_subtitle: normalize(values.site_subtitle),
     hero_background_url: normalize(values.hero_background_url),
   };
 }
@@ -77,7 +77,7 @@ export function HomeHeroForm({ initial, onSubmit, onChange, isSubmitting }: Home
     const id = setTimeout(() => onChange(toPayload(watched)), 250);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watched.hero_eyebrow, watched.hero_title_line_1, watched.hero_title_line_2, watched.site_subtitle, watched.hero_background_url]);
+  }, [watched.site_subtitle, watched.hero_eyebrow, watched.hero_title_line_1, watched.hero_title_line_2, watched.hero_background_url]);
 
   const handleSubmit = async (values: HomeHeroFormValues) => {
     await onSubmit(toPayload(values));
@@ -86,6 +86,7 @@ export function HomeHeroForm({ initial, onSubmit, onChange, isSubmitting }: Home
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        {/* 1. Imagem de fundo */}
         <FormField
           control={form.control}
           name="hero_background_url"
@@ -106,6 +107,7 @@ export function HomeHeroForm({ initial, onSubmit, onChange, isSubmitting }: Home
           )}
         />
 
+        {/* 2. Eyebrow */}
         <FormField
           control={form.control}
           name="hero_eyebrow"
@@ -131,6 +133,7 @@ export function HomeHeroForm({ initial, onSubmit, onChange, isSubmitting }: Home
           )}
         />
 
+        {/* 3. Título linha 1 + linha 2 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -175,20 +178,24 @@ export function HomeHeroForm({ initial, onSubmit, onChange, isSubmitting }: Home
           />
         </div>
 
+        {/* 4. Subtítulo */}
         <FormField
           control={form.control}
           name="site_subtitle"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-sm font-medium text-gray-700">Subtítulo do hero</FormLabel>
+              <FormLabel className="text-sm font-medium text-gray-700">Subtítulo da Página</FormLabel>
               <FormControl>
                 <Input
                   {...field}
                   value={field.value ?? ""}
-                  placeholder="Frase descritiva curta que aparece abaixo do título"
+                  placeholder="Ex: Confira os melhores imóveis disponíveis"
                   className="border-gray-300 focus:border-[#9747FF] focus:ring-[#9747FF]"
                 />
               </FormControl>
+              <FormDescription className="text-xs text-gray-500">
+                Aparece abaixo do título principal no hero.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
