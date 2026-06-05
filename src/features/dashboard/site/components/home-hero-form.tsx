@@ -17,6 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { ImageUpload } from "./image-upload";
+import { ColorPicker } from "./color-picker";
 import type { SiteSetting, UpdateSiteSettingPayload } from "../services/site-service";
 
 const schema = z.object({
@@ -25,6 +26,8 @@ const schema = z.object({
   hero_title_line_1: z.string().max(255).optional().nullable().or(z.literal("")),
   hero_title_line_2: z.string().max(255).optional().nullable().or(z.literal("")),
   hero_background_url: z.string().max(1000).optional().nullable().or(z.literal("")),
+  hero_overlay_color: z.string().max(20).optional().nullable().or(z.literal("")),
+  hero_overlay_opacity: z.number().min(0).max(100).optional().nullable(),
 });
 
 export type HomeHeroFormValues = z.infer<typeof schema>;
@@ -43,6 +46,8 @@ function buildInitial(initial?: SiteSetting): HomeHeroFormValues {
     hero_title_line_1: initial?.hero_title_line_1 ?? "Onde o luxo encontra",
     hero_title_line_2: initial?.hero_title_line_2 ?? "o seu novo lar.",
     hero_background_url: initial?.hero_background_url ?? "",
+    hero_overlay_color: initial?.hero_overlay_color ?? "#0F0820",
+    hero_overlay_opacity: initial?.hero_overlay_opacity ?? 75,
   };
 }
 
@@ -55,6 +60,8 @@ function toPayload(values: HomeHeroFormValues): UpdateSiteSettingPayload {
     hero_title_line_1: normalize(values.hero_title_line_1),
     hero_title_line_2: normalize(values.hero_title_line_2),
     hero_background_url: normalize(values.hero_background_url),
+    hero_overlay_color: normalize(values.hero_overlay_color),
+    hero_overlay_opacity: values.hero_overlay_opacity ?? null,
   };
 }
 
@@ -77,7 +84,7 @@ export function HomeHeroForm({ initial, onSubmit, onChange, isSubmitting }: Home
     const id = setTimeout(() => onChange(toPayload(watched)), 250);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watched.site_subtitle, watched.hero_eyebrow, watched.hero_title_line_1, watched.hero_title_line_2, watched.hero_background_url]);
+  }, [watched.site_subtitle, watched.hero_eyebrow, watched.hero_title_line_1, watched.hero_title_line_2, watched.hero_background_url, watched.hero_overlay_color, watched.hero_overlay_opacity]);
 
   const handleSubmit = async (values: HomeHeroFormValues) => {
     await onSubmit(toPayload(values));
@@ -107,7 +114,56 @@ export function HomeHeroForm({ initial, onSubmit, onChange, isSubmitting }: Home
           )}
         />
 
-        {/* 2. Eyebrow */}
+        {/* 2. Cor e transparência do overlay */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="hero_overlay_color"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-gray-700">
+                  Cor do overlay
+                </FormLabel>
+                <FormControl>
+                  <ColorPicker value={field.value ?? "#0F0820"} onChange={field.onChange} />
+                </FormControl>
+                <FormDescription className="text-xs">
+                  Cor da camada escura sobre a imagem de fundo.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="hero_overlay_opacity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-gray-700">
+                  Transparência do overlay — {field.value ?? 75}%
+                </FormLabel>
+                <FormControl>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={field.value ?? 75}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    className="w-full accent-[#4A316A]"
+                  />
+                </FormControl>
+                <FormDescription className="text-xs">
+                  0% = totalmente transparente · 100% = totalmente opaco.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* 3. Eyebrow */}
         <FormField
           control={form.control}
           name="hero_eyebrow"
@@ -133,7 +189,7 @@ export function HomeHeroForm({ initial, onSubmit, onChange, isSubmitting }: Home
           )}
         />
 
-        {/* 3. Título linha 1 + linha 2 */}
+        {/* 4. Título linha 1 + linha 2 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -178,7 +234,7 @@ export function HomeHeroForm({ initial, onSubmit, onChange, isSubmitting }: Home
           />
         </div>
 
-        {/* 4. Subtítulo */}
+        {/* 5. Subtítulo */}
         <FormField
           control={form.control}
           name="site_subtitle"

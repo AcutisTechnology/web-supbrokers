@@ -21,6 +21,8 @@ interface PremiumHeroProps {
     titleLine2: string | null;
     subtitle: string | null;
     backgroundUrl: string | null;
+    overlayColor?: string | null;
+    overlayOpacity?: number | null;
   };
 }
 
@@ -49,6 +51,15 @@ export function PremiumHero({
   const subtitle = hero?.subtitle || brandSubtitle || null;
   const eyebrow = hero?.eyebrow || null;
 
+  const overlayColor = hero?.overlayColor || '#0F0820';
+  const overlayOpacity = hero?.overlayOpacity ?? 75;
+  // Convert 0-100 opacity to hex suffixes: 85%, 55%, 100%, 70%
+  const toHex = (pct: number) => Math.round(Math.min(100, Math.max(0, pct)) * 2.55).toString(16).padStart(2, '0');
+  const op85 = toHex(overlayOpacity * 0.85);
+  const op55 = toHex(overlayOpacity * 0.55);
+  const op100 = toHex(overlayOpacity);
+  const op70 = toHex(overlayOpacity * 0.70);
+
   return (
     <section className="relative min-h-[100vh] flex items-center overflow-hidden">
       {/* Background */}
@@ -60,8 +71,14 @@ export function PremiumHero({
           priority
           className="object-cover scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0F0820]/85 via-[#0F0820]/55 to-[#0F0820]" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0F0820]/70 via-transparent to-transparent" />
+        <div
+          className="absolute inset-0"
+          style={{ background: `linear-gradient(to bottom, ${overlayColor}${op85}, ${overlayColor}${op55}, ${overlayColor}${op100})` }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{ background: `linear-gradient(to right, ${overlayColor}${op70}, transparent)` }}
+        />
         <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-amber-500/10 blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-purple-500/15 blur-3xl" />
       </div>

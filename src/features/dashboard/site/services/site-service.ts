@@ -58,6 +58,8 @@ export interface SiteSetting {
   hero_title_line_1: string | null;
   hero_title_line_2: string | null;
   hero_background_url: string | null;
+  hero_overlay_color: string | null;
+  hero_overlay_opacity: number | null;
   seo_title: string | null;
   seo_description: string | null;
   og_image_url: string | null;
@@ -80,6 +82,8 @@ export interface UpdateSiteSettingPayload {
   hero_title_line_1?: string | null;
   hero_title_line_2?: string | null;
   hero_background_url?: string | null;
+  hero_overlay_color?: string | null;
+  hero_overlay_opacity?: number | null;
   seo_title?: string | null;
   seo_description?: string | null;
   og_image_url?: string | null;

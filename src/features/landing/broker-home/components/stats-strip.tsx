@@ -14,7 +14,6 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react';
-import { mockStats } from '../data/mock';
 import type { HomeStat } from '../hooks/use-broker-home-data';
 import { CountUp } from './primitives/count-up';
 import { Reveal, Stagger, StaggerItem } from './primitives/reveal';
@@ -44,17 +43,7 @@ function resolveIcon(name: string | null | undefined, fallback: LucideIcon): Luc
 }
 
 export function StatsStrip({ stats }: StatsStripProps) {
-  // Quando há stats reais (com broker conectado), usa eles. Senão, mocks pra demonstração.
-  const items: HomeStat[] = stats && stats.length > 0
-    ? stats
-    : mockStats.map((s, i) => ({
-        id: i,
-        label: s.label,
-        value: s.value,
-        prefix: s.prefix ?? null,
-        suffix: s.suffix ?? null,
-        icon: null,
-      }));
+  const items: HomeStat[] = stats && stats.length > 0 ? stats : [];
 
   if (items.length === 0) return null;
 

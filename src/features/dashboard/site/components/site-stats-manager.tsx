@@ -60,6 +60,13 @@ const EMPTY_DRAFT: SiteStatPayload = {
   is_active: true,
 };
 
+const DEFAULT_STATS: SiteStatPayload[] = [
+  { label: "Anos de Mercado", value: 18, suffix: "+", icon: "Award", is_active: true },
+  { label: "Imóveis Vendidos", value: 2300, suffix: "+", icon: "Building2", is_active: true },
+  { label: "Em Ativos Geridos", value: 850, prefix: "R$ ", suffix: "M+", icon: "TrendingUp", is_active: true },
+  { label: "Discrição Garantida", value: 100, suffix: "%", icon: "ShieldCheck", is_active: true },
+];
+
 export function SiteStatsManager() {
   const {
     stats,
@@ -81,6 +88,7 @@ export function SiteStatsManager() {
   const [draft, setDraft] = useState<SiteStatPayload>(EMPTY_DRAFT);
   const [showAddForm, setShowAddForm] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<SiteStat | null>(null);
+  const [isSeeding, setIsSeeding] = useState(false);
 
   const startCreate = () => {
     setEditingId(null);
@@ -121,6 +129,17 @@ export function SiteStatsManager() {
       await create(payload);
     }
     cancel();
+  };
+
+  const seedDefaults = async () => {
+    setIsSeeding(true);
+    try {
+      for (const s of DEFAULT_STATS) {
+        await create(s);
+      }
+    } finally {
+      setIsSeeding(false);
+    }
   };
 
   const move = async (index: number, dir: "up" | "down") => {
@@ -267,18 +286,56 @@ export function SiteStatsManager() {
           )}
 
           {stats.length === 0 && !showAddForm ? (
-            <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-              <BarChart3 className="w-10 h-10 text-[#9747FF]/60 mx-auto mb-3" />
-              <p className="text-sm font-medium text-[#141414]">
-                Comece adicionando as métricas da sua imobiliária
-              </p>
-              <p className="text-xs text-[#777777] mt-1">
-                Anos de mercado, imóveis vendidos, ativos geridos, etc.
-              </p>
-              <Button onClick={startCreate} className="mt-4">
-                <Plus className="w-4 h-4 mr-2" />
-                Nova estatística
-              </Button>
+            <div className="rounded-2xl border border-dashed border-gray-200 overflow-hidden">
+              <div className="px-5 pt-5 pb-4 bg-gray-50 text-center">
+                <BarChart3 className="w-8 h-8 text-[#9747FF]/60 mx-auto mb-2" />
+                <p className="text-sm font-medium text-[#141414]">Nenhuma estatística cadastrada</p>
+                <p className="text-xs text-[#777777] mt-0.5 mb-4">
+                  Use os exemplos abaixo como ponto de partida ou crie do zero.
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <Button
+                    onClick={seedDefaults}
+                    disabled={isSeeding}
+                    className="bg-gradient-to-r from-[#9747FF] to-[#7C3AED] hover:from-[#9747FF]/90 hover:to-[#7C3AED]/90"
+                  >
+                    {isSeeding ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Criando…
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        Usar exemplos
+                      </>
+                    )}
+                  </Button>
+                  <Button variant="outline" onClick={startCreate}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Criar do zero
+                  </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-gray-100 border-t border-gray-100">
+                {DEFAULT_STATS.map((s, i) => {
+                  const Icon = ICON_MAP[s.icon ?? ""] ?? BarChart3;
+                  return (
+                    <div key={i} className="flex flex-col gap-1 p-4 bg-white opacity-60">
+                      <div className="w-8 h-8 rounded-lg bg-[#0F0820] flex items-center justify-center text-amber-300 mb-2">
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <span className="font-display text-xl text-[#0F0820]">
+                        {s.prefix}{s.value.toLocaleString("pt-BR")}{s.suffix}
+                      </span>
+                      <span className="text-xs text-[#777777]">{s.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : (
             <div className="space-y-2">

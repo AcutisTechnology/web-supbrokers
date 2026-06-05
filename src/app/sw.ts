@@ -1,6 +1,6 @@
 import { defaultCache } from '@serwist/next/worker';
 import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
-import { NetworkFirst, NetworkOnly, Serwist } from 'serwist';
+import { NetworkOnly, Serwist } from 'serwist';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -33,20 +33,12 @@ const serwist = new Serwist({
         url.pathname.includes('/api/v1/') && request.method !== 'GET',
       handler: new NetworkOnly(),
     },
-    // API externa do backend (GET): rede primeiro (com timeout) e cache como fallback.
+    // API externa do backend (GET): sem cache no SW — o React Query gerencia cache client-side.
+    // Cachear aqui causava respostas stale quando campos novos eram adicionados ao backend.
     {
       matcher: ({ url, request }) =>
         url.pathname.includes('/api/v1/') && request.method === 'GET',
-      handler: new NetworkFirst({
-        cacheName: 'api-v1',
-        networkTimeoutSeconds: 5,
-        plugins: [
-          {
-            cacheWillUpdate: async ({ response }) =>
-              response && response.status === 200 ? response : null,
-          },
-        ],
-      }),
+      handler: new NetworkOnly(),
     },
     // Demais recursos (estáticos, fontes, imagens, páginas públicas) usam os defaults do Serwist.
     ...defaultCache,

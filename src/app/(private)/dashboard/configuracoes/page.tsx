@@ -797,9 +797,7 @@ type PageSubTab =
   | "appearance"
   | "home"
   | "footer"
-  | "social"
   | "pages"
-  | "team"
   | "messages";
 
 function PageSection() {
@@ -856,6 +854,8 @@ function PageSection() {
       hero_title_line_1?: string | null;
       hero_title_line_2?: string | null;
       hero_background_url?: string | null;
+      hero_overlay_color?: string | null;
+      hero_overlay_opacity?: number | null;
     }
   >({});
   const [previewFooter, setPreviewFooter] = useState<Partial<SiteFooterFormData>>({});
@@ -866,6 +866,12 @@ function PageSection() {
         primary_color: settings.primary_color ?? undefined,
         site_subtitle: settings.site_subtitle ?? undefined,
         brand_image: settings.brand_image ?? undefined,
+        hero_eyebrow: settings.hero_eyebrow ?? undefined,
+        hero_title_line_1: settings.hero_title_line_1 ?? undefined,
+        hero_title_line_2: settings.hero_title_line_2 ?? undefined,
+        hero_background_url: settings.hero_background_url ?? undefined,
+        hero_overlay_color: settings.hero_overlay_color ?? undefined,
+        hero_overlay_opacity: settings.hero_overlay_opacity ?? undefined,
       });
     }
   }, [settings]);
@@ -893,10 +899,8 @@ function PageSection() {
   const subTabs: Array<{ key: PageSubTab; label: string; description: string }> = [
     { key: "appearance", label: "Aparência", description: "Cores, logo e cabeçalho" },
     { key: "home", label: "Home", description: "Hero e estatísticas" },
-    { key: "footer", label: "Rodapé", description: "Contato, endereço e CRECI" },
-    { key: "social", label: "Redes Sociais", description: "Links exibidos no rodapé" },
-    { key: "pages", label: "Páginas", description: "Páginas institucionais do site" },
-    { key: "team", label: "Equipe", description: "Corretores da página /equipe" },
+    { key: "footer", label: "Rodapé", description: "Contato, redes sociais e CRECI" },
+    { key: "pages", label: "Menu", description: "Links e páginas do menu superior" },
     { key: "messages", label: "Mensagens", description: "Templates de WhatsApp" },
   ];
 
@@ -967,52 +971,42 @@ function PageSection() {
             )}
 
             {tab === "footer" && (
-              <SettingsCard title="Rodapé" description="Dados de contato e textos exibidos no rodapé do site público.">
-                <SiteFooterForm
-                  initial={footer}
-                  onSubmit={async (payload) => {
-                    await updateFooter(payload);
-                  }}
-                  onChange={(data) => setPreviewFooter((prev) => ({ ...prev, ...data }))}
-                  isSubmitting={isUpdatingFooter}
-                />
-              </SettingsCard>
-            )}
-
-            {tab === "social" && (
-              <SettingsCard
-                title="Redes Sociais"
-                description="Cadastre os perfis sociais que aparecerão no rodapé."
-              >
-                <SiteSocialLinksManager
-                  socialLinks={socialLinks}
-                  isLoading={isLoadingSocial}
-                  onCreate={createSocial}
-                  onUpdate={(id, payload) => updateSocial({ id, payload })}
-                  onDelete={removeSocial}
-                  isMutating={isCreating || isUpdatingSocial || isRemoving}
-                />
-              </SettingsCard>
+              <>
+                <SettingsCard title="Rodapé" description="Dados de contato e textos exibidos no rodapé do site público.">
+                  <SiteFooterForm
+                    initial={footer}
+                    onSubmit={async (payload) => {
+                      await updateFooter(payload);
+                    }}
+                    onChange={(data) => setPreviewFooter((prev) => ({ ...prev, ...data }))}
+                    isSubmitting={isUpdatingFooter}
+                  />
+                </SettingsCard>
+                <SettingsCard
+                  title="Redes Sociais"
+                  description="Cadastre os perfis sociais que aparecerão no rodapé."
+                >
+                  <SiteSocialLinksManager
+                    socialLinks={socialLinks}
+                    isLoading={isLoadingSocial}
+                    onCreate={createSocial}
+                    onUpdate={(id, payload) => updateSocial({ id, payload })}
+                    onDelete={removeSocial}
+                    isMutating={isCreating || isUpdatingSocial || isRemoving}
+                  />
+                </SettingsCard>
+              </>
             )}
 
             {tab === "pages" && (
               <SettingsCard
-                title="Páginas"
-                description="Gerencie as páginas institucionais do site público."
+                title="Menu"
+                description="Gerencie os itens exibidos no menu superior do site. Cada página adicionada aqui aparece como um link na navegação principal."
               >
                 <SitePagesManager
                   onActivePageChange={setActivePage}
                   onDraftChange={setPageDraft}
                 />
-              </SettingsCard>
-            )}
-
-            {tab === "team" && (
-              <SettingsCard
-                title="Equipe / Corretores"
-                description="Gerencie os corretores exibidos na página /equipe do site público."
-              >
-                <AgentProfilesManager />
               </SettingsCard>
             )}
 
@@ -1047,6 +1041,8 @@ function PageSection() {
                         hero_title_line_2: data.hero_title_line_2,
                         hero_background_url: data.hero_background_url,
                         site_subtitle: data.site_subtitle ?? undefined,
+                        hero_overlay_color: data.hero_overlay_color,
+                        hero_overlay_opacity: data.hero_overlay_opacity,
                       }))
                     }
                     onSubmit={async payload => {
@@ -1078,6 +1074,12 @@ function PageSection() {
                   description="Artigos exibidos na seção de conteúdo da home."
                 >
                   <PostsManager />
+                </SettingsCard>
+                <SettingsCard
+                  title="Equipe / Corretores"
+                  description="Gerencie os corretores exibidos na página /equipe do site público."
+                >
+                  <AgentProfilesManager />
                 </SettingsCard>
               </div>
             )}

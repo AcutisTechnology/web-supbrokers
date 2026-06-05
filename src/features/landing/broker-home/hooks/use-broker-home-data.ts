@@ -27,6 +27,8 @@ export interface HeroContent {
   titleLine2: string | null;
   subtitle: string | null;
   backgroundUrl: string | null;
+  overlayColor: string | null;
+  overlayOpacity: number | null;
 }
 
 export interface HomeStat {
@@ -124,6 +126,8 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
         titleLine2: null,
         subtitle: null,
         backgroundUrl: null,
+        overlayColor: null,
+        overlayOpacity: null,
       },
       stats: [],
       whatsappTemplates: [],
@@ -222,6 +226,8 @@ export function useBrokerHomeData(brokerSlug: string | null): BrokerHomeData {
     titleLine2: site?.hero_title_line_2 ?? null,
     subtitle: site?.site_subtitle ?? null,
     backgroundUrl: site?.hero_background_url ?? null,
+    overlayColor: site?.hero_overlay_color ?? '#0F0820',
+    overlayOpacity: site?.hero_overlay_opacity ?? 75,
   };
 
   const stats: HomeStat[] = (data?.stats ?? []).map(s => ({

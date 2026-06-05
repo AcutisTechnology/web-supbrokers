@@ -44,6 +44,10 @@ export function SitePreview({ settings, footer, socialLinks = [] }: SitePreviewP
   const titleLine2 = settings?.hero_title_line_2 || null;
   const subtitle = settings?.site_subtitle || null;
   const heroBg = settings?.hero_background_url || null;
+  const overlayColor = settings?.hero_overlay_color || '#0F0820';
+  const overlayOpacity = settings?.hero_overlay_opacity ?? 75;
+  const toHex = (pct: number) => Math.round(Math.min(100, Math.max(0, pct)) * 2.55).toString(16).padStart(2, '0');
+  const overlayGradient = `linear-gradient(to bottom, ${overlayColor}${toHex(overlayOpacity * 0.85)}, ${overlayColor}${toHex(overlayOpacity * 0.55)}, ${overlayColor}${toHex(overlayOpacity)})`;
 
   const showSocial = footer?.show_social_links !== false;
   const activeSocial = socialLinks.filter((s) => s.is_active);
@@ -62,9 +66,7 @@ export function SitePreview({ settings, footer, socialLinks = [] }: SitePreviewP
         )}
         <div
           className="absolute inset-0"
-          style={{
-            background: `linear-gradient(to bottom, ${NAVY}cc, ${NAVY}88, ${NAVY})`,
-          }}
+          style={{ background: overlayGradient }}
         />
 
         <div className="relative p-4">

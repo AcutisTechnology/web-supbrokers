@@ -68,6 +68,8 @@ export interface PublicSite {
   hero_title_line_1: string | null;
   hero_title_line_2: string | null;
   hero_background_url: string | null;
+  hero_overlay_color: string | null;
+  hero_overlay_opacity: number | null;
   home_layout: { key: string; enabled: boolean }[];
   seo_title: string | null;
   seo_description: string | null;
@@ -203,11 +205,12 @@ export function useBrokerProperties(
     queryKey: ["broker-properties", slug, query],
     queryFn: async () => {
       const response = await api
-        .get(`${slug}/properties${query}`)
+        .get(`${slug}/properties${query}`, { cache: 'no-store' })
         .json<BrokerPropertiesResponse>();
       return response;
     },
     enabled: !!slug,
+    staleTime: 0,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
