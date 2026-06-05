@@ -161,10 +161,10 @@ export function useCreateProperty() {
         }
 
         // Adicionar características no formato correto com o campo "text"
+        // Salvamos o ID (ex: "arCondicionado"), não o label — facilita edição posterior
         if (data.characteristics && data.characteristics.length > 0) {
           data.characteristics.forEach((characteristic, index) => {
-            const label = PROPERTY_CHARACTERISTICS_LABELS[characteristic] ?? characteristic;
-            formData.append(`characteristics[${index}][text]`, label);
+            formData.append(`characteristics[${index}][text]`, characteristic);
           });
         } else {
           formData.append("characteristics[0][text]", "");

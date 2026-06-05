@@ -19,6 +19,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Reveal, Stagger, StaggerItem } from '../../components/primitives/reveal';
+import { resolveCharacteristicLabel } from '@/lib/property';
 
 interface DetailFeaturesProps {
   characteristics: { text: string }[];
@@ -64,13 +65,14 @@ export function DetailFeatures({ characteristics }: DetailFeaturesProps) {
       <Reveal>
         <Stagger className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {items.map((c, idx) => {
-            const Icon = iconFor(c.text);
+            const label = resolveCharacteristicLabel(c.text);
+            const Icon = iconFor(label);
             return (
               <StaggerItem key={`${c.text}-${idx}`}>
                 <div className="group bg-white border border-black/[0.06] rounded-2xl p-5 hover:border-amber-300/50 hover:shadow-[0_20px_40px_-15px_rgba(15,8,32,0.1)] transition-all duration-300">
                   <Icon className="w-6 h-6 text-amber-500 mb-4 group-hover:scale-110 transition-transform" />
                   <p className="font-display text-base md:text-lg text-[#0F0820] font-semibold leading-tight">
-                    {c.text}
+                    {label}
                   </p>
                 </div>
               </StaggerItem>

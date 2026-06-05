@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { PROPERTY_FALLBACK_IMAGE } from "@/lib/property";
+import { PROPERTY_FALLBACK_IMAGE, resolveCharacteristicLabel } from "@/lib/property";
 import { 
   Carousel,
   CarouselContent,
@@ -478,7 +478,7 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
                 <div className="flex flex-wrap gap-2">
                   {property.characteristics.map((characteristic, index) => (
                     <Badge key={index} variant="outline" className="text-sm">
-                      {characteristic.text}
+                      {resolveCharacteristicLabel(characteristic.text)}
                     </Badge>
                   ))}
                 </div>

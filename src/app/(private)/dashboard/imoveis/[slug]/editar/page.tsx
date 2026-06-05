@@ -10,6 +10,7 @@ import {
   PropertyFormValues,
   type PropertyType,
 } from "@/features/dashboard/imoveis/novo/schemas/property-schema";
+import { resolveCharacteristicId } from "@/lib/property";
 import React, { use, useMemo } from "react";
 
 // Componente cliente que recebe o slug como propriedade
@@ -70,10 +71,8 @@ function EditPropertyClient({ slug }: { slug: string }) {
       code: property.code,
       qr_code: property.qr_code ?? "",
       active: property.active ? 1 : 0,
-      characteristics: property.characteristics?.map(c =>
-        // Normaliza dados antigos salvos com sufixo "Form" (ex: "aquecimentoForm" → "aquecimento")
-        c.text.endsWith('Form') ? c.text.slice(0, -4) : c.text
-      ) || [],
+      // Normaliza para ID canônico (lida com IDs diretos, sufixo "Form" legado e labels legados)
+      characteristics: property.characteristics?.map(c => resolveCharacteristicId(c.text)) || [],
       attachments: property.attachments || [],
       purpose,
     };
