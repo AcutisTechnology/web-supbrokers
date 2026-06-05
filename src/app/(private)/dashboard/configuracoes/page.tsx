@@ -234,8 +234,8 @@ function ConfiguracoesPageContent() {
     <>
       <TopNav title_secondary="Configurações" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div className="lg:col-span-4 xl:col-span-3 lg:sticky lg:top-4 lg:self-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-4 xl:col-span-3">
           <SettingsSidebar activeKey={section} onSelect={setSection} sections={visibleSections} />
         </div>
 
@@ -300,7 +300,7 @@ function SettingsSidebar({
   sections: typeof settingsSections;
 }) {
   return (
-    <Card className="border border-gray-100 shadow-sm rounded-2xl">
+    <Card className="border border-gray-100 shadow-sm rounded-2xl sticky top-4">
       <CardHeader className="pb-3">
         <CardTitle className="text-base">Configurações</CardTitle>
         <CardDescription>Gerencie preferências e dados</CardDescription>
