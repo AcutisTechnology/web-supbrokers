@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/shared/configs/api";
 import { useCurrentUser } from "@/shared/hooks/use-current-user";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CalendarCheck, CalendarClock, CheckCircle2, FileText, FileUp, History, Home, ListTodo, MessageCircle, MessageSquareText, Phone, Tag, User2, XCircle } from "lucide-react";
+import { ArrowLeft, CalendarCheck, CalendarClock, CheckCircle2, FileText, FileUp, History, Home, ListTodo, MessageCircle, MessageSquareText, PhoneCall, Phone, Tag, User2, XCircle } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import {
@@ -33,6 +33,7 @@ import { LeadVisitsPanel } from "@/features/dashboard/crm/components/lead-visits
 import { LeadPropertiesPanel } from "@/features/dashboard/crm/components/lead-properties-panel";
 import { LeadProposalsPanel } from "@/features/dashboard/crm/components/lead-proposals-panel";
 import { MarkLostDialog } from "@/features/dashboard/crm/components/mark-lost-dialog";
+import { LogCallModal } from "@/features/dashboard/crm/components/log-call-modal";
 
 type Broker = {
   id: number;
@@ -83,6 +84,7 @@ export default function CrmLeadDetailPage() {
   const uploadAttachmentMutation = useUploadCrmLeadAttachment(leadId);
 
   const [markLostOpen, setMarkLostOpen] = useState(false);
+  const [logCallOpen, setLogCallOpen] = useState(false);
 
   const [notesDraft, setNotesDraft] = useState("");
   const [followUpDraft, setFollowUpDraft] = useState("");
@@ -135,6 +137,13 @@ export default function CrmLeadDetailPage() {
   const pendingActivities = useMemo(
     () => (lead?.activities ?? []).filter((a) => !a.is_done),
     [lead?.activities],
+  );
+
+  const callInteractions = useMemo(
+    () => (lead?.interactions ?? []).filter((i) => i.type === "call").sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    ),
+    [lead?.interactions],
   );
 
   const [interactionType, setInteractionType] = useState<CrmLeadInteraction["type"]>("note");
@@ -269,6 +278,7 @@ export default function CrmLeadDetailPage() {
       </div>
 
       <MarkLostDialog open={markLostOpen} onOpenChange={setMarkLostOpen} lead={lead ?? null} />
+      <LogCallModal leadId={leadId} leadName={lead?.name} open={logCallOpen} onOpenChange={setLogCallOpen} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <Card className="border border-gray-100 shadow-sm rounded-2xl lg:col-span-2">
@@ -424,6 +434,15 @@ export default function CrmLeadDetailPage() {
             <History className="h-4 w-4" />
             Timeline
           </TabsTrigger>
+          <TabsTrigger value="calls" className="gap-2">
+            <PhoneCall className="h-4 w-4" />
+            Ligações
+            {callInteractions.length > 0 && (
+              <Badge className="ml-1 bg-[#9747FF]/10 text-[#9747FF] border border-[#9747FF]/20">
+                {callInteractions.length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="activities" className="gap-2">
             <ListTodo className="h-4 w-4" />
             Atividades
@@ -527,6 +546,37 @@ export default function CrmLeadDetailPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="calls" className="mt-6">
+          <Card className="border border-gray-100 shadow-sm rounded-2xl">
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="text-base">Ligações registradas</CardTitle>
+              <Button className="gap-2" onClick={() => setLogCallOpen(true)}>
+                <PhoneCall className="h-4 w-4" />
+                Registrar ligação
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {callInteractions.map((i) => (
+                  <div key={i.id} className="p-4 rounded-2xl border border-gray-100">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 font-semibold text-[#141414]">
+                        <PhoneCall className="h-4 w-4 text-[#9747FF]" />
+                        Ligação
+                      </div>
+                      <div className="text-xs text-[#777777]">{formatDateTime(i.created_at)}</div>
+                    </div>
+                    <div className="text-sm text-[#777777] mt-2 whitespace-pre-wrap">{i.description}</div>
+                  </div>
+                ))}
+                {!isLoading && callInteractions.length === 0 && (
+                  <div className="text-sm text-[#777777] py-6 text-center">Nenhuma ligação registrada.</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="activities" className="mt-6">

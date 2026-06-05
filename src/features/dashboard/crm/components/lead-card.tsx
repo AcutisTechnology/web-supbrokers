@@ -4,11 +4,13 @@ import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { Flame, MessageCircle, Phone, User2 } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { CrmLead } from "../services/crm-service";
+import { LogCallModal } from "./log-call-modal";
 
 interface LeadCardProps {
   lead: CrmLead;
@@ -36,6 +38,7 @@ export function LeadCard({ lead, draggable = true }: LeadCardProps) {
     opacity: isDragging ? 0.4 : 1,
   };
 
+  const [logCallOpen, setLogCallOpen] = useState(false);
   const phoneDigits = normalizePhoneDigits(lead.phone);
 
   return (
@@ -130,17 +133,15 @@ export function LeadCard({ lead, draggable = true }: LeadCardProps) {
           {phoneDigits ? (
             <>
               <Button
-                asChild
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7"
-                onClick={(e) => e.stopPropagation()}
+                title="Registrar ligação"
+                onClick={(e) => { e.stopPropagation(); setLogCallOpen(true); }}
                 onMouseDown={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                <a href={`tel:+55${phoneDigits}`} title="Ligar">
-                  <Phone className="h-3.5 w-3.5" />
-                </a>
+                <Phone className="h-3.5 w-3.5" />
               </Button>
               <Button
                 asChild
@@ -164,6 +165,13 @@ export function LeadCard({ lead, draggable = true }: LeadCardProps) {
           ) : null}
         </div>
       </div>
+
+      <LogCallModal
+        leadId={lead.id}
+        leadName={lead.name}
+        open={logCallOpen}
+        onOpenChange={setLogCallOpen}
+      />
     </div>
   );
 }
