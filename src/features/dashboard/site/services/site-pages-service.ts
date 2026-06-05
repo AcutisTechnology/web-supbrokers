@@ -1,6 +1,6 @@
 import { api } from "@/shared/configs/api";
 
-export const PAGE_TYPES = ["home", "properties", "blog", "about", "team", "contact", "privacy", "custom"] as const;
+export const PAGE_TYPES = ["home", "properties", "blog", "about", "team", "agent", "contact", "privacy", "custom"] as const;
 export type SitePageType = (typeof PAGE_TYPES)[number];
 
 /**
@@ -12,6 +12,7 @@ export const PAGE_TYPE_DEFAULT_SLUGS: Partial<Record<SitePageType, string>> = {
   blog: "blog",
   about: "quem-somos",
   team: "equipe",
+  agent: "meu-perfil",
   contact: "contato",
   privacy: "politica-de-privacidade",
 };
@@ -138,6 +139,7 @@ export const PAGE_TYPE_LABELS: Record<SitePageType, string> = {
   blog: "Blog",
   about: "Quem Somos",
   team: "Equipe",
+  agent: "Corretor (perfil individual)",
   contact: "Contato",
   privacy: "Política de Privacidade",
   custom: "Personalizada",

@@ -80,6 +80,12 @@ function buildMenuHref(brokerSlug: string, pageSlug: string, pageType?: string):
   // Home
   if (pageSlug === '/' || pageSlug === '') return `/${brokerSlug}`;
 
+  // Perfil individual do corretor — aponta para /{brokerSlug}/equipe/{slug}
+  if (pageType === 'agent') {
+    const normalized = pageSlug.replace(/^\/+/, '');
+    return `/${brokerSlug}/equipe/${normalized}`;
+  }
+
   // Tipos com rota de sistema — redirecionam para a rota nativa do site
   if (pageType && pageType in PAGE_TYPE_SYSTEM_ROUTES) {
     const systemRoute = PAGE_TYPE_SYSTEM_ROUTES[pageType as keyof typeof PAGE_TYPE_SYSTEM_ROUTES];

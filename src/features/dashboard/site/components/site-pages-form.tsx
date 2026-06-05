@@ -34,6 +34,7 @@ import {
   type SitePage,
   type SitePageType,
 } from "../services/site-pages-service";
+import { useAgentProfiles } from "../services/agent-profiles-service";
 
 const slugRegex = /^[a-z0-9/\-]+$/;
 
@@ -115,6 +116,8 @@ export function SitePageForm({
     });
     return () => subscription.unsubscribe();
   }, [form, onChange]);
+
+  const { agents } = useAgentProfiles();
 
   const isHomeLocked = initial?.is_home === true;
   const watchedType = form.watch("page_type");
@@ -215,6 +218,54 @@ export function SitePageForm({
                 <FormDescription className="text-[#9747FF]">
                   Redireciona para: <span className="font-mono">/{"{seu-slug}"}/<span>{systemRoute === "/" ? "" : systemRoute}</span></span>
                 </FormDescription>
+              )}
+              {!isSystemRoute && watchedType === "agent" && (
+                <div className="mt-2 space-y-1.5">
+                  {(() => {
+                    const publicAgents = agents.filter(a => a.is_public);
+                    const hiddenAgents = agents.filter(a => !a.is_public);
+                    if (agents.length === 0) {
+                      return (
+                        <p className="text-xs text-amber-600">
+                          Nenhum corretor cadastrado. Adicione corretores em <strong>Home → Equipe / Corretores</strong> antes de criar esta página.
+                        </p>
+                      );
+                    }
+                    return (
+                      <>
+                        <p className="text-xs text-[#777777]">Selecione o corretor cujo perfil será exibido:</p>
+                        <Select
+                          value={form.watch("slug")}
+                          onValueChange={(slug) => form.setValue("slug", slug, { shouldValidate: true })}
+                        >
+                          <SelectTrigger className="text-sm">
+                            <SelectValue placeholder="Escolha um corretor..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {publicAgents.length > 0 && publicAgents.map((a) => (
+                              <SelectItem key={a.id} value={a.slug}>
+                                {a.name} <span className="text-[#777777] font-mono text-xs ml-1">({a.slug})</span>
+                              </SelectItem>
+                            ))}
+                            {publicAgents.length === 0 && (
+                              <div className="px-3 py-2 text-xs text-amber-600">Nenhum corretor visível.</div>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        {hiddenAgents.length > 0 && publicAgents.length === 0 && (
+                          <p className="text-xs text-amber-600">
+                            Os corretores cadastrados estão <strong>Ocultos</strong>. Para aparecer aqui, marque o corretor como <strong>Visível</strong> em Home → Equipe / Corretores.
+                          </p>
+                        )}
+                        {form.watch("slug") && (
+                          <p className="text-[11px] text-[#9747FF] font-mono">
+                            → /{"{seu-slug}"}/equipe/{form.watch("slug")}
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
               )}
               {!isSystemRoute && watchedType === "about" && (
                 <FormDescription>
