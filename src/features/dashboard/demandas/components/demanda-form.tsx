@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,14 +19,17 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 
 import { demandaSchema, DemandaFormValues, demandaDefaultValues } from "../types/demanda-schema";
 import {
-  useDemanda, useCreateDemanda, useUpdateDemanda, useSearchClients,
+  useDemanda, useCreateDemanda, useUpdateDemanda,
+  searchCustomers, searchNeighborhoodSuggestions,
 } from "../services/demandas-service";
 import {
   PROPERTY_TYPES, DEMANDA_STATUS_LABELS, DemandaStatus,
 } from "../types/demanda";
+import { QuickCreateLeadModal } from "@/features/dashboard/visitas/components/quick-create-lead-modal";
 
 const CHARACTERISTICS = [
   "Piscina", "Academia", "Mobiliado", "Internet", "Área de serviço",
@@ -51,9 +54,17 @@ export function DemandaForm({ demandaId }: DemandaFormProps) {
   const createMutation = useCreateDemanda();
   const updateMutation = useUpdateDemanda();
 
+  // Cliente
+  const [clientName, setClientName] = useState("");
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const handleClientSearch = useCallback(searchCustomers, []);
+
+  // Bairros
   const [neighborhoodInput, setNeighborhoodInput] = useState("");
-  const [clientSearch, setClientSearch] = useState("");
-  const { data: clientsData } = useSearchClients(clientSearch);
+  const [neighborhoodOptions, setNeighborhoodOptions] = useState<string[]>([]);
+  const [neighborhoodDropdownOpen, setNeighborhoodDropdownOpen] = useState(false);
+  const [neighborhoodLoading, setNeighborhoodLoading] = useState(false);
+  const neighborhoodRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<DemandaFormValues>({
     resolver: zodResolver(demandaSchema),
@@ -85,8 +96,43 @@ export function DemandaForm({ demandaId }: DemandaFormProps) {
       description: d.description ?? null,
       status: (d.status as DemandaFormValues['status']) || 'nova',
     });
-    setClientSearch(d.client?.name ?? "");
+    setClientName(d.client?.name ?? "");
   }, [demandaResp?.data, isEditing, form]);
+
+  // Busca de bairros com debounce
+  useEffect(() => {
+    const trimmed = neighborhoodInput.trim();
+    if (trimmed.length < 2) {
+      setNeighborhoodOptions([]);
+      setNeighborhoodDropdownOpen(false);
+      return;
+    }
+    let cancelled = false;
+    const handle = setTimeout(async () => {
+      setNeighborhoodLoading(true);
+      try {
+        const results = await searchNeighborhoodSuggestions(trimmed);
+        if (!cancelled) {
+          setNeighborhoodOptions(results.map(r => r.name));
+          setNeighborhoodDropdownOpen(true);
+        }
+      } finally {
+        if (!cancelled) setNeighborhoodLoading(false);
+      }
+    }, 300);
+    return () => { cancelled = true; clearTimeout(handle); };
+  }, [neighborhoodInput]);
+
+  // Fechar dropdown de bairros ao clicar fora
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (neighborhoodRef.current && !neighborhoodRef.current.contains(e.target as Node)) {
+        setNeighborhoodDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   async function onSubmit(values: DemandaFormValues) {
     if (isEditing) {
@@ -99,14 +145,15 @@ export function DemandaForm({ demandaId }: DemandaFormProps) {
     router.push("/dashboard/demandas");
   }
 
-  const addNeighborhood = () => {
-    const trimmed = neighborhoodInput.trim();
+  const addNeighborhood = (name: string) => {
+    const trimmed = name.trim();
     if (!trimmed) return;
     const current = form.getValues("neighborhoods");
     if (!current.includes(trimmed)) {
       form.setValue("neighborhoods", [...current, trimmed]);
     }
     setNeighborhoodInput("");
+    setNeighborhoodDropdownOpen(false);
   };
 
   const removeNeighborhood = (n: string) => {
@@ -138,42 +185,40 @@ export function DemandaForm({ demandaId }: DemandaFormProps) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <FormField name="client_id" control={form.control} render={({ field }) => (
               <FormItem>
-                <FormLabel>Selecionar cliente</FormLabel>
+                <FormLabel>
+                  Cliente <span className="text-red-500">*</span>
+                </FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <Input
-                      placeholder="Buscar cliente pelo nome..."
-                      value={clientSearch}
-                      onChange={e => setClientSearch(e.target.value)}
-                    />
-                    {clientsData?.data && clientsData.data.length > 0 && clientSearch.length >= 2 && (
-                      <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-md max-h-48 overflow-y-auto">
-                        {clientsData.data.map(c => (
-                          <button
-                            key={c.id}
-                            type="button"
-                            className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm"
-                            onClick={() => {
-                              field.onChange(c.id);
-                              setClientSearch(c.name);
-                            }}
-                          >
-                            {c.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <AutocompleteInput
+                    value={{ id: field.value ? String(field.value) : null, name: clientName }}
+                    onChange={(value) => {
+                      // Remove o sufixo do telefone (ex: "Nome — +55...") para exibição limpa
+                      const cleanName = value.name.split(" — ")[0];
+                      setClientName(cleanName);
+                      field.onChange(value.id ? Number(value.id) : null);
+                    }}
+                    onSearch={handleClientSearch}
+                    placeholder="Buscar lead pelo nome, telefone ou e-mail..."
+                  />
                 </FormControl>
-                {field.value && (
+                <div className="flex items-center gap-3 mt-1">
+                  {field.value ? (
+                    <button
+                      type="button"
+                      className="text-xs text-red-500 underline"
+                      onClick={() => { field.onChange(null); setClientName(""); }}
+                    >
+                      Remover cliente
+                    </button>
+                  ) : null}
                   <button
                     type="button"
-                    className="text-xs text-red-500 underline mt-1"
-                    onClick={() => { field.onChange(null); setClientSearch(""); }}
+                    className="text-xs text-[#9747ff] underline"
+                    onClick={() => setQuickCreateOpen(true)}
                   >
-                    Remover cliente
+                    + Cadastrar novo lead
                   </button>
-                )}
+                </div>
                 <FormMessage />
               </FormItem>
             )} />
@@ -205,7 +250,7 @@ export function DemandaForm({ demandaId }: DemandaFormProps) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <FormField name="title" control={form.control} render={({ field }) => (
               <FormItem className="lg:col-span-2">
-                <FormLabel>Título *</FormLabel>
+                <FormLabel>Título <span className="text-red-500">*</span></FormLabel>
                 <FormControl>
                   <Input {...field} value={field.value ?? ""} placeholder="Ex: Apartamento Vista Mar — João Silva" />
                 </FormControl>
@@ -235,7 +280,9 @@ export function DemandaForm({ demandaId }: DemandaFormProps) {
 
             {/* Finalidade */}
             <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Finalidade</span>
+              <span className="text-sm font-medium">
+                Finalidade <span className="text-red-500">*</span>
+              </span>
               <div className="flex gap-6">
                 <FormField name="sale" control={form.control} render={({ field }) => (
                   <FormItem className="flex items-center gap-2">
@@ -254,6 +301,11 @@ export function DemandaForm({ demandaId }: DemandaFormProps) {
                   </FormItem>
                 )} />
               </div>
+              {form.formState.errors.sale && (
+                <p className="text-sm font-medium text-destructive">
+                  {form.formState.errors.sale.message}
+                </p>
+              )}
             </div>
           </div>
         </Card>
@@ -281,21 +333,62 @@ export function DemandaForm({ demandaId }: DemandaFormProps) {
               </FormItem>
             )} />
 
-            {/* Bairros */}
+            {/* Bairros com autocomplete */}
             <FormField name="neighborhoods" control={form.control} render={({ field }) => (
               <FormItem className="lg:col-span-2">
                 <FormLabel>Bairros desejados</FormLabel>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Digite um bairro e pressione Adicionar"
-                    value={neighborhoodInput}
-                    onChange={e => setNeighborhoodInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addNeighborhood(); } }}
-                  />
-                  <Button type="button" variant="outline" onClick={addNeighborhood}>
-                    <Plus className="w-4 h-4 mr-1" /> Adicionar
-                  </Button>
+                <div ref={neighborhoodRef} className="relative">
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        placeholder="Digite um bairro para buscar ou adicionar..."
+                        value={neighborhoodInput}
+                        onChange={e => setNeighborhoodInput(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") { e.preventDefault(); addNeighborhood(neighborhoodInput); }
+                          if (e.key === "Escape") setNeighborhoodDropdownOpen(false);
+                        }}
+                        onFocus={() => {
+                          if (neighborhoodInput.trim().length >= 2 && neighborhoodOptions.length > 0) {
+                            setNeighborhoodDropdownOpen(true);
+                          }
+                        }}
+                      />
+                      {neighborhoodLoading && (
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
+                      )}
+                    </div>
+                    <Button type="button" variant="outline" onClick={() => addNeighborhood(neighborhoodInput)}>
+                      <Plus className="w-4 h-4 mr-1" /> Adicionar
+                    </Button>
+                  </div>
+
+                  {neighborhoodDropdownOpen && (neighborhoodOptions.length > 0 || neighborhoodInput.trim().length >= 2) && (
+                    <div className="absolute z-50 mt-1 w-full bg-white border rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                      {neighborhoodOptions.map(name => (
+                        <button
+                          key={name}
+                          type="button"
+                          className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm transition-colors"
+                          onMouseDown={e => { e.preventDefault(); addNeighborhood(name); }}
+                        >
+                          {name}
+                        </button>
+                      ))}
+                      {neighborhoodInput.trim() && !neighborhoodOptions.map(n => n.toLowerCase()).includes(neighborhoodInput.trim().toLowerCase()) && (
+                        <button
+                          type="button"
+                          className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm text-[#9747ff] border-t border-gray-100 flex items-center gap-2 transition-colors"
+                          onMouseDown={e => { e.preventDefault(); addNeighborhood(neighborhoodInput); }}
+                        >
+                          <Plus className="w-3 h-3" />
+                          Adicionar &quot;{neighborhoodInput.trim()}&quot;
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
+
                 <div className="flex flex-wrap gap-2 mt-2">
                   {(field.value ?? []).map(n => (
                     <span key={n} className="flex items-center gap-1 bg-[#9747ff]/10 text-[#9747ff] text-sm px-2 py-1 rounded-full">
@@ -377,7 +470,7 @@ export function DemandaForm({ demandaId }: DemandaFormProps) {
         <Card className="p-4 sm:p-8 shadow-sm">
           <h2 className="text-lg font-semibold mb-4 text-[#9747ff]">Características Básicas</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {(["min_bedrooms","min_suites","min_bathrooms","min_garages"] as const).map(field => {
+            {(["min_bedrooms","min_suites","min_bathrooms","min_garages"] as const).map(f => {
               const labels: Record<string, string> = {
                 min_bedrooms: "Quartos mínimos",
                 min_suites: "Suítes mínimas",
@@ -385,14 +478,14 @@ export function DemandaForm({ demandaId }: DemandaFormProps) {
                 min_garages: "Vagas mínimas",
               };
               return (
-                <FormField key={field} name={field} control={form.control} render={({ field: f }) => (
+                <FormField key={f} name={f} control={form.control} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{labels[field]}</FormLabel>
+                    <FormLabel>{labels[f]}</FormLabel>
                     <FormControl>
                       <Input
                         type="number" min="0"
-                        value={f.value ?? ""}
-                        onChange={e => f.onChange(e.target.value ? Number(e.target.value) : null)}
+                        value={field.value ?? ""}
+                        onChange={e => field.onChange(e.target.value ? Number(e.target.value) : null)}
                         placeholder="0"
                       />
                     </FormControl>
@@ -488,6 +581,16 @@ export function DemandaForm({ demandaId }: DemandaFormProps) {
         </div>
 
       </form>
+
+      <QuickCreateLeadModal
+        open={quickCreateOpen}
+        onOpenChange={setQuickCreateOpen}
+        initialName={clientName}
+        onCreated={(lead) => {
+          form.setValue("client_id", lead.id);
+          setClientName(lead.name);
+        }}
+      />
     </Form>
   );
 }

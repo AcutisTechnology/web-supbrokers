@@ -3,6 +3,7 @@ import { api } from '@/shared/configs/api';
 import { useToast } from '@/hooks/use-toast';
 import type { Demanda } from '../types/demanda';
 import type { DemandaFormValues } from '../types/demanda-schema';
+import type { AutocompleteOption } from '@/components/ui/autocomplete-input';
 
 export interface DemandasFilters {
   search?: string;
@@ -111,4 +112,23 @@ export function useSearchClients(query: string) {
       api.get(`customers?search=${encodeURIComponent(query)}`).json<{ data: { id: number; name: string }[] }>(),
     enabled: query.length >= 2,
   });
+}
+
+export async function searchCustomers(query: string): Promise<AutocompleteOption[]> {
+  if (query.trim().length < 2) return [];
+  const res = await api
+    .get(`crm/leads?search=${encodeURIComponent(query)}&per_page=20`)
+    .json<{ data: { id: number; name: string; phone?: string }[] }>();
+  return res.data.map(c => ({
+    id: String(c.id),
+    name: c.phone ? `${c.name} — ${c.phone}` : c.name,
+  }));
+}
+
+export async function searchNeighborhoodSuggestions(query: string): Promise<{ id: number; name: string }[]> {
+  if (query.trim().length < 2) return [];
+  const res = await api
+    .get(`locations?type=bairro&search=${encodeURIComponent(query)}`)
+    .json<{ data: { id: number; name: string }[] }>();
+  return res.data;
 }

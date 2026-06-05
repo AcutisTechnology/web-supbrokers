@@ -37,7 +37,7 @@ export function AutocompleteInput({
   className,
   inputClassName,
   debounceMs = 300,
-  createLabel = (typed) => `Cadastrar novo: ${typed}`,
+  createLabel,
 }: Props) {
   const containerRef = React.useRef<HTMLDivElement | null>(null)
   const [open, setOpen] = React.useState(false)
@@ -85,7 +85,7 @@ export function AutocompleteInput({
   }, [debounceMs, onSearch, open, query])
 
   const typed = query.trim()
-  const hasCreateOption = typed.length > 0
+  const hasCreateOption = typed.length > 0 && !!createLabel
   const showDropdown = open && (loading || options.length > 0 || hasCreateOption)
 
   const selectCreate = () => {

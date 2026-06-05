@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const demandaSchema = z.object({
-  client_id: z.number().nullable().optional(),
+  client_id: z.number().nullable(),
   title: z.string().min(1, 'O título é obrigatório'),
   property_type: z.string().nullable().optional(),
   city: z.string().nullable().optional(),
@@ -21,7 +21,15 @@ export const demandaSchema = z.object({
   desired_characteristics: z.array(z.string()).default([]),
   description: z.string().nullable().optional(),
   status: z.enum(['nova','em_busca','imoveis_enviados','negociacao','fechada','perdida']).default('nova'),
-});
+})
+  .refine(data => data.client_id !== null, {
+    message: 'Selecione um cliente',
+    path: ['client_id'],
+  })
+  .refine(data => data.sale || data.rent, {
+    message: 'Selecione ao menos uma finalidade (Comprar ou Alugar)',
+    path: ['sale'],
+  });
 
 export type DemandaFormValues = z.infer<typeof demandaSchema>;
 
