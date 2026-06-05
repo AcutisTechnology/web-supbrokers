@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CurrencyInput } from "@/components/ui/currency-input";
 
-export type PaymentBlockKey = "entrada" | "mensais" | "semestrais" | "chaves";
+export type PaymentBlockKey = "entrada" | "mensais" | "semestrais" | "anuais" | "chaves";
 
 export type PaymentCategory = {
   amountCents: number;

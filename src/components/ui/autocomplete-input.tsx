@@ -19,7 +19,7 @@ export type AutocompleteValue = {
 type Props = {
   value: AutocompleteValue
   onChange: (value: AutocompleteValue) => void
-  onSearch: (query: string) => Promise<AutocompleteOption[]>
+  onSearch?: (query: string) => Promise<AutocompleteOption[]>
   placeholder?: string
   disabled?: boolean
   className?: string
@@ -64,11 +64,13 @@ export function AutocompleteInput({
 
   React.useEffect(() => {
     if (!open) return
+    if (typeof onSearch !== 'function') return
 
     const typed = query.trim()
     let cancelled = false
 
     const handle = window.setTimeout(async () => {
+      if (typeof onSearch !== 'function') return
       setLoading(true)
       try {
         const result = await onSearch(typed)
