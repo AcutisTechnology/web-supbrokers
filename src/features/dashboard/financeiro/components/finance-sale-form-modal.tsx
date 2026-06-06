@@ -53,7 +53,7 @@ interface BrokerRow {
 
 interface FormState {
   property_id: number | "";
-  client_id: number | "";
+  lead_id: number | "";
   sale_value: number;
   commission_type: CommissionType;
   commission_value: number;
@@ -66,7 +66,7 @@ interface FormState {
 
 const empty: FormState = {
   property_id: "",
-  client_id: "",
+  lead_id: "",
   sale_value: 0,
   commission_type: "percentage",
   commission_value: 0,
@@ -84,7 +84,7 @@ function buildInitialState(sale?: FinanceSale | null): FormState {
   if (!sale) return empty;
   return {
     property_id: sale.property?.id ?? "",
-    client_id: sale.client?.id ?? "",
+    lead_id: sale.client?.id ?? "",
     sale_value: Number(sale.sale_value),
     commission_type: sale.commission_type,
     commission_value: Number(sale.commission_value ?? 0),
@@ -172,7 +172,7 @@ export function FinanceSaleFormModal({ open, onOpenChange, sale }: FinanceSaleFo
 
   const validate = (): string | null => {
     if (!form.property_id) return "Selecione um imóvel.";
-    if (!form.client_id) return "Selecione um cliente.";
+    if (!form.lead_id) return "Selecione um cliente.";
     if (!form.sale_value || form.sale_value <= 0) return "Informe o valor da venda.";
     if (form.commission_type === "percentage" && form.commission_percentage <= 0)
       return "Informe o percentual de comissão.";
@@ -196,7 +196,7 @@ export function FinanceSaleFormModal({ open, onOpenChange, sale }: FinanceSaleFo
 
     const payload: SalePayload = {
       property_id: Number(form.property_id),
-      client_id: Number(form.client_id),
+      lead_id: Number(form.lead_id),
       sale_value: Number(form.sale_value),
       commission_type: form.commission_type,
       commission_value: form.commission_type === "fixed" ? Number(form.commission_value) : null,
@@ -264,8 +264,8 @@ export function FinanceSaleFormModal({ open, onOpenChange, sale }: FinanceSaleFo
             <div className="space-y-2">
               <Label>Cliente</Label>
               <Select
-                value={form.client_id ? String(form.client_id) : ""}
-                onValueChange={(v) => update("client_id", v ? Number(v) : "")}
+                value={form.lead_id ? String(form.lead_id) : ""}
+                onValueChange={(v) => update("lead_id", v ? Number(v) : "")}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />

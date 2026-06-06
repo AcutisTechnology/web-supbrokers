@@ -160,7 +160,7 @@ export interface FinanceSale {
 export interface SaleFilters {
   search?: string;
   broker_id?: number;
-  client_id?: number;
+  lead_id?: number;
   property_id?: number;
   status?: SaleStatus;
   date_from?: string;
@@ -173,7 +173,7 @@ export interface SaleFilters {
 
 export interface SalePayload {
   property_id: number;
-  client_id: number;
+  lead_id: number;
   sale_value: number;
   commission_type: CommissionType;
   commission_value?: number | null;
