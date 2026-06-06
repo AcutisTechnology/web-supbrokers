@@ -1,84 +1,70 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Customer } from "../services/customer-service";
-import { getClienteSituacao, getCorSituacao } from "../utils/cliente-utils";
-import { ClienteTimelineDialog } from "./cliente-timeline";
-import { Clock } from "lucide-react";
+import { Flame, ExternalLink } from "lucide-react";
+import { CrmLead } from "../services/customer-service";
+import { getLeadStatusLabel, getLeadStatusColor } from "../utils/cliente-utils";
 
 interface ClienteMobileCardProps {
-  cliente: Customer;
+  lead: CrmLead;
 }
 
-export function ClienteMobileCard({ cliente }: ClienteMobileCardProps) {
-  const [isTimelineOpen, setIsTimelineOpen] = useState(false);
-  const situacao = getClienteSituacao(cliente);
-  const corSituacao = getCorSituacao(situacao);
-  const imovelInteresse = cliente.interested_properties && cliente.interested_properties.length > 0
-    ? cliente.interested_properties[0]
-    : null;
+export function ClienteMobileCard({ lead }: ClienteMobileCardProps) {
+  const statusLabel = getLeadStatusLabel(lead.status);
+  const statusColor = getLeadStatusColor(lead.status);
 
   return (
-    <>
-      <div className="bg-white rounded-lg border p-4">
+    <div className="bg-white rounded-lg border p-4 space-y-3">
+      {/* Nome + is_hot */}
+      <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="font-medium text-[#1c1b1f]">
-            {cliente.name}
+          <div className="font-medium text-[#1c1b1f] flex items-center gap-1.5">
+            {lead.name}
+            {lead.is_hot && <Flame className="h-3.5 w-3.5 text-orange-500" />}
           </div>
-          <div className="text-sm text-[#969696]">
-            {cliente.email}
-          </div>
-          <div className="text-sm text-[#969696] mt-1">
-            {cliente.phone}
-          </div>
+          <div className="text-sm text-[#969696]">{lead.phone}</div>
+          {lead.email && <div className="text-sm text-[#969696]">{lead.email}</div>}
         </div>
 
-        <div className="mt-4 pt-4 border-t">
-          <div className="flex items-center gap-2">
-            <div
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: corSituacao }}
-            />
-            <span className="text-[#1c1b1f]">{situacao}</span>
-          </div>
-          <div className="text-sm text-[#969696] mt-1">
-            {cliente.interested_properties.length} imóveis de interesse
-          </div>
+        <span className="flex items-center gap-1.5 text-xs shrink-0 mt-0.5">
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: statusColor }} />
+          {statusLabel}
+        </span>
+      </div>
+
+      {/* Etapa + responsável */}
+      <div className="flex items-center justify-between text-sm border-t pt-2">
+        <div className="text-[#969696]">
+          {lead.pipeline_stage ? (
+            <span className="flex items-center gap-1.5">
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: lead.pipeline_stage.color ?? "#9747FF" }}
+              />
+              {lead.pipeline_stage.name}
+            </span>
+          ) : "—"}
         </div>
-
-        {imovelInteresse && (
-          <div className="mt-4 pt-4 border-t">
-            <div className="font-medium text-[#1c1b1f]">
-              {imovelInteresse.title}
-            </div>
-            <div className="text-sm text-[#969696]">
-              {imovelInteresse.neighborhood}, {imovelInteresse.street}
-            </div>
-            <div className="text-sm text-[#969696] mt-1">
-              {imovelInteresse.rent ? "Aluguel" : "Venda"}: R$ {imovelInteresse.value}
-            </div>
-          </div>
-        )}
-
-        <div className="mt-4 pt-4 border-t">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsTimelineOpen(true)}
-            className="w-full flex items-center justify-center gap-2"
-          >
-            <Clock className="w-4 h-4" />
-            Ver Timeline
-          </Button>
+        <div className="text-[#969696] text-xs">
+          {lead.assigned_user?.name ?? "Sem responsável"}
         </div>
       </div>
 
-      <ClienteTimelineDialog
-        cliente={cliente}
-        isOpen={isTimelineOpen}
-        onClose={() => setIsTimelineOpen(false)}
-      />
-    </>
+      {/* Último contato + ação */}
+      <div className="flex items-center justify-between border-t pt-2">
+        <span className="text-xs text-[#969696]">
+          {lead.days_without_contact != null
+            ? `${lead.days_without_contact}d sem contato`
+            : "Novo"}
+        </span>
+        <Button asChild variant="outline" size="sm" className="gap-1.5 h-7 text-xs">
+          <Link href={`/dashboard/crm/leads/${lead.id}`}>
+            <ExternalLink className="h-3 w-3" />
+            Ver lead
+          </Link>
+        </Button>
+      </div>
+    </div>
   );
-} 
+}

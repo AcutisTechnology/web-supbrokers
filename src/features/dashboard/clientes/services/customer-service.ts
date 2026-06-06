@@ -1,7 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/shared/configs/api";
+import { useCrmLeads, CrmLead, CrmLeadsFilters } from "@/features/dashboard/crm/services/crm-service";
 
-// Interface para as propriedades de interesse do cliente
+// ── Novo: leads via CRM ───────────────────────────────────────────────────────
+
+export type { CrmLead };
+export type { CrmLeadsFilters };
+
+export function useLeads(filters?: CrmLeadsFilters) {
+  return useCrmLeads(filters);
+}
+
+// ── Legado: mantido para compatibilidade com dashboard e financeiro ────────────
+
 export interface InterestedProperty {
   id: number;
   title: string;
@@ -25,7 +36,6 @@ export interface InterestedProperty {
   created_at: string;
 }
 
-// Interface para os dados de um cliente
 export interface Customer {
   id: number;
   name: string;
@@ -34,7 +44,6 @@ export interface Customer {
   interested_properties: InterestedProperty[];
 }
 
-// Interface para a resposta paginada da API
 export interface PaginatedResponse<T> {
   data: T[];
   links: {
@@ -47,11 +56,7 @@ export interface PaginatedResponse<T> {
     current_page: number;
     from: number;
     last_page: number;
-    links: {
-      url: string | null;
-      label: string;
-      active: boolean;
-    }[];
+    links: { url: string | null; label: string; active: boolean }[];
     path: string;
     per_page: number;
     to: number;
@@ -59,29 +64,18 @@ export interface PaginatedResponse<T> {
   };
 }
 
-// Hook para buscar clientes com paginação
 export function useCustomers(page = 1) {
   return useQuery({
     queryKey: ["customers", page],
-    queryFn: async () => {
-      const response = await api
-        .get(`customers?page=${page}`)
-        .json<PaginatedResponse<Customer>>();
-      return response;
-    },
+    queryFn: () =>
+      api.get(`customers?page=${page}`).json<PaginatedResponse<Customer>>(),
   });
 }
 
-// Hook para buscar um cliente específico pelo ID
 export function useCustomer(id: number) {
   return useQuery({
     queryKey: ["customer", id],
-    queryFn: async () => {
-      const response = await api
-        .get(`customers/${id}`)
-        .json<{ data: Customer }>();
-      return response;
-    },
+    queryFn: () => api.get(`customers/${id}`).json<{ data: Customer }>(),
     enabled: !!id,
   });
 }

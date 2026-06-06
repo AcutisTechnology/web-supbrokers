@@ -1,31 +1,31 @@
-import { PaginatedResponse, Customer } from "../services/customer-service";
+import { CrmLead } from "../services/customer-service";
 import { ClienteDesktopRow } from "./cliente-desktop-row";
 import { ClienteMobileCard } from "./cliente-mobile-card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ClientesTableProps {
-  data: PaginatedResponse<Customer> | undefined;
-  status?: string;
+  leads: CrmLead[];
+  isLoading: boolean;
 }
 
-export function ClientesTable({ data, status = "todos" }: ClientesTableProps) {
-  if (!data || !data.data || data.data.length === 0) {
+export function ClientesTable({ leads, isLoading }: ClientesTableProps) {
+  if (isLoading) {
     return (
-      <div className="p-4 md:p-6 text-center text-[#969696]">
-        Nenhum cliente encontrado.
+      <div className="p-4 space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-14 w-full rounded-lg" />
+        ))}
       </div>
     );
   }
 
-  const getSituacao = (cliente: Customer) => {
-    if (cliente.interested_properties && cliente.interested_properties.length > 0) {
-      return "Interessado";
-    }
-    return "Em análise";
-  };
-
-  const filteredClientes = status === "todos"
-    ? data.data
-    : data.data.filter((cliente) => getSituacao(cliente) === status);
+  if (leads.length === 0) {
+    return (
+      <div className="p-8 text-center text-[#969696]">
+        Nenhum lead encontrado.
+      </div>
+    );
+  }
 
   return (
     <div className="w-full overflow-hidden">
@@ -34,48 +34,28 @@ export function ClientesTable({ data, status = "todos" }: ClientesTableProps) {
         <table className="w-full">
           <thead>
             <tr className="border-b">
-              <th className="text-left px-6 py-3 text-sm font-medium text-[#969696]">
-                CLIENTE
-              </th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-[#969696]">
-                SITUAÇÃO
-              </th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-[#969696]">
-                IMÓVEIS DE INTERESSE
-              </th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-[#969696]">
-                AÇÕES
-              </th>
+              <th className="text-left px-6 py-3 text-xs font-medium text-[#969696] uppercase tracking-wide">Lead</th>
+              <th className="text-left px-6 py-3 text-xs font-medium text-[#969696] uppercase tracking-wide">Etapa</th>
+              <th className="text-left px-6 py-3 text-xs font-medium text-[#969696] uppercase tracking-wide">Responsável</th>
+              <th className="text-left px-6 py-3 text-xs font-medium text-[#969696] uppercase tracking-wide">Status</th>
+              <th className="text-left px-6 py-3 text-xs font-medium text-[#969696] uppercase tracking-wide">Último contato</th>
+              <th className="text-left px-6 py-3 text-xs font-medium text-[#969696] uppercase tracking-wide">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {filteredClientes.length > 0 ? (
-              filteredClientes.map((cliente) => (
-                <ClienteDesktopRow key={cliente.id} cliente={cliente} />
-              ))
-            ) : (
-              <tr>
-                <td colSpan={5} className="text-center py-6 text-[#969696]">
-                  Nenhum cliente encontrado.
-                </td>
-              </tr>
-            )}
+            {leads.map((lead) => (
+              <ClienteDesktopRow key={lead.id} lead={lead} />
+            ))}
           </tbody>
         </table>
       </div>
 
       {/* Lista Mobile */}
-      <div className="md:hidden space-y-4">
-        {filteredClientes.length > 0 ? (
-          filteredClientes.map((cliente) => (
-            <ClienteMobileCard key={cliente.id} cliente={cliente} />
-          ))
-        ) : (
-          <div className="text-center py-6 text-[#969696]">
-            Nenhum cliente encontrado.
-          </div>
-        )}
+      <div className="md:hidden space-y-3 p-3">
+        {leads.map((lead) => (
+          <ClienteMobileCard key={lead.id} lead={lead} />
+        ))}
       </div>
     </div>
   );
-} 
+}

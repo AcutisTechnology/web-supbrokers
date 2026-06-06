@@ -1,89 +1,84 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Customer } from "../services/customer-service";
-import { getClienteSituacao, getCorSituacao } from "../utils/cliente-utils";
-import { ClienteTimelineDialog } from "./cliente-timeline";
-import { Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Flame, ExternalLink } from "lucide-react";
+import { CrmLead } from "../services/customer-service";
+import { getLeadStatusLabel, getLeadStatusColor } from "../utils/cliente-utils";
 
 interface ClienteDesktopRowProps {
-  cliente: Customer;
+  lead: CrmLead;
 }
 
-export function ClienteDesktopRow({ cliente }: ClienteDesktopRowProps) {
-  const [isTimelineOpen, setIsTimelineOpen] = useState(false);
-  const situacao = getClienteSituacao(cliente);
-  const corSituacao = getCorSituacao(situacao);
-  const imovelInteresse = cliente.interested_properties && cliente.interested_properties.length > 0
-    ? cliente.interested_properties[0]
-    : null;
+export function ClienteDesktopRow({ lead }: ClienteDesktopRowProps) {
+  const statusLabel = getLeadStatusLabel(lead.status);
+  const statusColor = getLeadStatusColor(lead.status);
 
   return (
-    <>
-      <tr className="border-b last:border-0">
-        <td className="px-6 py-4">
+    <tr className="border-b last:border-0 hover:bg-gray-50 transition-colors">
+      {/* Lead */}
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-2">
           <div>
-            <div className="font-medium text-[#1c1b1f]">
-              {cliente.name}
+            <div className="font-medium text-[#1c1b1f] flex items-center gap-1.5">
+              {lead.name}
+              {lead.is_hot && <Flame className="h-3.5 w-3.5 text-orange-500" />}
             </div>
-            <div className="text-sm text-[#969696]">
-              {cliente.email}
-            </div>
-            <div className="text-sm text-[#969696] mt-1">
-              {cliente.phone}
-            </div>
+            <div className="text-sm text-[#969696]">{lead.phone}</div>
+            {lead.email && <div className="text-sm text-[#969696]">{lead.email}</div>}
           </div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <div
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: corSituacao }}
-              />
-              <span className="text-[#1c1b1f]">{situacao}</span>
-            </div>
-            <div className="text-sm text-[#969696]">
-              {cliente.interested_properties.length} imóveis de interesse
-            </div>
-          </div>
-        </td>
-        <td className="px-6 py-4">
-          {imovelInteresse ? (
-            <div>
-              <div className="font-medium text-[#1c1b1f]">
-                {imovelInteresse.title}
-              </div>
-              <div className="text-sm text-[#969696]">
-                {imovelInteresse.neighborhood}, {imovelInteresse.street}
-              </div>
-              <div className="text-sm text-[#969696] mt-1">
-                {imovelInteresse.rent ? "Aluguel" : "Venda"}: R$ {imovelInteresse.value}
-              </div>
-            </div>
-          ) : (
-            <span className="text-[#969696]">Nenhum imóvel de interesse</span>
-          )}
-        </td>
-        <td className="px-6 py-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsTimelineOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Clock className="w-4 h-4" />
-            Timeline
-          </Button>
-        </td>
-      </tr>
+        </div>
+      </td>
 
-      <ClienteTimelineDialog
-        cliente={cliente}
-        isOpen={isTimelineOpen}
-        onClose={() => setIsTimelineOpen(false)}
-      />
-    </>
+      {/* Etapa */}
+      <td className="px-6 py-4">
+        {lead.pipeline_stage ? (
+          <span className="flex items-center gap-1.5 text-sm text-[#1c1b1f]">
+            <span
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ backgroundColor: lead.pipeline_stage.color ?? "#9747FF" }}
+            />
+            {lead.pipeline_stage.name}
+          </span>
+        ) : (
+          <span className="text-sm text-[#969696]">—</span>
+        )}
+      </td>
+
+      {/* Responsável */}
+      <td className="px-6 py-4">
+        <span className="text-sm text-[#1c1b1f]">
+          {lead.assigned_user?.name ?? <span className="text-[#969696]">—</span>}
+        </span>
+      </td>
+
+      {/* Status */}
+      <td className="px-6 py-4">
+        <span className="flex items-center gap-1.5 text-sm">
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: statusColor }} />
+          {statusLabel}
+        </span>
+      </td>
+
+      {/* Último contato */}
+      <td className="px-6 py-4">
+        <span className="text-sm text-[#969696]">
+          {lead.days_without_contact != null
+            ? `${lead.days_without_contact}d sem contato`
+            : "Novo"}
+        </span>
+      </td>
+
+      {/* Ações */}
+      <td className="px-6 py-4">
+        <Button asChild variant="outline" size="sm" className="gap-1.5">
+          <Link href={`/dashboard/crm/leads/${lead.id}`}>
+            <ExternalLink className="h-3.5 w-3.5" />
+            Ver lead
+          </Link>
+        </Button>
+      </td>
+    </tr>
   );
-} 
+}

@@ -1,20 +1,17 @@
-import { Customer } from "../services/customer-service";
+import { CrmLead } from "../services/customer-service";
 
-export function getClienteSituacao(cliente: Customer): string {
-  if (cliente.interested_properties && cliente.interested_properties.length > 0) {
-    return "Interessado";
+export function getLeadStatusLabel(status: CrmLead["status"]): string {
+  switch (status) {
+    case "won":  return "Ganho";
+    case "lost": return "Perdido";
+    default:     return "Em aberto";
   }
-  return "Em análise";
 }
 
-export function getCorSituacao(situacao: string): string {
-  switch (situacao) {
-    case "Interessado":
-      return "#16ae4f";
-    case "Sem interesse":
-      return "#e63946";
-    case "Em análise":
-    default:
-      return "#969696";
+export function getLeadStatusColor(status: CrmLead["status"]): string {
+  switch (status) {
+    case "won":  return "#16ae4f";
+    case "lost": return "#e63946";
+    default:     return "#9747FF";
   }
-} 
+}
