@@ -3,6 +3,7 @@ import { Inter, Poppins } from 'next/font/google';
 
 import './globals.css';
 import { AppProviders } from '@/shared/contexts/providers';
+import { PwaUpdater } from '@/shared/pwa/pwa-updater';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -75,7 +76,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <PwaUpdater />
+          {children}
+        </AppProviders>
       </body>
     </html>
   );
