@@ -56,11 +56,13 @@ export function PremiumHeader({
   const logoText = isLight ? 'text-[#0F0820]' : 'text-white';
   const headerBg = scrolled
     ? isLight
-      ? 'bg-white/95 backdrop-blur-xl border-b border-black/5 py-3 shadow-[0_4px_20px_-10px_rgba(15,8,32,0.1)]'
-      : 'bg-[#0F0820]/85 backdrop-blur-xl border-b border-white/5 py-3'
+      ? 'bg-white/95 backdrop-blur-xl border-b border-black/5 shadow-[0_4px_20px_-10px_rgba(15,8,32,0.1)]'
+      : 'bg-[#0F0820]/85 backdrop-blur-xl border-b border-white/5'
     : isLight
-      ? 'bg-white/80 backdrop-blur-sm py-4'
-      : 'bg-transparent py-5';
+      ? 'bg-white/80 backdrop-blur-sm'
+      : 'bg-transparent';
+
+  const containerPy = scrolled ? 'py-3' : isLight ? 'py-4' : 'py-5';
   const whatsBtn = isLight
     ? 'text-[#0F0820]/80 hover:text-[#0F0820]'
     : 'text-white/90 hover:text-white';
@@ -74,8 +76,9 @@ export function PremiumHeader({
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${headerBg}`}
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
-      <div className="container mx-auto px-4 md:px-8 flex items-center justify-between gap-8">
+      <div className={`container mx-auto px-4 md:px-8 flex items-center justify-between gap-8 ${containerPy}`}>
         {/* Logo */}
         <Link
           href={homeHref}
