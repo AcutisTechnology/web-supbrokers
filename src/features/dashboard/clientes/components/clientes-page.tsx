@@ -5,13 +5,16 @@ import { TopNav } from "@/features/dashboard/imoveis/top-nav";
 import { useInfiniteLeads, CrmLeadsFilters } from "../services/customer-service";
 import { ClientesTabs } from "./clientes-tabs";
 import { ClientesTable } from "./clientes-table";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Plus, Search } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
+import { NewLeadModal } from "@/features/dashboard/crm/components/new-lead-modal";
 
 export function ClientesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<CrmLeadsFilters["status"]>("all");
+  const [newLeadOpen, setNewLeadOpen] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const debouncedSearch = useDebounce(search, 300);
@@ -59,16 +62,24 @@ export function ClientesPage() {
       <TopNav title_secondary="Gestão de Leads" />
 
       <main className="p-4 md:p-6 space-y-4">
-        {/* Busca */}
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#969696]" />
-          <Input
-            placeholder="Buscar por nome ou telefone…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+        {/* Busca + Novo lead */}
+        <div className="flex items-center gap-3">
+          <div className="relative max-w-sm flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#969696]" />
+            <Input
+              placeholder="Buscar por nome ou telefone…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Button className="gap-2 shrink-0" onClick={() => setNewLeadOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Novo lead
+          </Button>
         </div>
+
+        <NewLeadModal open={newLeadOpen} onOpenChange={setNewLeadOpen} />
 
         {isError && (
           <div className="text-center py-8 text-[#969696]">

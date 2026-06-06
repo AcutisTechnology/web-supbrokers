@@ -4,25 +4,14 @@ import { TopNav } from "@/features/dashboard/imoveis/top-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/shared/configs/api";
 import { useCurrentUser } from "@/shared/hooks/use-current-user";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
-import { BarChart3, Filter, Plus, Search, Settings2, Upload } from "lucide-react";
+import { BarChart3, Filter, Plus, Search, Settings2, Upload, Users } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { useMemo, useState } from "react";
 import {
   CrmLeadsFilters,
-  useCreateCrmLead,
-  useCrmLeadSources,
   useCrmLeads,
   useCrmMetrics,
   useCrmPipelineStages,
@@ -33,28 +22,7 @@ import { KanbanBoard } from "@/features/dashboard/crm/components/kanban-board";
 import { KanbanSkeleton } from "@/features/dashboard/crm/components/kanban-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ImportLeadsModal } from "@/features/dashboard/crm/components/import-leads-modal";
-import { Users } from "lucide-react";
-
-type Broker = {
-  id: number;
-  name: string;
-  user_type?: string | null;
-};
-
-const createLeadSchema = z.object({
-  name: z.string().min(1, "Informe o nome"),
-  phone: z.string().min(1, "Informe o telefone"),
-  email: z.string().email("E-mail inválido").optional().or(z.literal("")),
-  source_id: z.string().optional(),
-  value: z.string().optional(),
-  priority: z.enum(["1", "2", "3"]).default("2"),
-  assigned_user_id: z.string().optional(),
-  pipeline_stage_id: z.string().min(1, "Selecione a etapa"),
-  notes: z.string().optional(),
-  tag_ids: z.array(z.number()).optional(),
-});
-
-type CreateLeadFormValues = z.infer<typeof createLeadSchema>;
+import { NewLeadModal } from "@/features/dashboard/crm/components/new-lead-modal";
 
 const formatCurrency = (value: string | null | undefined) => {
   const numeric = value ? Number(value) : 0;
@@ -86,58 +54,15 @@ export default function CrmPage() {
   const { data: metricsData } = useCrmMetrics(filters.period);
 
   const moveStageMutation = useMoveCrmLeadStage();
-  const { data: sourcesData } = useCrmLeadSources();
 
   const stages = useMemo(() => (stagesData ?? []).slice().sort((a, b) => a.order - b.order), [stagesData]);
-  const leads = useMemo(() => leadsData ?? [], [leadsData]);
-  const tags = useMemo(() => tagsData ?? [], [tagsData]);
-  const sources = useMemo(() => sourcesData ?? [], [sourcesData]);
-
-  const { data: brokersData } = useQuery({
-    queryKey: ["brokers", "list"],
-    queryFn: async () => {
-      const response = await api.get("users").json<{ data: Broker[] }>();
-      const users = Array.isArray(response.data) ? response.data : ([] as Broker[]);
-      return users.filter((u) => u.user_type === "corretor" || u.user_type === "admin");
-    },
-  });
-
-  const brokers = useMemo(() => brokersData ?? [], [brokersData]);
+  const leads  = useMemo(() => leadsData ?? [], [leadsData]);
+  const tags   = useMemo(() => tagsData  ?? [], [tagsData]);
 
   const [createLeadOpen, setCreateLeadOpen] = useState(false);
-  const createLeadMutation = useCreateCrmLead();
-  const form = useForm<CreateLeadFormValues>({
-    resolver: zodResolver(createLeadSchema),
-    defaultValues: {
-      name: "",
-      phone: "",
-      email: "",
-      source_id: "",
-      value: "",
-      priority: "2",
-      assigned_user_id: "",
-      pipeline_stage_id: "",
-      notes: "",
-      tag_ids: [],
-    },
-  });
-
-  useEffect(() => {
-    const current = form.getValues("pipeline_stage_id");
-    if (!current && stages[0]?.id) {
-      form.setValue("pipeline_stage_id", String(stages[0].id), { shouldValidate: true });
-    }
-  }, [form, stages]);
-
-  // Corretor sempre é o próprio responsável
-  useEffect(() => {
-    if (isBroker && currentUserId && createLeadOpen) {
-      form.setValue("assigned_user_id", String(currentUserId));
-    }
-  }, [isBroker, currentUserId, createLeadOpen, form]);
 
   const selectedTagIds = useMemo(() => filters.tag_ids ?? [], [filters.tag_ids]);
-  const selectedTags = useMemo(() => tags.filter((t) => selectedTagIds.includes(t.id)), [selectedTagIds, tags]);
+  const selectedTags   = useMemo(() => tags.filter((t) => selectedTagIds.includes(t.id)), [selectedTagIds, tags]);
 
   const handleToggleTagFilter = (tagId: number) => {
     setFilters((prev) => {
@@ -146,37 +71,6 @@ export default function CrmPage() {
       return { ...prev, tag_ids: next };
     });
   };
-
-  const submitCreateLead = form.handleSubmit(async (values) => {
-    const parseValue = () => {
-      const raw = (values.value ?? "").trim();
-      if (!raw) return null;
-      const cleaned = raw.replace(/\./g, "").replace(",", ".");
-      const number = Number(cleaned);
-      return Number.isFinite(number) ? number : null;
-    };
-
-    createLeadMutation.mutate(
-      {
-        name: values.name.trim(),
-        phone: values.phone.trim(),
-        email: values.email?.trim() || null,
-        source_id: values.source_id ? Number(values.source_id) : null,
-        value: parseValue(),
-        priority: Number(values.priority) as 1 | 2 | 3,
-        assigned_user_id: values.assigned_user_id ? Number(values.assigned_user_id) : null,
-        pipeline_stage_id: Number(values.pipeline_stage_id),
-        notes: values.notes?.trim() || null,
-        tag_ids: values.tag_ids ?? [],
-      },
-      {
-        onSuccess: () => {
-          setCreateLeadOpen(false);
-          form.reset();
-        },
-      }
-    );
-  });
 
   const headerIsLoading = isLoadingStages || isLoadingLeads;
 
@@ -208,176 +102,12 @@ export default function CrmPage() {
             </Button>
           )}
 
-          <Dialog open={createLeadOpen} onOpenChange={setCreateLeadOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Novo lead
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-xl">
-              <DialogHeader>
-                <DialogTitle>Novo lead</DialogTitle>
-              </DialogHeader>
+          <Button className="gap-2" onClick={() => setCreateLeadOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Novo lead
+          </Button>
 
-              <form className="grid grid-cols-1 gap-4" onSubmit={submitCreateLead}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Nome</Label>
-                    <Input {...form.register("name")} placeholder="Nome do lead" />
-                    {form.formState.errors.name?.message && (
-                      <div className="text-sm text-red-600">{form.formState.errors.name.message}</div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Telefone (WhatsApp)</Label>
-                    <Input {...form.register("phone")} placeholder="(00) 00000-0000" />
-                    {form.formState.errors.phone?.message && (
-                      <div className="text-sm text-red-600">{form.formState.errors.phone.message}</div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>E-mail (opcional)</Label>
-                    <Input type="email" {...form.register("email")} placeholder="cliente@email.com" />
-                    {form.formState.errors.email?.message && (
-                      <div className="text-sm text-red-600">{form.formState.errors.email.message}</div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Valor estimado</Label>
-                    <Input {...form.register("value")} placeholder="0,00" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Origem</Label>
-                    <Select
-                      value={form.watch("source_id") || "none"}
-                      onValueChange={(v) => form.setValue("source_id", v === "none" ? "" : v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Sem origem</SelectItem>
-                        {sources.map((s) => (
-                          <SelectItem key={s.id} value={String(s.id)}>
-                            {s.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Etapa</Label>
-                    <Select value={form.watch("pipeline_stage_id")} onValueChange={(v) => form.setValue("pipeline_stage_id", v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {stages.map((s) => (
-                          <SelectItem key={s.id} value={String(s.id)}>
-                            {s.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {form.formState.errors.pipeline_stage_id?.message && (
-                      <div className="text-sm text-red-600">{form.formState.errors.pipeline_stage_id.message}</div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Prioridade</Label>
-                    <Select value={form.watch("priority")} onValueChange={(v) => form.setValue("priority", v as "1" | "2" | "3")}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">Alta</SelectItem>
-                        <SelectItem value="2">Média</SelectItem>
-                        <SelectItem value="3">Baixa</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Responsável</Label>
-                    {isBroker ? (
-                      <div className="flex h-9 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
-                        {currentUser?.name ?? "Você"}
-                      </div>
-                    ) : (
-                      <Select
-                        value={form.watch("assigned_user_id") || "none"}
-                        onValueChange={(v) => form.setValue("assigned_user_id", v === "none" ? "" : v)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Sem responsável</SelectItem>
-                          {brokers.map((b) => (
-                            <SelectItem key={b.id} value={String(b.id)}>
-                              {b.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Tags</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((t) => {
-                      const selected = (form.watch("tag_ids") ?? []).includes(t.id);
-                      return (
-                        <button
-                          key={t.id}
-                          type="button"
-                          className={`px-3 py-1 rounded-full border text-xs transition-colors ${
-                            selected ? "bg-[#9747FF]/10 border-[#9747FF]/20 text-[#9747FF]" : "bg-white border-gray-200 text-[#777777] hover:bg-gray-50"
-                          }`}
-                          onClick={() => {
-                            const current = form.getValues("tag_ids") ?? [];
-                            const next = selected ? current.filter((id) => id !== t.id) : [...current, t.id];
-                            form.setValue("tag_ids", next);
-                          }}
-                        >
-                          {t.name}
-                        </button>
-                      );
-                    })}
-                    {tags.length === 0 && <div className="text-sm text-[#777777]">Cadastre tags em Configurações.</div>}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Observações</Label>
-                  <Textarea {...form.register("notes")} placeholder="Contexto, preferências, próximas ações..." />
-                </div>
-
-                <div className="flex items-center justify-end gap-3 pt-2">
-                  <Button type="submit" disabled={createLeadMutation.isPending} className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Criar lead
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <NewLeadModal open={createLeadOpen} onOpenChange={setCreateLeadOpen} />
         </div>
       </div>
 
