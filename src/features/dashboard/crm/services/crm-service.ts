@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/shared/configs/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -247,6 +247,33 @@ export function useCrmLeads(filters?: CrmLeadsFilters) {
       const response = await api.get(`crm/leads${qs}`).json<{ data: CrmLead[] }>();
       return response.data;
     },
+  });
+}
+
+export type CrmLeadsMeta = {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+};
+
+export function useInfiniteCrmLeads(filters?: CrmLeadsFilters) {
+  const qs = buildLeadsQuery(filters);
+
+  return useInfiniteQuery({
+    queryKey: ["crm", "leads", "infinite", filters ?? {}],
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
+      const sep = qs ? "&" : "?";
+      const response = await api
+        .get(`crm/leads${qs}${sep}page=${pageParam}`)
+        .json<{ data: CrmLead[]; meta: CrmLeadsMeta }>();
+      return response;
+    },
+    getNextPageParam: (lastPage) =>
+      lastPage.meta.current_page < lastPage.meta.last_page
+        ? lastPage.meta.current_page + 1
+        : undefined,
   });
 }
 

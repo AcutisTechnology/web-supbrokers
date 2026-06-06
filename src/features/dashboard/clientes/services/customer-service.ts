@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/shared/configs/api";
-import { useCrmLeads, CrmLead, CrmLeadsFilters } from "@/features/dashboard/crm/services/crm-service";
+import { useCrmLeads, useInfiniteCrmLeads, CrmLead, CrmLeadsFilters } from "@/features/dashboard/crm/services/crm-service";
 
 // ── Novo: leads via CRM ───────────────────────────────────────────────────────
 
@@ -9,6 +9,10 @@ export type { CrmLeadsFilters };
 
 export function useLeads(filters?: CrmLeadsFilters) {
   return useCrmLeads(filters);
+}
+
+export function useInfiniteLeads(filters?: CrmLeadsFilters) {
+  return useInfiniteCrmLeads(filters);
 }
 
 // ── Legado: mantido para compatibilidade com dashboard e financeiro ────────────
