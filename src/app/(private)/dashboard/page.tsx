@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useProperties } from "@/features/dashboard/imoveis/services/property-service";
-import { useCustomers } from "@/features/dashboard/clientes/services/customer-service";
+import { useCrmLeads, useCrmMetrics } from "@/features/dashboard/crm/services/crm-service";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -70,53 +70,40 @@ export default function DashboardPage() {
     window.open(publicUrl, '_blank');
   };
   
-  // Buscar imóveis e clientes
-  const { 
-    data: propertiesData, 
-    isLoading: isLoadingProperties, 
+  // Buscar imóveis e leads
+  const {
+    data: propertiesData,
+    isLoading: isLoadingProperties,
     isError: isErrorProperties,
     error: errorProperties
   } = useProperties(1);
-  
-  const { 
-    data: customersData, 
-    isLoading: isLoadingCustomers, 
-    isError: isErrorCustomers,
-    error: errorCustomers
-  } = useCustomers(1);
-  
+
+  const { data: leadsData, isLoading: isLoadingLeads } = useCrmLeads({ sort: "recent", direction: "desc" });
+  const { data: metricsData } = useCrmMetrics();
+
   // Verificar se o componente está montado no cliente
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  
-  // Calcular o total de imóveis e o limite
+
+  // Calcular o total de imóveis
   const totalProperties = propertiesData?.meta?.total || 0;
-  const propertyLimit = 10; // Limite fictício, pode ser ajustado conforme necessário
-  
+
   // Obter o imóvel mais recente
-  const latestProperty = propertiesData?.data && propertiesData.data.length > 0 
-    ? propertiesData.data[0] 
+  const latestProperty = propertiesData?.data && propertiesData.data.length > 0
+    ? propertiesData.data[0]
     : null;
-  
-  // Obter o cliente mais recente
-  const latestCustomer = customersData?.data && customersData.data.length > 0 
-    ? customersData.data[0] 
-    : null;
-    
-  // Calcular estatísticas
-  const totalCustomers = customersData?.data?.length || 0;
-  const interestedCustomers = customersData?.data?.filter(
-    customer => customer.interested_properties && customer.interested_properties.length > 0
-  ).length || 0;
-  const interestedPercentage = totalCustomers > 0 
-    ? Math.round((interestedCustomers / totalCustomers) * 100) 
-    : 0;
-  
+
+  // Leads e métricas do CRM
+  const latestLead = leadsData?.[0] ?? null;
+  const totalLeads = metricsData?.total_leads ?? 0;
+  const wonLeads = metricsData?.won_leads ?? 0;
+  const conversionRate = metricsData?.conversion_rate ?? 0;
+
   // Verificar se está carregando ou se houve erro
-  const isLoading = isLoadingProperties || isLoadingCustomers;
-  const isError = isErrorProperties || isErrorCustomers;
-  const error = errorProperties || errorCustomers;
+  const isLoading = isLoadingProperties || isLoadingLeads;
+  const isError = isErrorProperties;
+  const error = errorProperties;
 
   // Personalizar mensagem de erro para 403
   const errorMessage = error?.message?.includes('403')
@@ -231,32 +218,32 @@ export default function DashboardPage() {
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs sm:text-sm font-medium text-[#969696]">Total de Clientes</p>
-                    <h3 className="text-xl sm:text-2xl font-bold mt-1">{totalCustomers}</h3>
+                    <p className="text-xs sm:text-sm font-medium text-[#969696]">Total de Leads</p>
+                    <h3 className="text-xl sm:text-2xl font-bold mt-1">{totalLeads}</h3>
                   </div>
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#16ae4f]/10 rounded-full flex items-center justify-center">
                     <Users className="w-5 h-5 sm:w-6 sm:h-6 text-[#16ae4f]" />
                   </div>
                 </div>
                 <div className="mt-3 sm:mt-4 text-xs text-[#969696]">
-                  <span className="text-green-600 font-medium">+12%</span> desde o último mês
+                  <span className="text-green-600 font-medium">{wonLeads}</span> ganhos
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card className="border-l-4 border-l-[#f59e0b]">
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs sm:text-sm font-medium text-[#969696]">Taxa de Interesse</p>
-                    <h3 className="text-xl sm:text-2xl font-bold mt-1">{interestedPercentage}%</h3>
+                    <p className="text-xs sm:text-sm font-medium text-[#969696]">Taxa de Conversão</p>
+                    <h3 className="text-xl sm:text-2xl font-bold mt-1">{conversionRate}%</h3>
                   </div>
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#f59e0b]/10 rounded-full flex items-center justify-center">
                     <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-[#f59e0b]" />
                   </div>
                 </div>
                 <div className="mt-3 sm:mt-4 text-xs text-[#969696]">
-                  <span className="text-green-600 font-medium">{interestedCustomers}</span> clientes interessados
+                  leads convertidos em vendas
                 </div>
               </CardContent>
             </Card>
@@ -368,7 +355,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <User className="w-5 h-5 text-[#16ae4f]" />
-                    <CardTitle className="text-base sm:text-lg font-medium">Clientes</CardTitle>
+                    <CardTitle className="text-base sm:text-lg font-medium">Leads</CardTitle>
                   </div>
                   <Link href="/dashboard/clientes">
                     <Button variant="ghost" size="sm" className="gap-1">
@@ -378,15 +365,14 @@ export default function DashboardPage() {
                   </Link>
                 </div>
                 <CardDescription className="text-xs sm:text-sm">
-                  <span className="font-medium text-[#141414]">{customersData?.meta?.total || 0}</span> clientes
-                  cadastrados
+                  <span className="font-medium text-[#141414]">{totalLeads}</span> leads cadastrados
                 </CardDescription>
               </CardHeader>
 
               <CardContent className="p-4 sm:p-6">
-                {latestCustomer ? (
+                {latestLead ? (
                   <div>
-                    <h3 className="font-medium text-xs sm:text-sm text-[#969696] mb-3">Cliente mais recente</h3>
+                    <h3 className="font-medium text-xs sm:text-sm text-[#969696] mb-3">Lead mais recente</h3>
                     <div className="bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
                       <div className="p-4">
                         <div className="flex items-center gap-3">
@@ -394,53 +380,33 @@ export default function DashboardPage() {
                             <User className="w-6 h-6 sm:w-8 sm:h-8 text-[#16ae4f]" />
                           </div>
                           <div>
-                            <h3 className="font-medium text-base sm:text-lg">{latestCustomer.name}</h3>
-                            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
-                              <Mail className="w-3 h-3" />
-                              <span>{latestCustomer.email}</span>
-                            </div>
+                            <h3 className="font-medium text-base sm:text-lg">{latestLead.name}</h3>
+                            {latestLead.email && (
+                              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                                <Mail className="w-3 h-3" />
+                                <span>{latestLead.email}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
-                        
-                        <div className="mt-4 pt-4 sm:pt-6 border-t">
-                          <h4 className="font-medium text-xs sm:text-sm mb-2">Informações de contato</h4>
+
+                        <div className="mt-4 pt-4 border-t">
                           <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 mb-1">
                             <span className="font-medium">Telefone:</span>
-                            <span>{latestCustomer.phone}</span>
+                            <span>{latestLead.phone}</span>
                           </div>
-                          
-                          {latestCustomer.interested_properties && latestCustomer.interested_properties.length > 0 ? (
-                            <div className="mt-3">
-                              <h4 className="font-medium text-xs sm:text-sm mb-2">Imóveis de interesse</h4>
-                              <div className="space-y-2">
-                                {latestCustomer.interested_properties.slice(0, 2).map((property, index) => (
-                                  <div key={index} className="bg-white p-2 rounded border text-xs sm:text-sm">
-                                    <div className="font-medium">{property.title}</div>
-                                    <div className="text-xs sm:text-sm text-gray-500">{property.neighborhood}</div>
-                                    <div className="text-xs sm:text-sm text-green-600 mt-1">
-                                      {property.rent ? 'Aluguel' : 'Venda'}: R$ {property.value}
-                                    </div>
-                                  </div>
-                                ))}
-                                
-                                {latestCustomer.interested_properties.length > 2 && (
-                                  <div className="text-xs sm:text-sm text-center text-[#9747ff]">
-                                    +{latestCustomer.interested_properties.length - 2} imóveis
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="mt-3 text-xs sm:text-sm text-gray-500">
-                              Nenhum imóvel de interesse
+                          {latestLead.pipeline_stage && (
+                            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                              <span className="font-medium">Etapa:</span>
+                              <span>{latestLead.pipeline_stage.name}</span>
                             </div>
                           )}
                         </div>
-                        
+
                         <div className="mt-4">
                           <Link href="/dashboard/clientes">
                             <Button className="w-full bg-[#16ae4f] hover:bg-[#16ae4f]/90 text-sm">
-                              Ver detalhes
+                              Ver todos os leads
                             </Button>
                           </Link>
                         </div>
@@ -449,7 +415,7 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="text-center py-6 sm:py-8 text-sm text-gray-500">
-                    Nenhum cliente cadastrado
+                    Nenhum lead cadastrado
                   </div>
                 )}
               </CardContent>

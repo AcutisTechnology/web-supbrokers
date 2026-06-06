@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { useCustomers } from "@/features/dashboard/clientes/services/customer-service";
+import { useCrmLeads } from "@/features/dashboard/crm/services/crm-service";
 import { useProperties } from "@/features/dashboard/imoveis/services/property-service";
 import {
   COMMISSION_TYPES,
@@ -112,11 +112,10 @@ export function FinanceSaleFormModal({ open, onOpenChange, sale }: FinanceSaleFo
   }, [open, sale]);
 
   const { data: brokersData } = useFinanceBrokers();
-  const { data: customersData } = useCustomers(1);
+  const { data: customers = [] } = useCrmLeads();
   const { data: propertiesData } = useProperties(1);
 
   const brokers = brokersData?.data ?? [];
-  const customers = customersData?.data ?? [];
   const properties = propertiesData?.data ?? [];
 
   const createMutation = useCreateFinanceSale();
