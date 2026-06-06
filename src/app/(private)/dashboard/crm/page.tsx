@@ -6,13 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCurrentUser } from "@/shared/hooks/use-current-user";
+import { api } from "@/shared/configs/api";
 import { BarChart3, Filter, Plus, Search, Settings2, Upload, Users } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   CrmLeadsFilters,
   useCrmLeads,
+  useCrmLeadSources,
   useCrmMetrics,
   useCrmPipelineStages,
   useCrmTags,
@@ -23,6 +28,8 @@ import { KanbanSkeleton } from "@/features/dashboard/crm/components/kanban-skele
 import { EmptyState } from "@/components/ui/empty-state";
 import { ImportLeadsModal } from "@/features/dashboard/crm/components/import-leads-modal";
 import { NewLeadModal } from "@/features/dashboard/crm/components/new-lead-modal";
+
+type Broker = { id: number; name: string; user_type?: string | null };
 
 const formatCurrency = (value: string | null | undefined) => {
   const numeric = value ? Number(value) : 0;
@@ -36,6 +43,15 @@ export default function CrmPage() {
 
   const { data: stagesData, isLoading: isLoadingStages } = useCrmPipelineStages();
   const { data: tagsData } = useCrmTags();
+  const { data: sourcesData } = useCrmLeadSources();
+  const { data: brokersData } = useQuery({
+    queryKey: ["brokers", "list"],
+    queryFn: async () => {
+      const res = await api.get("users").json<{ data: Broker[] }>();
+      const users = Array.isArray(res.data) ? res.data : [];
+      return users.filter((u) => u.user_type === "corretor" || u.user_type === "admin");
+    },
+  });
 
   const [filters, setFilters] = useState<CrmLeadsFilters>({
     search: "",
@@ -55,9 +71,11 @@ export default function CrmPage() {
 
   const moveStageMutation = useMoveCrmLeadStage();
 
-  const stages = useMemo(() => (stagesData ?? []).slice().sort((a, b) => a.order - b.order), [stagesData]);
-  const leads  = useMemo(() => leadsData ?? [], [leadsData]);
-  const tags   = useMemo(() => tagsData  ?? [], [tagsData]);
+  const stages   = useMemo(() => (stagesData ?? []).slice().sort((a, b) => a.order - b.order), [stagesData]);
+  const leads    = useMemo(() => leadsData ?? [], [leadsData]);
+  const tags     = useMemo(() => tagsData  ?? [], [tagsData]);
+  const sources  = useMemo(() => sourcesData ?? [], [sourcesData]);
+  const brokers  = useMemo(() => brokersData ?? [], [brokersData]);
 
   const [createLeadOpen, setCreateLeadOpen] = useState(false);
 

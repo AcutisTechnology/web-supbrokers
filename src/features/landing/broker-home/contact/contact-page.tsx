@@ -70,15 +70,9 @@ export function ContactPage({ brokerSlug, page }: ContactPageProps) {
   const overlayGradient = `linear-gradient(to bottom, ${overlayColor}${toHex(overlayOpacity * 0.85)}, ${overlayColor}${toHex(overlayOpacity * 0.55)}, ${overlayColor}${toHex(overlayOpacity)})`;
 
   const phone = footer?.phone ?? null;
-  const whatsapp = footer?.whatsapp ?? null;
+  const whatsapp = meta.whatsappNumber || null;
   const email = footer?.email ?? null;
-  const address = [
-    [footer?.address, footer?.address_number].filter(Boolean).join(', '),
-    footer?.district,
-    [footer?.city, footer?.state].filter(Boolean).join('/'),
-  ]
-    .filter(Boolean)
-    .join(' — ');
+  const address = footer?.address ?? null;
 
   return (
     <WhatsappProvider number={meta.whatsappNumber} templates={meta.whatsappTemplates}>
