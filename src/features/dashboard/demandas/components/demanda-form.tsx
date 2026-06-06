@@ -75,7 +75,7 @@ export function DemandaForm({ demandaId }: DemandaFormProps) {
     if (!isEditing || !demandaResp?.data) return;
     const d = demandaResp.data;
     form.reset({
-      client_id: d.client?.id ?? null,
+      lead_id: d.client?.id ?? null,
       title: d.title,
       property_type: d.property_type ?? null,
       city: d.city ?? null,
@@ -183,7 +183,7 @@ export function DemandaForm({ demandaId }: DemandaFormProps) {
         <Card className="p-4 sm:p-8 shadow-sm">
           <h2 className="text-lg font-semibold mb-4 text-[#9747ff]">Cliente</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <FormField name="client_id" control={form.control} render={({ field }) => (
+            <FormField name="lead_id" control={form.control} render={({ field }) => (
               <FormItem>
                 <FormLabel>
                   Cliente <span className="text-red-500">*</span>
@@ -587,7 +587,7 @@ export function DemandaForm({ demandaId }: DemandaFormProps) {
         onOpenChange={setQuickCreateOpen}
         initialName={clientName}
         onCreated={(lead) => {
-          form.setValue("client_id", lead.id);
+          form.setValue("lead_id", lead.id);
           setClientName(lead.name);
         }}
       />

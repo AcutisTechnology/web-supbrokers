@@ -9,7 +9,7 @@ export interface DemandasFilters {
   search?: string;
   status?: string;
   property_type?: string;
-  client_id?: number | null;
+  lead_id?: number | null;
 }
 
 interface PaginatedResponse<T> {
@@ -29,7 +29,7 @@ function buildQuery(filters?: DemandasFilters): string {
   if (filters?.search?.trim()) params.set('search', filters.search.trim());
   if (filters?.status) params.set('status', filters.status);
   if (filters?.property_type) params.set('property_type', filters.property_type);
-  if (filters?.client_id) params.set('client_id', String(filters.client_id));
+  if (filters?.lead_id) params.set('lead_id', String(filters.lead_id));
   const qs = params.toString();
   return qs ? `&${qs}` : '';
 }
@@ -109,7 +109,7 @@ export function useSearchClients(query: string) {
   return useQuery({
     queryKey: ['clients-search', query],
     queryFn: () =>
-      api.get(`customers?search=${encodeURIComponent(query)}`).json<{ data: { id: number; name: string }[] }>(),
+      api.get(`crm/leads?search=${encodeURIComponent(query)}&per_page=20`).json<{ data: { id: number; name: string }[] }>(),
     enabled: query.length >= 2,
   });
 }
