@@ -33,8 +33,12 @@ function EditPropertyClient({ slug }: { slug: string }) {
   const formValues = useMemo((): Partial<PropertyFormValues> => {
     if (!property) return {};
 
-    // Determinar o propósito (aluguel ou venda)
-    const purpose = property.rent ? "rent" : "sell" as const;
+    // Determinar o propósito
+    const purpose = (property.rent && property.sale)
+      ? "both"
+      : property.rent
+        ? "rent"
+        : "sell" as const;
 
     // Função para converter valores monetários formatados para número
     const parseMoneyValue = (value: string | undefined): number => {
@@ -59,6 +63,7 @@ function EditPropertyClient({ slug }: { slug: string }) {
       state: property.state ?? "",
       zipcode: property.zipcode ?? "",
       size: property.size,
+      total_size: property.total_size ?? null,
       bedrooms: property.bedrooms,
       suites: property.suites ?? 0,
       bathrooms: property.bathrooms ?? 0,
@@ -75,6 +80,8 @@ function EditPropertyClient({ slug }: { slug: string }) {
       characteristics: property.characteristics?.map(c => resolveCharacteristicId(c.text)) || [],
       attachments: property.attachments || [],
       purpose,
+      rent_price: parseMoneyValue(property.rent_price ?? undefined),
+      responsible_user_id: property.responsible_user?.id ?? null,
     };
   }, [property]);
 

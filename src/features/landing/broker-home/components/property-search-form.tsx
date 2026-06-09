@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  PROPERTY_TYPES,
+  PROPERTY_TYPES_UI,
   PROPERTY_TYPE_LABELS,
   type PropertyType,
 } from '@/features/dashboard/imoveis/novo/schemas/property-schema';
@@ -199,7 +199,7 @@ export function PropertySearchForm({
               className={`w-full ${selectClass}`}
             >
               <option value="">Tipo de imóvel</option>
-              {PROPERTY_TYPES.map(t => (
+              {PROPERTY_TYPES_UI.map(t => (
                 <option key={t} value={t}>
                   {PROPERTY_TYPE_LABELS[t]}
                 </option>

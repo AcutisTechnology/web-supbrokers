@@ -35,6 +35,8 @@ export interface Property {
   characteristics: { text: string }[];
   attachments: { name: string; url: string }[];
   created_at: string;
+  total_size?: number | null;
+  rent_price?: string | null;
   user_id?: number | null;
   responsible_user?: { id: number; name: string } | null;
 }

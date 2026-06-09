@@ -17,10 +17,12 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Pagination } from "@/components/ui/pagination";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import { ChevronDown, ChevronUp, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Upload } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/shared/configs/api";
+import { useCurrentUser } from "@/shared/hooks/use-current-user";
+import { ImportPropertiesModal } from "@/features/dashboard/imoveis/components/import-properties-modal";
 
 const emptyOption = { id: null as number | null, name: "" };
 
@@ -38,6 +40,8 @@ export default function PropertiesPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { hasPermission } = useCurrentUser();
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
@@ -109,7 +113,15 @@ export default function PropertiesPage() {
           <Plus className="mr-2 h-4 w-4" />
           Criar novo imóvel
         </Button>
+        {hasPermission("imoveis.importar") && (
+          <Button variant="outline" onClick={() => setImportModalOpen(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Importar Canal Pro
+          </Button>
+        )}
       </div>
+
+      <ImportPropertiesModal open={importModalOpen} onOpenChange={setImportModalOpen} />
 
       {/* Filtros */}
       <Card className="border border-gray-100 shadow-sm mb-6">

@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import {
-  PROPERTY_TYPES,
+  PROPERTY_TYPES_UI,
   PROPERTY_TYPE_LABELS,
   PropertyFormValues,
 } from "../../schemas/property-schema";
@@ -136,6 +136,7 @@ export function BasicInfoStep({ form }: BasicInfoStepProps) {
                   <SelectContent>
                     <SelectItem value="sell">Venda</SelectItem>
                     <SelectItem value="rent">Aluguel</SelectItem>
+                    <SelectItem value="both">Venda e Aluguel</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -161,7 +162,7 @@ export function BasicInfoStep({ form }: BasicInfoStepProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {PROPERTY_TYPES.map((type) => (
+                    {PROPERTY_TYPES_UI.map((type) => (
                       <SelectItem key={type} value={type}>
                         {PROPERTY_TYPE_LABELS[type]}
                       </SelectItem>

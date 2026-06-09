@@ -136,7 +136,7 @@ export function PropertyDetailsStep({ form }: PropertyDetailsStepProps) {
             <FormItem>
               <FormLabel className="text-base font-medium flex items-center gap-2">
                 <Ruler className="w-4 h-4" />
-                Área (m²)
+                Área útil (m²)
                 <span className="text-red-500">*</span>
               </FormLabel>
               <FormControl>
@@ -147,6 +147,35 @@ export function PropertyDetailsStep({ form }: PropertyDetailsStepProps) {
                     placeholder="Ex: 85"
                     min="1"
                     {...field}
+                  />
+                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                    m²
+                  </span>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="total_size"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-base font-medium flex items-center gap-2">
+                <Ruler className="w-4 h-4" />
+                Área total (m²)
+              </FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input
+                    className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500 pr-8"
+                    type="number"
+                    placeholder="Ex: 100"
+                    min="0"
+                    value={field.value ?? ""}
+                    onChange={(e) => field.onChange(e.target.value === "" ? null : e.target.value)}
                   />
                   <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
                     m²
