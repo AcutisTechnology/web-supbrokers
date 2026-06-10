@@ -16,7 +16,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   CrmLeadsFilters,
-  useInfiniteCrmLeads,
+  useCrmLeads,
   useCrmLeadSources,
   useCrmMetrics,
   useCrmPipelineStages,
@@ -69,16 +69,13 @@ export default function CrmPage() {
   const {
     data: leadsData,
     isLoading: isLoadingLeads,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-  } = useInfiniteCrmLeads(filters);
+  } = useCrmLeads(filters);
   const { data: metricsData } = useCrmMetrics(filters.period);
 
   const moveStageMutation = useMoveCrmLeadStage();
 
   const stages = useMemo(() => (stagesData ?? []).slice().sort((a, b) => a.order - b.order), [stagesData]);
-  const leads  = useMemo(() => leadsData?.pages.flatMap((p) => p.data) ?? [], [leadsData]);
+  const leads  = useMemo(() => leadsData ?? [], [leadsData]);
 
   const tags     = useMemo(() => tagsData  ?? [], [tagsData]);
   const sources  = useMemo(() => sourcesData ?? [], [sourcesData]);
@@ -424,9 +421,6 @@ export default function CrmPage() {
           stages={stages}
           leads={leads}
           onMove={(leadId, toStageId) => moveStageMutation.mutate({ id: leadId, to_stage_id: toStageId })}
-          hasNextPage={hasNextPage}
-          isFetchingNextPage={isFetchingNextPage}
-          onLoadMore={fetchNextPage}
         />
       )}
     </>
