@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <div className="flex min-h-screen bg-[#f6f6f6]">
       <Sidebar />
-      <main className="flex-1 min-w-0 p-4 md:p-8 md:py-6 mt-16 md:mt-0 pb-[calc(env(safe-area-inset-bottom)+4.75rem)] lg:pb-6">
+      <main className="flex-1 min-w-0 p-4 md:p-8 md:py-6 mt-16 md:mt-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] lg:pb-6">
         {children}
       </main>
       <MobileBottomNav items={ADMIN_NAV} theme="light" />
