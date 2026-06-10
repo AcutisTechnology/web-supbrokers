@@ -5,51 +5,50 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import {
+  useWhatsappInstances,
+  useCreateWhatsappInstance,
+  useDeleteWhatsappInstance,
+  useWhatsappInstanceQr,
+  useWhatsappInstanceStatus,
+} from "@/features/dashboard/whatsapp/services/whatsapp-service";
 import Image from "next/image";
-import { BarChart3, Bot, CheckCircle2, CircleHelp, Loader2, MessageCircle, Plus, QrCode, Unplug, Wifi } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-
-type WhatsappInstanceStatus = "connected" | "waiting" | "disconnected";
-
-type WhatsappInstance = {
-  id: number;
-  name: string;
-  status: WhatsappInstanceStatus;
-  phone: string;
-};
-
-const createMockQrCells = (seed: number, size = 17) => {
-  let value = seed;
-  const next = () => {
-    value = (value * 48271) % 2147483647;
-    return value / 2147483647;
-  };
-
-  const cells: boolean[] = [];
-  for (let i = 0; i < size * size; i += 1) {
-    const isFinder =
-      (i % size < 5 && Math.floor(i / size) < 5) ||
-      (i % size > size - 6 && Math.floor(i / size) < 5) ||
-      (i % size < 5 && Math.floor(i / size) > size - 6);
-    cells.push(isFinder ? true : next() > 0.6);
-  }
-  return { cells, size };
-};
+import { BarChart3, Bot, CheckCircle2, CircleHelp, Loader2, Plus, QrCode, Unplug, Wifi } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { QRCodeSVG } from "qrcode.react";
 
 export default function WhatsappPage() {
   const { toast } = useToast();
+  const { data: instances = [], isLoading: isBootLoading } = useWhatsappInstances();
+  const createInstance = useCreateWhatsappInstance();
+  const deleteInstance = useDeleteWhatsappInstance();
 
-  const [isBootLoading, setIsBootLoading] = useState(true);
-  const [instances, setInstances] = useState<WhatsappInstance[]>([]);
+  // Estado do modal de conexão
   const [qrModalOpen, setQrModalOpen] = useState(false);
-  const [qrStatus, setQrStatus] = useState<WhatsappInstanceStatus>("waiting");
-  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectingInstanceId, setConnectingInstanceId] = useState<number | null>(null);
+  const [displayNameInput, setDisplayNameInput] = useState("WhatsApp Imobiliária");
+  const [showNameForm, setShowNameForm] = useState(false);
 
+  // QR Code polling (ativo enquanto modal aberto e não conectado)
+  const qrEnabled = qrModalOpen && connectingInstanceId !== null;
+  const { data: qrData } = useWhatsappInstanceQr(connectingInstanceId, qrEnabled);
+
+  // Status polling — verifica a cada 3s se o QR foi escaneado
+  const { data: statusData } = useWhatsappInstanceStatus(connectingInstanceId, qrEnabled);
+
+  // Quando status mudar para 'connected' → fecha modal e notifica
+  const prevStatus = useRef<string | null>(null);
   useEffect(() => {
-    const timer = window.setTimeout(() => setIsBootLoading(false), 650);
-    return () => window.clearTimeout(timer);
-  }, []);
+    if (!statusData) return;
+    if (statusData.status === "connected" && prevStatus.current !== "connected") {
+      toast({ title: "WhatsApp conectado!", description: "Sua instância está ativa." });
+      setQrModalOpen(false);
+      setConnectingInstanceId(null);
+    }
+    prevStatus.current = statusData.status;
+  }, [statusData, toast]);
 
   const connectedCount = useMemo(
     () => instances.filter((i) => i.status === "connected").length,
@@ -57,56 +56,58 @@ export default function WhatsappPage() {
   );
 
   const statusLabel =
-    connectedCount === 0 ? "0 instâncias conectadas" : connectedCount === 1 ? "1 instância ativa" : `${connectedCount} instâncias ativas`;
-
-  const openQrModal = () => {
-    setQrStatus("waiting");
-    setQrModalOpen(true);
-  };
+    connectedCount === 0
+      ? "0 instâncias conectadas"
+      : connectedCount === 1
+        ? "1 instância ativa"
+        : `${connectedCount} instâncias ativas`;
 
   const handleTutorial = () => {
-    toast({
-      title: "Em breve",
-      description: "O tutorial será disponibilizado em breve.",
-    });
+    toast({ title: "Em breve", description: "O tutorial será disponibilizado em breve." });
   };
 
-  const handleSimulateConnect = async () => {
-    if (isConnecting) return;
-    setIsConnecting(true);
-    setQrStatus("waiting");
-
-    window.setTimeout(() => {
-      setQrStatus("connected");
-      setInstances((prev) => {
-        if (prev.some((i) => i.status === "connected")) return prev;
-        return [
-          ...prev,
-          {
-            id: prev.length ? Math.max(...prev.map((i) => i.id)) + 1 : 1,
-            name: "WhatsApp Imobiliária",
-            status: "connected",
-            phone: "(83) 99999-9999",
-          },
-        ];
-      });
-
-      toast({
-        title: "Conectado!",
-        description: "Sua instância foi conectada com sucesso.",
-      });
-      setIsConnecting(false);
-      window.setTimeout(() => setQrModalOpen(false), 600);
-    }, 1200);
+  const openQrModal = (instanceId?: number) => {
+    if (instanceId) {
+      setConnectingInstanceId(instanceId);
+      setShowNameForm(false);
+      setQrModalOpen(true);
+    } else {
+      // Nova instância — pede o nome primeiro
+      setShowNameForm(true);
+      setDisplayNameInput("WhatsApp Imobiliária");
+      setConnectingInstanceId(null);
+      setQrModalOpen(true);
+    }
   };
 
-  const handleDisconnect = (id: number) => {
-    setInstances((prev) => prev.map((i) => (i.id === id ? { ...i, status: "disconnected" } : i)));
-    toast({
-      title: "Desconectado",
-      description: "A instância foi desconectada.",
-    });
+  const handleCreateInstance = async () => {
+    if (!displayNameInput.trim()) return;
+    try {
+      const instance = await createInstance.mutateAsync(displayNameInput.trim());
+      setConnectingInstanceId(instance.id);
+      setShowNameForm(false);
+      prevStatus.current = null;
+    } catch {
+      toast({ title: "Erro", description: "Falha ao criar instância WhatsApp.", variant: "destructive" });
+    }
   };
+
+  const handleDisconnect = async (id: number) => {
+    try {
+      await deleteInstance.mutateAsync(id);
+      toast({ title: "Desconectado", description: "A instância foi removida." });
+    } catch {
+      toast({ title: "Erro", description: "Falha ao desconectar.", variant: "destructive" });
+    }
+  };
+
+  const handleCloseModal = () => {
+    setQrModalOpen(false);
+    // Mantém o connectingInstanceId para não perder a instância criada
+  };
+
+  const qrCode = qrData?.base64 ?? null;
+  const currentStatus = statusData?.status ?? (connectingInstanceId ? "connecting" : "disconnected");
 
   return (
     <>
@@ -115,7 +116,7 @@ export default function WhatsappPage() {
       <WhatsappHeader
         isLoading={isBootLoading}
         statusLabel={statusLabel}
-        onOpenQr={openQrModal}
+        onOpenQr={() => openQrModal()}
         onTutorial={handleTutorial}
       />
 
@@ -126,7 +127,7 @@ export default function WhatsappPage() {
           <Card className="border border-gray-100 shadow-sm rounded-2xl lg:col-span-2">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <CardTitle className="text-base">Instâncias</CardTitle>
-              <Button className="gap-2" onClick={openQrModal}>
+              <Button className="gap-2" onClick={() => openQrModal()}>
                 <Plus className="h-4 w-4" />
                 Conectar novo
               </Button>
@@ -134,12 +135,12 @@ export default function WhatsappPage() {
             <CardContent className="space-y-3">
               {instances
                 .slice()
-                .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+                .sort((a, b) => a.display_name.localeCompare(b.display_name, "pt-BR"))
                 .map((instance) => (
                   <WhatsappInstanceCard
                     key={instance.id}
                     instance={instance}
-                    onReconnect={openQrModal}
+                    onReconnect={() => openQrModal(instance.id)}
                     onDisconnect={() => handleDisconnect(instance.id)}
                   />
                 ))}
@@ -163,7 +164,6 @@ export default function WhatsappPage() {
                 </div>
                 <Badge className="bg-gray-100 text-[#777777] border border-gray-200">{connectedCount}</Badge>
               </div>
-
               <div className="text-sm text-[#777777]">
                 A integração é feita via sessão externa (QR Code), sem uso da API oficial da Meta.
               </div>
@@ -171,17 +171,21 @@ export default function WhatsappPage() {
           </Card>
         </div>
       ) : (
-        <WhatsappEmptyState onOpenQr={openQrModal} onTutorial={handleTutorial} />
+        <WhatsappEmptyState onOpenQr={() => openQrModal()} onTutorial={handleTutorial} />
       )}
 
       <WhatsappStatsCards />
 
       <WhatsappQRModal
         open={qrModalOpen}
-        onOpenChange={setQrModalOpen}
-        status={qrStatus}
-        isConnecting={isConnecting}
-        onConnect={handleSimulateConnect}
+        onOpenChange={handleCloseModal}
+        showNameForm={showNameForm}
+        displayNameInput={displayNameInput}
+        onDisplayNameChange={setDisplayNameInput}
+        onCreateInstance={handleCreateInstance}
+        isCreating={createInstance.isPending}
+        qrCode={qrCode}
+        status={currentStatus}
       />
 
       <div className="mt-8 text-center text-sm text-[#777777]">Copyright © iMoobile. Todos os direitos reservados</div>
@@ -249,13 +253,7 @@ function WhatsappHeader({
   );
 }
 
-function WhatsappEmptyState({
-  onOpenQr,
-  onTutorial,
-}: {
-  onOpenQr: () => void;
-  onTutorial: () => void;
-}) {
+function WhatsappEmptyState({ onOpenQr, onTutorial }: { onOpenQr: () => void; onTutorial: () => void }) {
   return (
     <Card className="border border-gray-100 shadow-sm rounded-2xl mb-6">
       <CardContent className="p-0">
@@ -267,7 +265,6 @@ function WhatsappEmptyState({
           <div className="text-sm text-[#777777] max-w-md mx-auto">
             Conecte seu WhatsApp via QR Code para começar a automatizar seus atendimentos.
           </div>
-
           <div className="flex items-center justify-center gap-3 mt-6 flex-wrap">
             <Button className="gap-2" onClick={onOpenQr}>
               <Plus className="h-4 w-4" />
@@ -289,15 +286,15 @@ function WhatsappInstanceCard({
   onReconnect,
   onDisconnect,
 }: {
-  instance: WhatsappInstance;
+  instance: { id: number; display_name: string; status: string; phone: string | null };
   onReconnect: () => void;
   onDisconnect: () => void;
 }) {
   const status =
     instance.status === "connected"
       ? { label: "Conectado", className: "bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]" }
-      : instance.status === "waiting"
-        ? { label: "Aguardando", className: "bg-gray-100 text-[#141414] border border-gray-200" }
+      : instance.status === "connecting"
+        ? { label: "Conectando...", className: "bg-gray-100 text-[#141414] border border-gray-200" }
         : { label: "Desconectado", className: "bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA]" };
 
   return (
@@ -309,21 +306,25 @@ function WhatsappInstanceCard({
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="font-semibold text-[#141414] truncate">{instance.name}</div>
+              <div className="font-semibold text-[#141414] truncate">{instance.display_name}</div>
               <span className={`text-xs px-3 py-1 rounded-full ${status.className}`}>{status.label}</span>
             </div>
-            <div className="text-sm text-[#777777] mt-1">{instance.phone}</div>
+            <div className="text-sm text-[#777777] mt-1">{instance.phone ?? "—"}</div>
           </div>
         </div>
-
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="gap-2" onClick={onReconnect}>
             <QrCode className="h-4 w-4" />
             QR Code
           </Button>
-          <Button variant="ghost" size="sm" className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={onDisconnect}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+            onClick={onDisconnect}
+          >
             <Unplug className="h-4 w-4" />
-            Desconectar
+            Remover
           </Button>
         </div>
       </div>
@@ -334,24 +335,25 @@ function WhatsappInstanceCard({
 function WhatsappQRModal({
   open,
   onOpenChange,
+  showNameForm,
+  displayNameInput,
+  onDisplayNameChange,
+  onCreateInstance,
+  isCreating,
+  qrCode,
   status,
-  isConnecting,
-  onConnect,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  status: WhatsappInstanceStatus;
-  isConnecting: boolean;
-  onConnect: () => void;
+  showNameForm: boolean;
+  displayNameInput: string;
+  onDisplayNameChange: (v: string) => void;
+  onCreateInstance: () => void;
+  isCreating: boolean;
+  qrCode: string | null;
+  status: string;
 }) {
-  const qr = useMemo(() => createMockQrCells(1337, 19), []);
-
-  const statusUi =
-    status === "connected"
-      ? { label: "Conectado", icon: <CheckCircle2 className="h-4 w-4" />, className: "bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]" }
-      : status === "waiting"
-        ? { label: "Aguardando conexão", icon: <Loader2 className="h-4 w-4 animate-spin" />, className: "bg-gray-100 text-[#141414] border border-gray-200" }
-        : { label: "Desconectado", icon: <Unplug className="h-4 w-4" />, className: "bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA]" };
+  const isConnected = status === "connected";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -360,45 +362,79 @@ function WhatsappQRModal({
           <DialogTitle>Conectar via QR Code</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="flex items-center justify-center">
-            <div className="p-4 rounded-2xl border border-gray-100 bg-white shadow-sm">
-              <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${qr.size}, minmax(0, 1fr))` }}>
-                {qr.cells.map((cell, idx) => (
-                  <div key={idx} className={`${cell ? "bg-[#141414]" : "bg-white"} h-2 w-2 rounded-[2px]`} />
-                ))}
-              </div>
+        {showNameForm ? (
+          <div className="space-y-4">
+            <p className="text-sm text-[#777777]">
+              Dê um nome para identificar esta instância WhatsApp.
+            </p>
+            <Input
+              value={displayNameInput}
+              onChange={(e) => onDisplayNameChange(e.target.value)}
+              placeholder="Ex: WhatsApp Imobiliária"
+              onKeyDown={(e) => e.key === "Enter" && onCreateInstance()}
+            />
+            <div className="flex gap-3">
+              <Button onClick={onCreateInstance} disabled={isCreating || !displayNameInput.trim()}>
+                {isCreating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Gerar QR Code
+              </Button>
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
             </div>
           </div>
-
-          <div className="flex-1 space-y-4">
-            <div className={`inline-flex items-center gap-2 text-xs px-3 py-1 rounded-full ${statusUi.className}`}>
-              {statusUi.icon}
-              {statusUi.label}
-            </div>
-
-            <div className="text-sm text-[#777777]">
-              Abra o WhatsApp no celular, vá em Dispositivos conectados e escaneie o QR Code para iniciar a sessão.
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-sm font-semibold text-[#141414]">Ações</div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <Button className="gap-2" onClick={onConnect} disabled={isConnecting}>
-                  {isConnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />}
-                  {isConnecting ? "Conectando..." : "Simular conexão"}
-                </Button>
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  Fechar
-                </Button>
+        ) : (
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex items-center justify-center">
+              <div className="p-4 rounded-2xl border border-gray-100 bg-white shadow-sm min-w-[160px] min-h-[160px] flex items-center justify-center">
+                {isConnected ? (
+                  <CheckCircle2 className="h-16 w-16 text-green-500" />
+                ) : qrCode ? (
+                  /* Se vier como data URL (imagem), renderiza como <img>;
+                     se vier como string QR, usa QRCodeSVG */
+                  qrCode.startsWith("data:") ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={qrCode} alt="QR Code WhatsApp" className="w-40 h-40" />
+                  ) : (
+                    <QRCodeSVG value={qrCode} size={160} />
+                  )
+                ) : (
+                  <Loader2 className="h-8 w-8 text-[#777777] animate-spin" />
+                )}
               </div>
             </div>
 
-            <div className="text-xs text-[#777777]">
-              Integração via sessão externa (WhatsApp Web). Sem uso da API oficial da Meta.
+            <div className="flex-1 space-y-4">
+              <div
+                className={`inline-flex items-center gap-2 text-xs px-3 py-1 rounded-full ${
+                  isConnected
+                    ? "bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]"
+                    : "bg-gray-100 text-[#141414] border border-gray-200"
+                }`}
+              >
+                {isConnected ? (
+                  <CheckCircle2 className="h-4 w-4" />
+                ) : (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+                {isConnected ? "Conectado" : "Aguardando conexão"}
+              </div>
+
+              <div className="text-sm text-[#777777]">
+                Abra o WhatsApp no celular, vá em{" "}
+                <strong>Dispositivos conectados</strong> e escaneie o QR Code para iniciar a sessão.
+              </div>
+
+              <div className="text-xs text-[#777777]">
+                Integração via sessão externa (WhatsApp Web). Sem uso da API oficial da Meta.
+              </div>
+
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Fechar
+              </Button>
             </div>
           </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -426,15 +462,7 @@ function WhatsappStatsCards() {
   );
 }
 
-function FeatureCard({
-  title,
-  description,
-  icon,
-}: {
-  title: string;
-  description: string;
-  icon: ReactNode;
-}) {
+function FeatureCard({ title, description, icon }: { title: string; description: string; icon: ReactNode }) {
   return (
     <Card className="border border-gray-100 shadow-sm rounded-2xl hover:shadow-md transition-shadow">
       <CardContent className="p-6">
