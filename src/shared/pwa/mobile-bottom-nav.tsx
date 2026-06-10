@@ -96,7 +96,7 @@ export function MobileBottomNav({ items, theme = 'light', bgColor = '#f6f6f6' }:
                 <span
                   className="transition-all duration-500"
                   style={{
-                    transform: active ? 'translateY(-28px)' : 'translateY(0)',
+                    transform: active ? 'translateY(-8px)' : 'translateY(0)',
                     color: active
                       ? '#9747ff'
                       : isDark
