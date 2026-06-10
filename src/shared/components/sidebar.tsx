@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Home, Building2, Users, Settings, LogOut, Files, Menu, X, HelpCircle, ChevronLeft, ChevronRight, Building, Calendar, Calculator, ClipboardList, Crown, MessageCircle, ListTodo, Send, Link2, Bot, Megaphone, Filter, CalendarCheck, Wallet, ShoppingCart, Receipt, CreditCard, FileBarChart, Search, BookOpen } from "lucide-react";
 import { useAuth } from "../hooks/auth/use-auth";
 import { useState, useEffect } from "react";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 
 export function Sidebar() {
   const { logout } = useAuth();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
@@ -58,24 +60,38 @@ export function Sidebar() {
   useEffect(() => {
     const controlHeader = () => {
       const currentScrollY = window.scrollY;
-      
       if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Rolando para baixo e passou de 100px
         setIsHeaderVisible(false);
       } else {
-        // Rolando para cima ou no topo
         setIsHeaderVisible(true);
       }
-      
       setLastScrollY(currentScrollY);
     };
 
     window.addEventListener('scroll', controlHeader);
-    
-    return () => {
-      window.removeEventListener('scroll', controlHeader);
-    };
+    return () => window.removeEventListener('scroll', controlHeader);
   }, [lastScrollY]);
+
+  const isActive = (href: string, exact = false) => {
+    if (href === '#') return false;
+    if (exact) return pathname === href;
+    return pathname === href || pathname.startsWith(href + '/');
+  };
+
+  const navLinkClass = (href: string, exact = false) => {
+    const active = isActive(href, exact);
+    const base = 'flex items-center gap-3 text-sm font-medium rounded-xl transition-all duration-200 group';
+    const layout = isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3';
+    const state = active
+      ? 'bg-[#F4EEFF] text-[#9747ff] shadow-sm'
+      : 'text-[#141414] hover:bg-gray-50 hover:shadow-sm';
+    return `${base} ${layout} ${state}`;
+  };
+
+  const navIconClass = (href: string, exact = false) =>
+    isActive(href, exact)
+      ? 'text-[#9747ff] transition-colors'
+      : 'text-gray-600 group-hover:text-[#9747ff] transition-colors';
 
   return (
     <div className={`flex-shrink-0 md:p-4 transition-all duration-300 ${isCollapsed ? 'md:w-[80px]' : 'md:w-[280px]'}`}>
@@ -107,7 +123,7 @@ export function Sidebar() {
 
       {/* Overlay para fechar o menu em mobile */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-[40] md:hidden"
           onClick={() => setIsOpen(false)}
         />
@@ -157,22 +173,22 @@ export function Sidebar() {
           <nav className="space-y-2">
             <Link
               href="/dashboard"
-              className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+              className={navLinkClass('/dashboard', true)}
               onClick={() => setIsOpen(false)}
               title={isCollapsed ? "Home" : ""}
             >
-              <Home size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+              <Home size={20} className={navIconClass('/dashboard', true)} />
               {!isCollapsed && <span>Home</span>}
             </Link>
 
             {hasPermission("meus_imoveis") && (
               <Link
                 href="/dashboard/imoveis"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/imoveis')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Meus imóveis" : ""}
               >
-                <Building2 size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Building2 size={20} className={navIconClass('/dashboard/imoveis')} />
                 {!isCollapsed && <span>Meus imóveis</span>}
               </Link>
             )}
@@ -180,11 +196,11 @@ export function Sidebar() {
             {hasPermission("aluguéis") && (
               <Link
                 href="/dashboard/alugueis"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/alugueis')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Alugueis" : ""}
               >
-                <Building size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Building size={20} className={navIconClass('/dashboard/alugueis')} />
                 {!isCollapsed && <span>Alugueis</span>}
               </Link>
             )}
@@ -192,11 +208,11 @@ export function Sidebar() {
             {hasPermission("propostas") && (
               <Link
                 href="/dashboard/propostas"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/propostas')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Propostas" : ""}
               >
-                <Files size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Files size={20} className={navIconClass('/dashboard/propostas')} />
                 {!isCollapsed && <span>Propostas</span>}
               </Link>
             )}
@@ -204,11 +220,11 @@ export function Sidebar() {
             {hasPermission("calculadora_fluxo") && (
               <Link
                 href="/dashboard/calculadora-fluxo"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/calculadora-fluxo')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Calculadora de Fluxo" : ""}
               >
-                <Calculator size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Calculator size={20} className={navIconClass('/dashboard/calculadora-fluxo')} />
                 {!isCollapsed && <span>Calculadora de Fluxo</span>}
               </Link>
             )}
@@ -216,22 +232,22 @@ export function Sidebar() {
             {hasPermission("links_uteis") && (
               <Link
                 href="/dashboard/links-uteis"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/links-uteis')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Utilidades" : ""}
               >
-                <Link2 size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Link2 size={20} className={navIconClass('/dashboard/links-uteis')} />
                 {!isCollapsed && <span>Utilidades</span>}
               </Link>
             )}
 
             <Link
               href="/dashboard/kit"
-              className={`flex items-center gap-3 text-sm font-medium text-[#16ae4f] rounded-xl hover:bg-[#e8f5f0] hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+              className={navLinkClass('/dashboard/kit')}
               onClick={() => setIsOpen(false)}
               title={isCollapsed ? "Kit do Corretor" : ""}
             >
-              <BookOpen size={20} className="text-[#16ae4f] transition-colors" />
+              <BookOpen size={20} className={navIconClass('/dashboard/kit')} />
               {!isCollapsed && <span>Kit do Corretor</span>}
             </Link>
 
@@ -244,11 +260,11 @@ export function Sidebar() {
             {hasPermission("clientes") && (
               <Link
                 href="/dashboard/clientes"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/clientes')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Clientes" : ""}
               >
-                <Users size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Users size={20} className={navIconClass('/dashboard/clientes')} />
                 {!isCollapsed && <span>Clientes</span>}
               </Link>
             )}
@@ -256,11 +272,11 @@ export function Sidebar() {
             {hasPermission("calendario") && (
               <Link
                 href="/dashboard/calendario"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/calendario')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Calendário" : ""}
               >
-                <Calendar size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Calendar size={20} className={navIconClass('/dashboard/calendario')} />
                 {!isCollapsed && <span>Calendário</span>}
               </Link>
             )}
@@ -268,11 +284,11 @@ export function Sidebar() {
             {hasPermission("whatsapp") && (
               <Link
                 href="/dashboard/whatsapp"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/whatsapp')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "WhatsApp" : ""}
               >
-                <MessageCircle size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <MessageCircle size={20} className={navIconClass('/dashboard/whatsapp')} />
                 {!isCollapsed && <span>WhatsApp</span>}
               </Link>
             )}
@@ -280,11 +296,11 @@ export function Sidebar() {
             {hasPermission("follow_up") && (
               <Link
                 href="/dashboard/follow-up"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/follow-up')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Follow-up" : ""}
               >
-                <ListTodo size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <ListTodo size={20} className={navIconClass('/dashboard/follow-up')} />
                 {!isCollapsed && <span>Follow-up</span>}
               </Link>
             )}
@@ -292,11 +308,11 @@ export function Sidebar() {
             {hasPermission("disparo_massa") && (
               <Link
                 href="/dashboard/disparo-em-massa"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/disparo-em-massa')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Disparo em massa" : ""}
               >
-                <Send size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Send size={20} className={navIconClass('/dashboard/disparo-em-massa')} />
                 {!isCollapsed && <span>Disparo em massa</span>}
               </Link>
             )}
@@ -304,11 +320,11 @@ export function Sidebar() {
             {hasPermission("agente_ia") && (
               <Link
                 href="/dashboard/agente-ia"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/agente-ia')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Agente de IA" : ""}
               >
-                <Bot size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Bot size={20} className={navIconClass('/dashboard/agente-ia')} />
                 {!isCollapsed && <span>Agente de IA</span>}
               </Link>
             )}
@@ -316,11 +332,11 @@ export function Sidebar() {
             {hasPermission("crm") && (
               <Link
                 href="/dashboard/crm"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/crm')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "CRM" : ""}
               >
-                <Filter size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Filter size={20} className={navIconClass('/dashboard/crm')} />
                 {!isCollapsed && <span>CRM</span>}
               </Link>
             )}
@@ -328,11 +344,11 @@ export function Sidebar() {
             {hasPermission("visitas") && (
               <Link
                 href="/dashboard/visitas"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/visitas')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Visitas" : ""}
               >
-                <CalendarCheck size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <CalendarCheck size={20} className={navIconClass('/dashboard/visitas')} />
                 {!isCollapsed && <span>Visitas</span>}
               </Link>
             )}
@@ -340,11 +356,11 @@ export function Sidebar() {
             {hasPermission("demandas") && (
               <Link
                 href="/dashboard/demandas"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/demandas')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Demandas" : ""}
               >
-                <Search size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Search size={20} className={navIconClass('/dashboard/demandas')} />
                 {!isCollapsed && <span>Demandas</span>}
               </Link>
             )}
@@ -358,11 +374,11 @@ export function Sidebar() {
             {showFinanceiro && (
               <Link
                 href="/dashboard/financeiro"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/financeiro', true)}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Financeiro" : ""}
               >
-                <Wallet size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Wallet size={20} className={navIconClass('/dashboard/financeiro', true)} />
                 {!isCollapsed && <span>Financeiro</span>}
               </Link>
             )}
@@ -370,11 +386,11 @@ export function Sidebar() {
             {showFinanceiro && (
               <Link
                 href="/dashboard/financeiro/vendas"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/financeiro/vendas')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Vendas" : ""}
               >
-                <ShoppingCart size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <ShoppingCart size={20} className={navIconClass('/dashboard/financeiro/vendas')} />
                 {!isCollapsed && <span>Vendas</span>}
               </Link>
             )}
@@ -382,11 +398,11 @@ export function Sidebar() {
             {showFinanceiro && canManageFinance && (
               <Link
                 href="/dashboard/financeiro/parcelas"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/financeiro/parcelas')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Parcelas" : ""}
               >
-                <CalendarCheck size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <CalendarCheck size={20} className={navIconClass('/dashboard/financeiro/parcelas')} />
                 {!isCollapsed && <span>Parcelas</span>}
               </Link>
             )}
@@ -394,11 +410,11 @@ export function Sidebar() {
             {showFinanceiro && canManageFinance && (
               <Link
                 href="/dashboard/financeiro/pagamentos"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/financeiro/pagamentos')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Pagamentos" : ""}
               >
-                <CreditCard size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <CreditCard size={20} className={navIconClass('/dashboard/financeiro/pagamentos')} />
                 {!isCollapsed && <span>Pagamentos</span>}
               </Link>
             )}
@@ -406,11 +422,11 @@ export function Sidebar() {
             {showFinanceiro && (
               <Link
                 href="/dashboard/financeiro/extrato"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/financeiro/extrato')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Extrato" : ""}
               >
-                <FileBarChart size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <FileBarChart size={20} className={navIconClass('/dashboard/financeiro/extrato')} />
                 {!isCollapsed && <span>Extrato</span>}
               </Link>
             )}
@@ -418,11 +434,11 @@ export function Sidebar() {
             {showFinanceiro && !canManageFinance && (
               <Link
                 href="/dashboard/financeiro/minhas-comissoes"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/financeiro/minhas-comissoes')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Minhas Comissões" : ""}
               >
-                <Receipt size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Receipt size={20} className={navIconClass('/dashboard/financeiro/minhas-comissoes')} />
                 {!isCollapsed && <span>Minhas Comissões</span>}
               </Link>
             )}
@@ -436,11 +452,11 @@ export function Sidebar() {
             {hasPermission("captacoes") && (
               <Link
                 href="/dashboard/captacoes"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/captacoes')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Captações" : ""}
               >
-                <ClipboardList size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <ClipboardList size={20} className={navIconClass('/dashboard/captacoes')} />
                 {!isCollapsed && <span>Captações</span>}
               </Link>
             )}
@@ -448,11 +464,11 @@ export function Sidebar() {
             {hasPermission("captacoes") && (
               <Link
                 href="/dashboard/construtoras"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/construtoras')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Construtoras" : ""}
               >
-                <Building size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Building size={20} className={navIconClass('/dashboard/construtoras')} />
                 {!isCollapsed && <span>Construtoras</span>}
               </Link>
             )}
@@ -466,11 +482,11 @@ export function Sidebar() {
             {hasPermission("canal_pro") && (
               <Link
                 href="/dashboard/canal-pro"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/canal-pro')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Canal PRO" : ""}
               >
-                <Crown size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Crown size={20} className={navIconClass('/dashboard/canal-pro')} />
                 {!isCollapsed && <span>Canal PRO</span>}
               </Link>
             )}
@@ -478,62 +494,41 @@ export function Sidebar() {
             {hasPermission("meta_ads") && (
               <Link
                 href="/dashboard/meta-ads"
-                className={`flex items-center gap-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+                className={navLinkClass('/dashboard/meta-ads')}
                 onClick={() => setIsOpen(false)}
                 title={isCollapsed ? "Meta ADS" : ""}
               >
-                <Megaphone size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Megaphone size={20} className={navIconClass('/dashboard/meta-ads')} />
                 {!isCollapsed && <span>Meta ADS</span>}
               </Link>
             )}
           </nav>
 
-          {!isCollapsed && (
-            <div className="mt-8 transition-all duration-300">
-              <p className="px-3 text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">
-                Minha Conta
-              </p>
-              <nav className="space-y-2">
-                <Link
-                  href="/dashboard/configuracoes"
-                  className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <Settings size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-                  Configurações
-                </Link>
-                <Link
-                  href="#"
-                  className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <HelpCircle size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
-                  Suporte
-                </Link>
-              </nav>
-            </div>
-          )}
-
-          {isCollapsed && (
-            <div className="mt-8 space-y-2 transition-all duration-300">
+          <div className="mt-8 transition-all duration-300">
+            {!isCollapsed && (
+              <p className="px-3 text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Minha Conta</p>
+            )}
+            <nav className="space-y-2">
               <Link
                 href="/dashboard/configuracoes"
-                className="flex items-center justify-center px-2 py-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group"
+                className={navLinkClass('/dashboard/configuracoes')}
                 onClick={() => setIsOpen(false)}
-                title="Configurações"
+                title={isCollapsed ? "Configurações" : ""}
               >
-                <Settings size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                <Settings size={20} className={navIconClass('/dashboard/configuracoes')} />
+                {!isCollapsed && <span>Configurações</span>}
               </Link>
               <Link
                 href="#"
-                className="flex items-center justify-center px-2 py-3 text-sm font-medium text-[#141414] rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-200 group"
+                className={navLinkClass('#')}
                 onClick={() => setIsOpen(false)}
-                title="Suporte"
+                title={isCollapsed ? "Suporte" : ""}
               >
                 <HelpCircle size={20} className="text-gray-600 group-hover:text-[#9747ff] transition-colors" />
+                {!isCollapsed && <span>Suporte</span>}
               </Link>
-            </div>
-          )}
+            </nav>
+          </div>
         </div>
 
         <div className={`border-t border-gray-100 ${isCollapsed ? 'p-3' : 'p-6'}`}>
