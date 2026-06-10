@@ -8,23 +8,21 @@ import { usePathname } from 'next/navigation';
 export interface BottomNavItem {
   label: string;
   icon: LucideIcon;
-  /** Rota interna. Omitir quando for ação externa (href). */
   to?: string;
-  /** Link externo (ex.: WhatsApp). */
   href?: string;
-  /** Match exato (ex.: home). Por padrão usa startsWith. */
   exact?: boolean;
 }
 
 interface MobileBottomNavProps {
   items: BottomNavItem[];
   theme?: 'light' | 'dark';
+  /** Cor do fundo da página — usada pelo indicador para criar o efeito de "buraco" na barra. */
+  bgColor?: string;
 }
 
-export function MobileBottomNav({ items, theme = 'light' }: MobileBottomNavProps) {
+export function MobileBottomNav({ items, theme = 'light', bgColor = '#f6f6f6' }: MobileBottomNavProps) {
   const pathname = usePathname();
   const isDark = theme === 'dark';
-  const barBg = isDark ? '#0F0820' : '#ffffff';
 
   const isActive = (item: BottomNavItem) => {
     if (!item.to) return false;
@@ -41,71 +39,81 @@ export function MobileBottomNav({ items, theme = 'light' }: MobileBottomNavProps
       className="lg:hidden fixed bottom-0 inset-x-0 z-50 px-3 pb-[max(env(safe-area-inset-bottom),10px)]"
     >
       <div
-        className={`relative h-[60px] rounded-2xl overflow-visible ${
-          isDark
-            ? 'bg-[#0F0820] shadow-[0_-4px_24px_rgba(0,0,0,0.55)]'
-            : 'bg-white shadow-[0_-2px_16px_rgba(0,0,0,0.08),0_4px_16px_rgba(0,0,0,0.06)]'
-        }`}
+        className={`relative h-[70px] rounded-[10px] flex justify-center overflow-visible ${
+          isDark ? 'bg-[#252432]' : 'bg-white'
+        } shadow-[0_5px_15px_rgba(0,0,0,0.1)]`}
       >
-        {/* Indicador animado que desliza entre itens */}
-        {activeIndex >= 0 && (
-          <motion.div
-            className="absolute top-0 h-full pointer-events-none z-10"
-            style={{ width: `${itemWidthPct}%` }}
-            animate={{ left: `${activeIndex * itemWidthPct}%` }}
-            initial={{ left: `${activeIndex * itemWidthPct}%` }}
-            transition={{ type: 'spring', stiffness: 520, damping: 40, mass: 0.8 }}
-          >
-            {/* Asa esquerda — cria a curva côncava no lado esquerdo da bolha */}
-            <span
-              className="absolute top-0 w-[18px] h-[18px] rounded-full"
-              style={{ left: 'calc(50% - 40px)', boxShadow: `9px -9px 0 3px ${barBg}` }}
-            />
-            {/* Asa direita */}
-            <span
-              className="absolute top-0 w-[18px] h-[18px] rounded-full"
-              style={{ left: 'calc(50% + 22px)', boxShadow: `-9px -9px 0 3px ${barBg}` }}
-            />
-
-            {/* Círculo elevado com ícone ativo */}
-            <span
-              className={`absolute left-1/2 -translate-x-1/2 -top-[26px] flex items-center justify-center w-[52px] h-[52px] rounded-full bg-[#9747ff] shadow-[0_8px_22px_rgba(151,71,255,0.45)] ${
-                isDark ? 'ring-[5px] ring-[#0F0820]' : 'ring-[5px] ring-white'
-              }`}
+        <ul className="flex w-full relative">
+          {/* ── Indicador deslizante ── */}
+          {activeIndex >= 0 && (
+            <motion.div
+              className="absolute h-[70px] z-0"
+              style={{
+                width: `${itemWidthPct}%`,
+                top: '-10px',
+                background: bgColor,
+                border: `6px solid ${bgColor}`,
+                borderBottomLeftRadius: '50%',
+                borderBottomRightRadius: '50%',
+              }}
+              animate={{ left: `${activeIndex * itemWidthPct}%` }}
+              initial={{ left: `${activeIndex * itemWidthPct}%` }}
+              transition={{ type: 'spring', stiffness: 500, damping: 38, mass: 0.8 }}
             >
-              {(() => {
-                const Icon = items[activeIndex]?.icon;
-                return Icon ? <Icon size={22} className="text-white" strokeWidth={2.2} /> : null;
-              })()}
-            </span>
-          </motion.div>
-        )}
+              {/* Asa esquerda — curva côncava */}
+              <span
+                className="absolute w-[20px] h-[20px] rounded-tr-[20px]"
+                style={{ top: '4px', left: '-25.75px', boxShadow: `4px -6px 0 2px ${bgColor}` }}
+              />
+              {/* Asa direita */}
+              <span
+                className="absolute w-[20px] h-[20px] rounded-tl-[20px]"
+                style={{ top: '4px', right: '-25.75px', boxShadow: `-4px -6px 0 2px ${bgColor}` }}
+              />
+              {/* Círculo decorativo interno */}
+              <span
+                className="absolute rounded-full bg-white border-[4px] border-[#9747ff] shadow-[0_5px_15px_rgba(0,0,0,0.15)]"
+                style={{
+                  bottom: '3px',
+                  left: '50%',
+                  transform: 'translateX(-50%) scale(0.85)',
+                  transformOrigin: 'bottom',
+                  width: '60px',
+                  height: '60px',
+                }}
+              />
+            </motion.div>
+          )}
 
-        {/* Lista de itens */}
-        <ul className="flex h-full relative z-20">
+          {/* ── Itens de navegação ── */}
           {items.map((item, index) => {
             const active = index === activeIndex;
             const Icon = item.icon;
 
-            const content = active ? (
-              /* Ativo: ícone está na bolha acima; exibe apenas o label */
-              <span className="flex flex-col items-center justify-end h-full pb-[6px]">
-                <span className="text-[10px] font-semibold text-[#9747ff] leading-none tracking-wide">
-                  {item.label}
-                </span>
-              </span>
-            ) : (
-              /* Inativo: ícone + label centralizados */
-              <span className="flex flex-col items-center justify-center h-full gap-[3px]">
-                <Icon
-                  size={20}
-                  strokeWidth={1.8}
-                  className={isDark ? 'text-white/55' : 'text-[#aaa]'}
-                />
+            const inner = (
+              <span className="relative flex justify-center items-center flex-col w-full h-full text-center">
+                {/* Ícone — levanta quando ativo */}
                 <span
-                  className={`text-[10px] font-medium leading-none ${
-                    isDark ? 'text-white/45' : 'text-[#aaa]'
-                  }`}
+                  className="transition-all duration-500"
+                  style={{
+                    transform: active ? 'translateY(-28px)' : 'translateY(0)',
+                    color: active
+                      ? '#9747ff'
+                      : isDark
+                        ? 'rgba(255,255,255,0.65)'
+                        : 'rgba(0,0,0,0.55)',
+                  }}
+                >
+                  <Icon size={22} strokeWidth={active ? 2.2 : 1.8} />
+                </span>
+                {/* Label — só aparece quando ativo, abaixo do ícone */}
+                <span
+                  className="absolute bottom-[8px] text-[10px] font-semibold leading-none tracking-wide transition-all duration-300"
+                  style={{
+                    color: '#9747ff',
+                    opacity: active ? 1 : 0,
+                    transform: active ? 'translateY(0)' : 'translateY(4px)',
+                  }}
                 >
                   {item.label}
                 </span>
@@ -113,23 +121,22 @@ export function MobileBottomNav({ items, theme = 'light' }: MobileBottomNavProps
             );
 
             return (
-              <li key={item.label} style={{ width: `${itemWidthPct}%` }} className="relative">
+              <li
+                key={item.label}
+                style={{ width: `${itemWidthPct}%` }}
+                className="relative list-none h-[70px] z-10"
+              >
                 {item.href ? (
-                  <a
-                    href={item.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block h-full active:opacity-70 transition-opacity"
-                  >
-                    {content}
+                  <a href={item.href} target="_blank" rel="noreferrer" className="block w-full h-full">
+                    {inner}
                   </a>
                 ) : (
                   <Link
                     href={item.to ?? '#'}
-                    className="block h-full active:opacity-70 transition-opacity"
+                    className="block w-full h-full"
                     aria-current={active ? 'page' : undefined}
                   >
-                    {content}
+                    {inner}
                   </Link>
                 )}
               </li>
