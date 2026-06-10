@@ -1,52 +1,33 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PaginatedResponse, Customer } from "../services/customer-service";
-import { ClientesTable } from "./clientes-table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CrmLeadsFilters } from "../services/customer-service";
+import { Badge } from "@/components/ui/badge";
 
 interface ClientesTabsProps {
-  data: PaginatedResponse<Customer> | undefined;
+  status: CrmLeadsFilters["status"];
+  onStatusChange: (status: CrmLeadsFilters["status"]) => void;
+  total: number;
 }
 
-export function ClientesTabs({ data }: ClientesTabsProps) {
+export function ClientesTabs({ status, onStatusChange, total }: ClientesTabsProps) {
   return (
-    <div className="bg-white rounded-lg shadow-sm">
-      <Tabs 
-        defaultValue="todos" 
-        className="w-full"
-      >
-        <div className="border-b">
-          <div className="px-2 md:px-6 py-3">
-            <TabsList className="w-full h-auto flex flex-wrap md:flex-nowrap justify-start">
-              <TabsTrigger value="todos" className="text-sm flex-1 md:flex-none px-2 md:px-4">
-                Todos
-              </TabsTrigger>
-              <TabsTrigger value="interessados" className="text-sm flex-1 md:flex-none px-2 md:px-4">
-                Interessados
-              </TabsTrigger>
-              <TabsTrigger value="sem-interesse" className="text-sm flex-1 md:flex-none px-2 md:px-4">
-                Sem interesse
-              </TabsTrigger>
-              <TabsTrigger value="em-analise" className="text-sm flex-1 md:flex-none px-2 md:px-4">
-                Em análise
-              </TabsTrigger>
-            </TabsList>
-          </div>
-        </div>
-
-        <div className="p-0">
-          <TabsContent value="todos" className="mt-0">
-            <ClientesTable data={data} />
-          </TabsContent>
-          <TabsContent value="interessados" className="mt-0">
-            <ClientesTable data={data} status="Interessado" />
-          </TabsContent>
-          <TabsContent value="sem-interesse" className="mt-0">
-            <ClientesTable data={data} status="Sem interesse" />
-          </TabsContent>
-          <TabsContent value="em-analise" className="mt-0">
-            <ClientesTable data={data} status="Em análise" />
-          </TabsContent>
-        </div>
+    <div className="bg-white rounded-t-lg border-b px-2 md:px-6 py-3">
+      <Tabs value={status ?? "all"} onValueChange={(v) => onStatusChange(v as CrmLeadsFilters["status"])}>
+        <TabsList className="w-full h-auto flex flex-wrap md:flex-nowrap justify-start gap-1">
+          <TabsTrigger value="all" className="text-sm flex-1 md:flex-none px-3 md:px-4 gap-1.5">
+            Todos
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{total}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="open" className="text-sm flex-1 md:flex-none px-3 md:px-4">
+            Em aberto
+          </TabsTrigger>
+          <TabsTrigger value="won" className="text-sm flex-1 md:flex-none px-3 md:px-4">
+            Negócios Fechados
+          </TabsTrigger>
+          <TabsTrigger value="lost" className="text-sm flex-1 md:flex-none px-3 md:px-4">
+            Perdidos
+          </TabsTrigger>
+        </TabsList>
       </Tabs>
     </div>
   );
-} 
+}

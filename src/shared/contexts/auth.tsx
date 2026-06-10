@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import React, { createContext, useState, ReactNode, useEffect } from "react";
 import { useSignUpMutation } from "@/features/signup/hooks/use-sign-up";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/shared/configs/react-query";
 
 interface AuthContextProps {
   user: IAuthenticateUserDTO | null;
@@ -25,6 +26,7 @@ interface AuthContextProps {
   }) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  updateUser: (patch: Partial<IAuthenticateUserDTO["user"]>) => void;
 }
 
 export const AuthContext = createContext<AuthContextProps>(
@@ -60,6 +62,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         maxAge: 30 * 24 * 60 * 60, // 30 days
         path: "/",
       });
+
+      // Limpa cache do usuário anterior antes de setar o novo
+      queryClient.clear();
 
       // Salva os dados do usuário no localStorage
       localStorage.setItem('@SupBrokers:user', JSON.stringify(userData));
@@ -102,10 +107,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateUser = (patch: Partial<IAuthenticateUserDTO["user"]>) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const next = { ...prev, user: { ...prev.user, ...patch } };
+      localStorage.setItem('@SupBrokers:user', JSON.stringify(next));
+      return next;
+    });
+  };
+
   const logout = () => {
     destroyCookie(null, "token");
     localStorage.removeItem('@SupBrokers:user');
     setUser(null);
+    queryClient.clear();
     router.push("/login");
   };
 
@@ -118,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signup,
         logout,
         loading,
+        updateUser,
       }}
     >
       {children}

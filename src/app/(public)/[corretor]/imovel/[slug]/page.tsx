@@ -1,60 +1,83 @@
-"use client";
+import type { Metadata } from 'next';
+import { PropertyDetail } from '@/features/landing/broker-home/detail/property-detail';
 
-import { useRouter } from "next/navigation";
-import { use, useEffect } from "react";
-import { PropertyListing } from "@/features/landing/property/components/property-listing";
-import { SiteHeader } from "@/features/landing/property/components/site-header";
-import { usePropertyDetail, getSelectedProperty, useBrokerProperties } from "@/features/landing/services/broker-service";
+interface PageParams {
+  corretor: string;
+  slug: string;
+}
 
-export default function PropertyDetails({ params }: { params: Promise<{ corretor: string; slug: string }> }) {
-  const router = useRouter();
-  const { corretor, slug } = use(params);
-  const { data: property, isLoading: isLoadingProperty, error: propertyError } = usePropertyDetail(corretor, slug);
-  const { data: brokerData, isLoading: isLoadingBroker, error: brokerError } = useBrokerProperties(corretor);
+interface OgProperty {
+  slug: string;
+  title: string;
+  description?: string | null;
+  attachments?: { url: string }[];
+}
 
-  // Verificar se temos os dados do imóvel no localStorage
-  useEffect(() => {
-    // Se não estiver carregando e não tiver dados, verificamos o localStorage
-    if (!isLoadingProperty && !property) {
-      const storedProperty = getSelectedProperty();
-      if (!storedProperty) {
-        // Se não houver dados no localStorage, redirecionamos para a página do corretor
-        router.push(`/${corretor}`);
-      }
-    }
-  }, [isLoadingProperty, property, corretor, router]);
-
-  const isLoading = isLoadingProperty || isLoadingBroker;
-  const error = propertyError || brokerError;
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-xl">Carregando...</p>
-      </div>
+// Busca o imóvel a partir do endpoint público do corretor (sem auth).
+// Não há endpoint individual público, então derivamos do bucket "all".
+async function fetchProperty(
+  corretor: string,
+  slug: string
+): Promise<OgProperty | null> {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/${corretor}/properties`,
+      { next: { revalidate: 300 } }
     );
+    if (!res.ok) return null;
+    const json = await res.json();
+    const all: OgProperty[] = json?.data?.all ?? [];
+    return all.find(p => p.slug === slug) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<PageParams>;
+}): Promise<Metadata> {
+  const { corretor, slug } = await params;
+  const property = await fetchProperty(corretor, slug);
+
+  if (!property) {
+    return { title: 'Imóvel não encontrado' };
   }
 
-  if (error || !property || !brokerData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-xl">Não foi possível carregar o imóvel.</p>
-      </div>
-    );
-  }
+  const title = property.title;
+  const description = (property.description ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 200);
+  const image = property.attachments?.[0]?.url;
+  const url = `/${corretor}/imovel/${slug}`;
 
-  return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader corretor={corretor} />
-      <main className="px-8 md:container py-6 mx-auto">
-        <PropertyListing 
-          propertyData={property.data.property} 
-          userData={property.data.user} 
-          allProperties={brokerData.data.all}
-          corretor={corretor}
-          primary_color={property.data.user.page_settings?.primary_color}
-        />
-      </main>
-    </div>
-  );
-} 
+  return {
+    title,
+    description,
+    openGraph: {
+      type: 'website',
+      url,
+      title,
+      description,
+      siteName: 'Imoobile',
+      images: image ? [{ url: image, alt: title }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
+  };
+}
+
+export default async function CorretorImovel({
+  params,
+}: {
+  params: Promise<PageParams>;
+}) {
+  const { corretor, slug } = await params;
+  return <PropertyDetail brokerSlug={corretor} propertySlug={slug} />;
+}

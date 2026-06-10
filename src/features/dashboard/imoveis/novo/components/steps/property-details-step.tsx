@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Home, Bed, Car, Ruler } from "lucide-react";
+import { Home, Bed, Car, Ruler, Bath, ShowerHead } from "lucide-react";
 import { PropertyFormValues } from "../../schemas/property-schema";
 
 interface PropertyDetailsStepProps {
@@ -67,12 +67,76 @@ export function PropertyDetailsStep({ form }: PropertyDetailsStepProps) {
 
         <FormField
           control={form.control}
+          name="suites"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-base font-medium flex items-center gap-2">
+                <ShowerHead className="w-4 h-4" />
+                Suítes
+              </FormLabel>
+              <Select
+                onValueChange={(value) => field.onChange(parseInt(value))}
+                value={field.value?.toString() ?? "0"}
+              >
+                <FormControl>
+                  <SelectTrigger className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="0">Sem suíte</SelectItem>
+                  <SelectItem value="1">1 suíte</SelectItem>
+                  <SelectItem value="2">2 suítes</SelectItem>
+                  <SelectItem value="3">3 suítes</SelectItem>
+                  <SelectItem value="4">4 suítes</SelectItem>
+                  <SelectItem value="5">5+ suítes</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="bathrooms"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-base font-medium flex items-center gap-2">
+                <Bath className="w-4 h-4" />
+                Banheiros
+              </FormLabel>
+              <Select
+                onValueChange={(value) => field.onChange(parseInt(value))}
+                value={field.value?.toString() ?? "0"}
+              >
+                <FormControl>
+                  <SelectTrigger className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="0">Sem banheiro</SelectItem>
+                  <SelectItem value="1">1 banheiro</SelectItem>
+                  <SelectItem value="2">2 banheiros</SelectItem>
+                  <SelectItem value="3">3 banheiros</SelectItem>
+                  <SelectItem value="4">4 banheiros</SelectItem>
+                  <SelectItem value="5">5+ banheiros</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="size"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-base font-medium flex items-center gap-2">
                 <Ruler className="w-4 h-4" />
-                Área (m²)
+                Área útil (m²)
                 <span className="text-red-500">*</span>
               </FormLabel>
               <FormControl>
@@ -83,6 +147,35 @@ export function PropertyDetailsStep({ form }: PropertyDetailsStepProps) {
                     placeholder="Ex: 85"
                     min="1"
                     {...field}
+                  />
+                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                    m²
+                  </span>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="total_size"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-base font-medium flex items-center gap-2">
+                <Ruler className="w-4 h-4" />
+                Área total (m²)
+              </FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input
+                    className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500 pr-8"
+                    type="number"
+                    placeholder="Ex: 100"
+                    min="0"
+                    value={field.value ?? ""}
+                    onChange={(e) => field.onChange(e.target.value === "" ? null : e.target.value)}
                   />
                   <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
                     m²

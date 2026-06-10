@@ -18,20 +18,6 @@ export default function AlugueisPage() {
 
         <main className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-xl sm:text-2xl font-semibold text-[#1c1b1f]">
-                  Gestão de aluguéis
-                </h1>
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-[#9747ff] to-[#7c2ae8] text-white shadow-sm">
-                  BETA
-                </span>
-              </div>
-              <p className="text-sm sm:text-base text-[#969696]">
-                Veja a lista dos seus contratos de aluguel ou adicione uma nova
-                locação para gerenciar o aluguel de um imóvel.
-              </p>
-            </div>
             <Button className="bg-[#9747ff] hover:bg-[#7c2ae8] w-full sm:w-auto" onClick={() => router.push('/dashboard/alugueis/novo')}>
               Nova locação
             </Button>

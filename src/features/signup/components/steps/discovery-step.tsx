@@ -3,9 +3,9 @@
 import { UseFormReturn } from "react-hook-form";
 import { motion } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SignupFormData } from "../signup-wizard";
+import { SignupFormData, StepSharedProps } from "../signup-wizard";
 
-interface DiscoveryStepProps {
+interface DiscoveryStepProps extends StepSharedProps {
   form: UseFormReturn<SignupFormData>;
   onNext: () => void;
 }

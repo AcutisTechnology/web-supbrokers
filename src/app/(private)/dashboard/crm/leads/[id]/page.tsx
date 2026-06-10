@@ -11,8 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/shared/configs/api";
+import { useCurrentUser } from "@/shared/hooks/use-current-user";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CalendarClock, FileUp, History, MessageCircle, MessageSquareText, Phone, Tag, User2 } from "lucide-react";
+import { ArrowLeft, CalendarCheck, CalendarClock, CheckCircle2, FileText, FileUp, History, Home, ListTodo, MessageCircle, MessageSquareText, PhoneCall, Phone, Tag, User2, XCircle } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import {
@@ -21,10 +22,18 @@ import {
   useCrmLead,
   useCrmPipelineStages,
   useCrmTags,
+  useMarkWonCrmLead,
   useMoveCrmLeadStage,
   useUpdateCrmLead,
   useUploadCrmLeadAttachment,
 } from "@/features/dashboard/crm/services/crm-service";
+import { Skeleton } from "@/components/ui/skeleton";
+import { LeadActivitiesPanel } from "@/features/dashboard/crm/components/lead-activities-panel";
+import { LeadVisitsPanel } from "@/features/dashboard/crm/components/lead-visits-panel";
+import { LeadPropertiesPanel } from "@/features/dashboard/crm/components/lead-properties-panel";
+import { LeadProposalsPanel } from "@/features/dashboard/crm/components/lead-proposals-panel";
+import { MarkLostDialog } from "@/features/dashboard/crm/components/mark-lost-dialog";
+import { LogCallModal } from "@/features/dashboard/crm/components/log-call-modal";
 
 type Broker = {
   id: number;
@@ -58,6 +67,7 @@ export default function CrmLeadDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { toast } = useToast();
+  const { isBroker } = useCurrentUser();
 
   const leadId = Number(params.id);
   const { data: lead, isLoading } = useCrmLead(leadId);
@@ -69,8 +79,12 @@ export default function CrmLeadDetailPage() {
 
   const updateLeadMutation = useUpdateCrmLead(leadId);
   const moveStageMutation = useMoveCrmLeadStage();
+  const markWonMutation = useMarkWonCrmLead();
   const createInteractionMutation = useCreateCrmLeadInteraction(leadId);
   const uploadAttachmentMutation = useUploadCrmLeadAttachment(leadId);
+
+  const [markLostOpen, setMarkLostOpen] = useState(false);
+  const [logCallOpen, setLogCallOpen] = useState(false);
 
   const [notesDraft, setNotesDraft] = useState("");
   const [followUpDraft, setFollowUpDraft] = useState("");
@@ -103,11 +117,34 @@ export default function CrmLeadDetailPage() {
       id: `i-${i.id}`,
       created_at: i.created_at,
       kind: "interaction" as const,
-      title: i.type === "whatsapp" ? "WhatsApp" : i.type === "call" ? "Ligação" : i.type === "email" ? "Email" : "Nota",
+      title: i.type === "whatsapp" ? "WhatsApp" : i.type === "call" ? "Ligação" : i.type === "email" ? "Email" : i.type === "meeting" ? "Reunião" : i.type === "visit" ? "Visita" : "Nota",
       description: i.description,
     }));
-    return [...movements, ...interactions].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [lead?.interactions, lead?.stage_movements]);
+    const doneActivities = (lead?.activities ?? [])
+      .filter((a) => a.is_done)
+      .map((a) => ({
+        id: `a-${a.id}`,
+        created_at: a.done_at ?? a.scheduled_for ?? a.created_at,
+        kind: "activity" as const,
+        title: `Atividade concluída: ${a.title}`,
+        description: a.description ?? "",
+      }));
+    return [...movements, ...interactions, ...doneActivities].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+  }, [lead?.interactions, lead?.stage_movements, lead?.activities]);
+
+  const pendingActivities = useMemo(
+    () => (lead?.activities ?? []).filter((a) => !a.is_done),
+    [lead?.activities],
+  );
+
+  const callInteractions = useMemo(
+    () => (lead?.interactions ?? []).filter((i) => i.type === "call").sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    ),
+    [lead?.interactions],
+  );
 
   const [interactionType, setInteractionType] = useState<CrmLeadInteraction["type"]>("note");
   const [interactionDescription, setInteractionDescription] = useState("");
@@ -143,6 +180,29 @@ export default function CrmLeadDetailPage() {
     );
   }
 
+  if (isLoading && !lead) {
+    return (
+      <>
+        <TopNav title_secondary="CRM" />
+        <div className="flex items-center gap-3 mb-6">
+          <Skeleton className="h-9 w-9 rounded-md" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-7 w-64" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+          <Skeleton className="h-9 w-28" />
+          <Skeleton className="h-9 w-32" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          <Skeleton className="h-64 lg:col-span-2 rounded-2xl" />
+          <Skeleton className="h-64 rounded-2xl" />
+        </div>
+        <Skeleton className="h-12 w-full rounded-2xl mb-4" />
+        <Skeleton className="h-96 w-full rounded-2xl" />
+      </>
+    );
+  }
+
   return (
     <>
       <TopNav title_secondary="CRM" />
@@ -158,7 +218,7 @@ export default function CrmLeadDetailPage() {
               <h1 className="text-2xl font-semibold text-[#141414] truncate">{lead?.name ?? "Carregando…"}</h1>
               {lead?.status && (
                 <Badge className="bg-gray-100 text-[#777777] border border-gray-200">
-                  {lead.status === "open" ? "Em aberto" : lead.status === "won" ? "Ganho" : "Perdido"}
+                  {lead.status === "open" ? "Em aberto" : lead.status === "won" ? "Negócio Fechado" : "Perdido"}
                 </Badge>
               )}
               {lead?.is_hot && (
@@ -183,17 +243,42 @@ export default function CrmLeadDetailPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
           {whatsappUrl && (
-            <Button asChild className="gap-2">
+            <Button asChild variant="outline" className="gap-2">
               <a href={whatsappUrl} target="_blank" rel="noreferrer">
                 <MessageCircle className="h-4 w-4" />
                 WhatsApp
               </a>
             </Button>
           )}
+          {lead && lead.status !== "won" && (
+            <Button
+              type="button"
+              className="gap-2 bg-emerald-600 hover:bg-emerald-700 transition-transform hover:scale-[1.02] active:scale-[0.98]"
+              onClick={() => markWonMutation.mutate(lead.id)}
+              disabled={markWonMutation.isPending}
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Negócio Fechado
+            </Button>
+          )}
+          {lead && lead.status !== "lost" && (
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2 text-rose-700 border-rose-200 hover:bg-rose-50"
+              onClick={() => setMarkLostOpen(true)}
+            >
+              <XCircle className="h-4 w-4" />
+              Marcar perdido
+            </Button>
+          )}
         </div>
       </div>
+
+      <MarkLostDialog open={markLostOpen} onOpenChange={setMarkLostOpen} lead={lead ?? null} />
+      <LogCallModal leadId={leadId} leadName={lead?.name} open={logCallOpen} onOpenChange={setLogCallOpen} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <Card className="border border-gray-100 shadow-sm rounded-2xl lg:col-span-2">
@@ -220,22 +305,28 @@ export default function CrmLeadDetailPage() {
 
               <div className="space-y-2">
                 <Label>Responsável</Label>
-                <Select
-                  value={lead?.assigned_user_id ? String(lead.assigned_user_id) : "none"}
-                  onValueChange={(v) => updateLeadMutation.mutate({ assigned_user_id: v === "none" ? null : Number(v) })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Sem responsável</SelectItem>
-                    {brokers.map((b) => (
-                      <SelectItem key={b.id} value={String(b.id)}>
-                        {b.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {isBroker ? (
+                  <div className="flex h-9 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
+                    {lead?.assigned_user?.name ?? "—"}
+                  </div>
+                ) : (
+                  <Select
+                    value={lead?.assigned_user_id ? String(lead.assigned_user_id) : "none"}
+                    onValueChange={(v) => updateLeadMutation.mutate({ assigned_user_id: v === "none" ? null : Number(v) })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem responsável</SelectItem>
+                      {brokers.map((b) => (
+                        <SelectItem key={b.id} value={String(b.id)}>
+                          {b.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -343,6 +434,46 @@ export default function CrmLeadDetailPage() {
             <History className="h-4 w-4" />
             Timeline
           </TabsTrigger>
+          <TabsTrigger value="calls" className="gap-2">
+            <PhoneCall className="h-4 w-4" />
+            Ligações
+            {callInteractions.length > 0 && (
+              <Badge className="ml-1 bg-[#9747FF]/10 text-[#9747FF] border border-[#9747FF]/20">
+                {callInteractions.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="activities" className="gap-2">
+            <ListTodo className="h-4 w-4" />
+            Atividades
+            {pendingActivities.length > 0 && (
+              <Badge className="ml-1 bg-[#9747FF]/10 text-[#9747FF] border border-[#9747FF]/20">
+                {pendingActivities.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="visits" className="gap-2">
+            <CalendarCheck className="h-4 w-4" />
+            Visitas
+          </TabsTrigger>
+          <TabsTrigger value="properties" className="gap-2">
+            <Home className="h-4 w-4" />
+            Imóveis
+            {(lead?.properties?.length ?? 0) > 0 && (
+              <Badge className="ml-1 bg-[#9747FF]/10 text-[#9747FF] border border-[#9747FF]/20">
+                {lead!.properties!.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="proposals" className="gap-2">
+            <FileText className="h-4 w-4" />
+            Propostas
+            {(lead?.proposals?.length ?? 0) > 0 && (
+              <Badge className="ml-1 bg-[#9747FF]/10 text-[#9747FF] border border-[#9747FF]/20">
+                {lead!.proposals!.length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="notes" className="gap-2">
             <MessageSquareText className="h-4 w-4" />
             Observações
@@ -415,6 +546,53 @@ export default function CrmLeadDetailPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="calls" className="mt-6">
+          <Card className="border border-gray-100 shadow-sm rounded-2xl">
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="text-base">Ligações registradas</CardTitle>
+              <Button className="gap-2" onClick={() => setLogCallOpen(true)}>
+                <PhoneCall className="h-4 w-4" />
+                Registrar ligação
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {callInteractions.map((i) => (
+                  <div key={i.id} className="p-4 rounded-2xl border border-gray-100">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 font-semibold text-[#141414]">
+                        <PhoneCall className="h-4 w-4 text-[#9747FF]" />
+                        Ligação
+                      </div>
+                      <div className="text-xs text-[#777777]">{formatDateTime(i.created_at)}</div>
+                    </div>
+                    <div className="text-sm text-[#777777] mt-2 whitespace-pre-wrap">{i.description}</div>
+                  </div>
+                ))}
+                {!isLoading && callInteractions.length === 0 && (
+                  <div className="text-sm text-[#777777] py-6 text-center">Nenhuma ligação registrada.</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="activities" className="mt-6">
+          <LeadActivitiesPanel leadId={leadId} activities={lead?.activities ?? []} />
+        </TabsContent>
+
+        <TabsContent value="visits" className="mt-6">
+          <LeadVisitsPanel leadId={leadId} />
+        </TabsContent>
+
+        <TabsContent value="properties" className="mt-6">
+          <LeadPropertiesPanel leadId={leadId} />
+        </TabsContent>
+
+        <TabsContent value="proposals" className="mt-6">
+          <LeadProposalsPanel proposals={lead?.proposals ?? []} />
         </TabsContent>
 
         <TabsContent value="notes" className="mt-6">

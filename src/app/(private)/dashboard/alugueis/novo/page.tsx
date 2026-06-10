@@ -4,13 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Home } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { TopNav } from "@/features/dashboard/imoveis/top-nav";
-import { api } from '@/shared/configs/api';
 import { useCreateAluguel } from '@/features/dashboard/alugueis/hooks/use-create-aluguel';
 import { MaskedInput } from '@/components/ui/masked-input';
 import { CurrencyInput } from '@/components/ui/currency-input';
+import { FileUpload } from '@/components/ui/file-upload';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -24,6 +23,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { aluguelSchema, AluguelFormValues, aluguelDefaultValues } from '@/features/dashboard/alugueis/types/aluguel-form-schema';
+
+const DOC_ACCEPT = 'image/*,application/pdf';
 
 export default function NovaLocacaoPage() {
   const router = useRouter();
@@ -40,25 +41,35 @@ export default function NovaLocacaoPage() {
   async function onSubmit(data: AluguelFormValues) {
     setError(null);
     const formData = new FormData();
+
+    const numericFields = ['valor', 'renda', 'multa'] as const;
+    const docFields = ['doc_rg', 'doc_cpf', 'doc_renda'] as const;
+
     Object.entries(data).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        if (key === 'valor') {
-          formData.append(key, String(value));
-        } else {
-          formData.append(key, value as Blob | string);
+      if (value === null || value === undefined) return;
+
+      if (numericFields.includes(key as typeof numericFields[number])) {
+        formData.append(key, String(value));
+      } else if (docFields.includes(key as typeof docFields[number])) {
+        const arr = value as File[];
+        if (arr.length > 0 && arr[0] instanceof File) {
+          formData.append(key, arr[0]);
         }
+      } else {
+        formData.append(key, value as Blob | string);
       }
     });
+
     mutation.mutate(formData, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['alugueis'] });
         setSuccess(true);
-        toast({ title: 'Locação criada com sucesso!', description: 'A locação foi cadastrada.', });
+        toast({ title: 'Locação criada com sucesso!', description: 'A locação foi cadastrada.' });
         setTimeout(() => router.push('/dashboard/alugueis'), 1500);
       },
       onError: () => {
         setError('Erro ao criar locação');
-        toast({ title: 'Erro ao criar locação', description: 'Ocorreu um erro ao criar a locação. Tente novamente.', variant: 'destructive', });
+        toast({ title: 'Erro ao criar locação', description: 'Ocorreu um erro. Tente novamente.', variant: 'destructive' });
       },
     });
   }
@@ -66,9 +77,11 @@ export default function NovaLocacaoPage() {
   return (
     <div className="flex-1">
       <main className="p-4 sm:p-6">
-          <TopNav title_secondary="Gestão de aluguéis" />
+        <TopNav title_secondary="Gestão de aluguéis" />
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
+            {/* Dados do Imóvel */}
             <Card className="p-4 sm:p-8 shadow-sm">
               <h2 className="text-lg font-semibold mb-4 text-[#9747ff]">Dados do Imóvel</h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -76,7 +89,7 @@ export default function NovaLocacaoPage() {
                   <FormItem>
                     <FormLabel>Imóvel</FormLabel>
                     <FormControl>
-                      <Input {...field} required placeholder="Imóvel" />
+                      <Input {...field} placeholder="Nome ou código do imóvel" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -85,113 +98,138 @@ export default function NovaLocacaoPage() {
                   <FormItem>
                     <FormLabel>Endereço do imóvel</FormLabel>
                     <FormControl>
-                      <Input {...field} required placeholder="Endereço" />
+                      <Input {...field} placeholder="Rua, número, bairro, cidade" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
               </div>
             </Card>
+
+            {/* Dados do Inquilino */}
             <Card className="p-4 sm:p-8 shadow-sm">
               <h2 className="text-lg font-semibold mb-4 text-[#9747ff]">Dados do Inquilino</h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <FormField name="inquilino" control={form.control} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome do inquilino</FormLabel>
+                    <FormLabel>Nome completo</FormLabel>
                     <FormControl>
-                      <Input {...field} required placeholder="Nome do inquilino" />
+                      <Input {...field} placeholder="Nome do inquilino" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField name="cpf" control={form.control} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>CPF do inquilino</FormLabel>
+                    <FormLabel>CPF</FormLabel>
                     <FormControl>
-                      <MaskedInput {...field} mask="###.###.###-##" required placeholder="CPF" />
+                      <MaskedInput {...field} mask="###.###.###-##" placeholder="000.000.000-00" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField name="rg" control={form.control} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>RG do inquilino</FormLabel>
+                    <FormLabel>RG</FormLabel>
                     <FormControl>
-                      <MaskedInput {...field} mask="##.###.###-#" required placeholder="RG" />
+                      <MaskedInput {...field} mask="##.###.###-#" placeholder="00.000.000-0" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField name="email" control={form.control} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>E-mail do inquilino</FormLabel>
+                    <FormLabel>E-mail</FormLabel>
                     <FormControl>
-                      <Input {...field} required placeholder="E-mail" />
+                      <Input {...field} type="email" placeholder="email@exemplo.com" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField name="telefone" control={form.control} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Telefone do inquilino</FormLabel>
+                    <FormLabel>Telefone / WhatsApp</FormLabel>
                     <FormControl>
-                      <MaskedInput {...field} mask="(##) #####-####" required placeholder="Telefone" />
+                      <MaskedInput {...field} mask="(##) #####-####" placeholder="(00) 00000-0000" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField name="profissao" control={form.control} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Profissão do inquilino</FormLabel>
+                    <FormLabel>Profissão</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Profissão" />
+                      <Input {...field} placeholder="Profissão do inquilino" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField name="renda" control={form.control} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Renda mensal do inquilino</FormLabel>
+                    <FormLabel>Renda mensal</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Renda mensal" />
+                      <CurrencyInput
+                        value={Number(field.value) || 0}
+                        onChange={(_, values) => field.onChange(values?.floatValue ?? 0)}
+                        placeholder="R$ 0,00"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
               </div>
             </Card>
+
+            {/* Documentação */}
             <Card className="p-4 sm:p-8 shadow-sm">
               <h2 className="text-lg font-semibold mb-4 text-[#9747ff]">Documentação</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <FormField name="doc_rg" control={form.control} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>RG (upload)</FormLabel>
+                    <FormLabel>RG</FormLabel>
                     <FormControl>
-                      <input type="file" onChange={e => field.onChange(e.target.files?.[0] || null)} className="w-full" />
+                      <FileUpload
+                        value={field.value ?? []}
+                        onChange={field.onChange}
+                        multiple={false}
+                        accept={DOC_ACCEPT}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField name="doc_cpf" control={form.control} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>CPF (upload)</FormLabel>
+                    <FormLabel>CPF</FormLabel>
                     <FormControl>
-                      <input type="file" onChange={e => field.onChange(e.target.files?.[0] || null)} className="w-full" />
+                      <FileUpload
+                        value={field.value ?? []}
+                        onChange={field.onChange}
+                        multiple={false}
+                        accept={DOC_ACCEPT}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField name="doc_renda" control={form.control} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Comprovante de renda (upload)</FormLabel>
+                    <FormLabel>Comprovante de renda</FormLabel>
                     <FormControl>
-                      <input type="file" onChange={e => field.onChange(e.target.files?.[0] || null)} className="w-full" />
+                      <FileUpload
+                        value={field.value ?? []}
+                        onChange={field.onChange}
+                        multiple={false}
+                        accept={DOC_ACCEPT}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
               </div>
             </Card>
+
+            {/* Dados do Contrato */}
             <Card className="p-4 sm:p-8 shadow-sm">
               <h2 className="text-lg font-semibold mb-4 text-[#9747ff]">Dados do Contrato</h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -202,8 +240,7 @@ export default function NovaLocacaoPage() {
                       <CurrencyInput
                         value={Number(field.value) || 0}
                         onChange={(_, values) => field.onChange(values?.floatValue ?? 0)}
-                        required
-                        placeholder="Valor do aluguel"
+                        placeholder="R$ 0,00"
                       />
                     </FormControl>
                     <FormMessage />
@@ -211,18 +248,18 @@ export default function NovaLocacaoPage() {
                 )} />
                 <FormField name="data_inicio" control={form.control} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Data de início do contrato</FormLabel>
+                    <FormLabel>Data de início</FormLabel>
                     <FormControl>
-                      <Input {...field} type="date" required placeholder="Data de início" />
+                      <Input {...field} type="date" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField name="data_fim" control={form.control} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Data de término do contrato</FormLabel>
+                    <FormLabel>Data de término</FormLabel>
                     <FormControl>
-                      <Input {...field} type="date" required placeholder="Data de término" />
+                      <Input {...field} type="date" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -231,7 +268,7 @@ export default function NovaLocacaoPage() {
                   <FormItem>
                     <FormLabel>Garantia</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Garantia" />
+                      <Input {...field} placeholder="Ex: Fiador, Caução, Seguro-fiança" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -240,7 +277,11 @@ export default function NovaLocacaoPage() {
                   <FormItem>
                     <FormLabel>Multa rescisória</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Multa rescisória" />
+                      <CurrencyInput
+                        value={Number(field.value) || 0}
+                        onChange={(_, values) => field.onChange(values?.floatValue ?? 0)}
+                        placeholder="R$ 0,00"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -249,34 +290,49 @@ export default function NovaLocacaoPage() {
                   <FormItem>
                     <FormLabel>Reajuste anual (%)</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Reajuste anual (%)" />
+                      <Input
+                        {...field}
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        placeholder="Ex: 3,5"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
               </div>
             </Card>
+
+            {/* Observações */}
             <Card className="p-4 sm:p-8 shadow-sm">
               <h2 className="text-lg font-semibold mb-4 text-[#9747ff]">Observações</h2>
               <FormField name="observacoes" control={form.control} render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Observações adicionais</FormLabel>
                   <FormControl>
-                    <Textarea {...field} placeholder="Observações adicionais" />
+                    <Textarea {...field} placeholder="Informações adicionais sobre o contrato" rows={4} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
             </Card>
+
+            {error && <div className="text-red-500 text-center text-sm">{error}</div>}
+
             <div className="flex justify-center sm:justify-end">
-              <Button type="submit" disabled={mutation.isPending} className="w-full sm:w-40 h-12 text-lg bg-[#9747ff] hover:bg-[#7c2ae8] text-white border-none">
+              <Button
+                type="submit"
+                disabled={mutation.isPending}
+                className="w-full sm:w-40 h-12 text-lg bg-[#9747ff] hover:bg-[#7c2ae8] text-white border-none"
+              >
                 {mutation.isPending ? 'Salvando...' : success ? 'Salvo!' : 'Salvar'}
               </Button>
             </div>
-            {error && <div className="text-red-500 text-center mb-4 text-sm sm:text-base">{error}</div>}
+
           </form>
         </Form>
       </main>
     </div>
   );
-} 
+}

@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ColorPicker } from "@/features/dashboard/page-settings/components/color-picker";
+import { ColorPicker } from "@/features/dashboard/site/components/color-picker";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, ChevronUp, Plus, Tag, Trash2, Wand2 } from "lucide-react";
+import { DeleteStageModal } from "@/features/dashboard/crm/components/delete-stage-modal";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -30,7 +32,10 @@ import {
 
 const stageSchema = z.object({
   name: z.string().min(1, "Informe o nome"),
+  description: z.string().max(500).optional().nullable(),
   color: z.string().optional(),
+  is_won: z.boolean().optional(),
+  is_lost: z.boolean().optional(),
 });
 
 type StageFormValues = z.infer<typeof stageSchema>;
@@ -59,11 +64,12 @@ export default function CrmConfigPage() {
   const deleteTagMutation = useDeleteCrmTag();
 
   const [stageDialog, setStageDialog] = useState<CrmPipelineStage | null>(null);
+  const [deleteStageDialog, setDeleteStageDialog] = useState<CrmPipelineStage | null>(null);
   const [tagDialog, setTagDialog] = useState<CrmTag | null>(null);
 
   const stageForm = useForm<StageFormValues>({
     resolver: zodResolver(stageSchema),
-    defaultValues: { name: "", color: "#9747FF" },
+    defaultValues: { name: "", description: "", color: "#9747FF", is_won: false, is_lost: false },
   });
 
   const tagForm = useForm<TagFormValues>({
@@ -73,7 +79,13 @@ export default function CrmConfigPage() {
 
   useEffect(() => {
     if (!stageDialog) return;
-    stageForm.reset({ name: stageDialog.name ?? "", color: stageDialog.color ?? "#9747FF" });
+    stageForm.reset({
+      name: stageDialog.name ?? "",
+      description: stageDialog.description ?? "",
+      color: stageDialog.color ?? "#9747FF",
+      is_won: stageDialog.is_won ?? false,
+      is_lost: stageDialog.is_lost ?? false,
+    });
   }, [stageDialog, stageForm]);
 
   useEffect(() => {
@@ -106,7 +118,6 @@ export default function CrmConfigPage() {
             <Wand2 className="w-5 h-5 text-[#141414]" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold text-[#141414]">Configurações do CRM</h1>
             <p className="text-[#777777]">Personalize etapas e tags do seu pipeline.</p>
           </div>
         </div>
@@ -129,10 +140,13 @@ export default function CrmConfigPage() {
                     onClick={() =>
                       setStageDialog({
                         id: 0,
+                        company_id: 0,
                         name: "",
                         order: stages.length + 1,
                         color: "#9747FF",
                         is_default: false,
+                        is_won: false,
+                        is_lost: false,
                       })
                     }
                   >
@@ -149,7 +163,13 @@ export default function CrmConfigPage() {
                     className="space-y-4"
                     onSubmit={stageForm.handleSubmit((values) => {
                       if (!stageDialog) return;
-                      const payload = { name: values.name.trim(), color: values.color?.trim() || null };
+                      const payload = {
+                        name: values.name.trim(),
+                        description: values.description?.trim() || null,
+                        color: values.color?.trim() || null,
+                        is_won: !!values.is_won,
+                        is_lost: !!values.is_lost,
+                      };
 
                       if (stageDialog.id) {
                         updateStageMutation.mutate({ id: stageDialog.id, ...payload });
@@ -169,11 +189,54 @@ export default function CrmConfigPage() {
                     </div>
 
                     <div className="space-y-2">
+                      <Label>Descrição <span className="text-[#777777] font-normal">(exibida ao passar o mouse no kanban)</span></Label>
+                      <Textarea
+                        {...stageForm.register("description")}
+                        placeholder="Explique o critério para um lead estar nesta etapa…"
+                        rows={3}
+                        className="resize-none"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
                       <Label>Cor</Label>
                       <ColorPicker
                         value={stageForm.watch("color") || "#9747FF"}
                         onChange={(c) => stageForm.setValue("color", c, { shouldValidate: true })}
                       />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="flex items-start gap-2 p-3 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50">
+                        <input
+                          type="checkbox"
+                          checked={stageForm.watch("is_won") ?? false}
+                          onChange={(e) => {
+                            stageForm.setValue("is_won", e.target.checked);
+                            if (e.target.checked) stageForm.setValue("is_lost", false);
+                          }}
+                          className="mt-0.5"
+                        />
+                        <div>
+                          <div className="text-sm font-semibold text-[#141414]">Etapa de ganho</div>
+                          <div className="text-xs text-[#777777]">Leads movidos para cá são marcados como Ganhos.</div>
+                        </div>
+                      </label>
+                      <label className="flex items-start gap-2 p-3 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50">
+                        <input
+                          type="checkbox"
+                          checked={stageForm.watch("is_lost") ?? false}
+                          onChange={(e) => {
+                            stageForm.setValue("is_lost", e.target.checked);
+                            if (e.target.checked) stageForm.setValue("is_won", false);
+                          }}
+                          className="mt-0.5"
+                        />
+                        <div>
+                          <div className="text-sm font-semibold text-[#141414]">Etapa de perda</div>
+                          <div className="text-xs text-[#777777]">Leads movidos para cá são marcados como Perdidos.</div>
+                        </div>
+                      </label>
                     </div>
 
                     <div className="flex justify-end gap-3">
@@ -194,9 +257,18 @@ export default function CrmConfigPage() {
                       <div className="h-3 w-3 rounded-full" style={{ backgroundColor: stage.color ?? "#e5e7eb" }} />
                       <div className="min-w-0">
                         <div className="font-semibold text-[#141414] truncate">{stage.name}</div>
-                        <div className="text-xs text-[#777777] flex items-center gap-2 mt-0.5">
+                        {stage.description && (
+                          <div className="text-xs text-[#777777] mt-0.5 line-clamp-1">{stage.description}</div>
+                        )}
+                        <div className="text-xs text-[#777777] flex items-center gap-2 mt-0.5 flex-wrap">
                           <span>Ordem: {stage.order}</span>
                           {typeof stage.leads_count === "number" && <Badge variant="secondary">{stage.leads_count} leads</Badge>}
+                          {stage.is_won && (
+                            <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200">Ganho</Badge>
+                          )}
+                          {stage.is_lost && (
+                            <Badge className="bg-rose-100 text-rose-800 border border-rose-200">Perda</Badge>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -217,7 +289,13 @@ export default function CrmConfigPage() {
                         variant="ghost"
                         size="icon"
                         className="h-9 w-9 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => deleteStageMutation.mutate(stage.id)}
+                        onClick={() => {
+                          if ((stage.leads_count ?? 0) > 0) {
+                            setDeleteStageDialog(stage);
+                          } else {
+                            deleteStageMutation.mutate({ id: stage.id });
+                          }
+                        }}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -327,6 +405,20 @@ export default function CrmConfigPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <DeleteStageModal
+        stage={deleteStageDialog}
+        stages={stages}
+        isDeleting={deleteStageMutation.isPending}
+        onConfirm={(targetStageId) => {
+          if (!deleteStageDialog) return;
+          deleteStageMutation.mutate(
+            { id: deleteStageDialog.id, target_stage_id: targetStageId },
+            { onSuccess: () => setDeleteStageDialog(null) },
+          );
+        }}
+        onCancel={() => setDeleteStageDialog(null)}
+      />
     </>
   );
 }

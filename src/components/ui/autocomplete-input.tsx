@@ -19,7 +19,7 @@ export type AutocompleteValue = {
 type Props = {
   value: AutocompleteValue
   onChange: (value: AutocompleteValue) => void
-  onSearch: (query: string) => Promise<AutocompleteOption[]>
+  onSearch?: (query: string) => Promise<AutocompleteOption[]>
   placeholder?: string
   disabled?: boolean
   className?: string
@@ -37,7 +37,7 @@ export function AutocompleteInput({
   className,
   inputClassName,
   debounceMs = 300,
-  createLabel = (typed) => `Cadastrar novo: ${typed}`,
+  createLabel,
 }: Props) {
   const containerRef = React.useRef<HTMLDivElement | null>(null)
   const [open, setOpen] = React.useState(false)
@@ -64,11 +64,13 @@ export function AutocompleteInput({
 
   React.useEffect(() => {
     if (!open) return
+    if (typeof onSearch !== 'function') return
 
     const typed = query.trim()
     let cancelled = false
 
     const handle = window.setTimeout(async () => {
+      if (typeof onSearch !== 'function') return
       setLoading(true)
       try {
         const result = await onSearch(typed)
@@ -85,7 +87,7 @@ export function AutocompleteInput({
   }, [debounceMs, onSearch, open, query])
 
   const typed = query.trim()
-  const hasCreateOption = typed.length > 0
+  const hasCreateOption = typed.length > 0 && !!createLabel
   const showDropdown = open && (loading || options.length > 0 || hasCreateOption)
 
   const selectCreate = () => {

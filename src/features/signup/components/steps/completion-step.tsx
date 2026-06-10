@@ -3,9 +3,9 @@
 import { UseFormReturn } from "react-hook-form";
 import { motion } from "framer-motion";
 import { CheckCircle, Sparkles, ArrowRight } from "lucide-react";
-import { SignupFormData } from "../signup-wizard";
+import { SignupFormData, StepSharedProps } from "../signup-wizard";
 
-interface CompletionStepProps {
+interface CompletionStepProps extends StepSharedProps {
   form: UseFormReturn<SignupFormData>;
   onNext: () => void;
 }

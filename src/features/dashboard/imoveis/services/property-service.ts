@@ -2,6 +2,7 @@ import { PropertyFormValues } from "../novo/schemas/property-schema";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@/shared/configs/api";
 import { useToast } from "@/hooks/use-toast"
+import { PROPERTY_CHARACTERISTICS_LABELS } from "@/lib/property"
 
 // Interface para os dados de um imóvel
 export interface Property {
@@ -9,16 +10,24 @@ export interface Property {
   title: string;
   description: string;
   slug: string;
+  property_type: string | null;
   street: string;
   neighborhood: string;
+  city: string | null;
+  state: string | null;
+  zipcode: string | null;
   complement?: string;
   size: number;
   bedrooms: number;
+  suites: number;
+  bathrooms: number;
   garages: number;
   rent: boolean;
   sale: boolean;
   value: string;
+  value_raw?: number;
   iptu_value: string;
+  condominium_value: string;
   code: string;
   qr_code: string;
   active: boolean;
@@ -26,6 +35,10 @@ export interface Property {
   characteristics: { text: string }[];
   attachments: { name: string; url: string }[];
   created_at: string;
+  total_size?: number | null;
+  rent_price?: string | null;
+  user_id?: number | null;
+  responsible_user?: { id: number; name: string } | null;
 }
 
 // Interface para a resposta da API ao criar um imóvel
@@ -59,13 +72,48 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export type PropertiesFilters = {
+  search?: string;
+  neighborhood?: { id: number | null; name: string };
+  city?: { id: number | null; name: string };
+  min_value?: number | null;
+  max_value?: number | null;
+  min_size?: number | null;
+  max_size?: number | null;
+};
+
+const buildFiltersQuery = (filters?: PropertiesFilters): string => {
+  if (!filters) return "";
+
+  const params = new URLSearchParams();
+
+  const search = filters.search?.trim();
+  if (search) params.set("search", search);
+
+  const cityName = filters.city?.name?.trim();
+  if (cityName) params.set("city_search", cityName);
+
+  const neighborhoodName = filters.neighborhood?.name?.trim();
+  if (neighborhoodName) params.set("neighborhood_search", neighborhoodName);
+
+  if (filters.min_value != null) params.set("min_value", String(filters.min_value));
+  if (filters.max_value != null) params.set("max_value", String(filters.max_value));
+  if (filters.min_size != null) params.set("min_size", String(filters.min_size));
+  if (filters.max_size != null) params.set("max_size", String(filters.max_size));
+
+  const qs = params.toString();
+  return qs ? `&${qs}` : "";
+};
+
 // Hook para buscar imóveis com paginação
-export function useProperties(page = 1) {
+export function useProperties(page = 1, filters?: PropertiesFilters) {
+  const filtersQuery = buildFiltersQuery(filters);
+
   return useQuery({
-    queryKey: ["properties", page],
+    queryKey: ["properties", page, filters ?? {}],
     queryFn: async () => {
       const response = await api
-        .get(`properties?page=${page}`)
+        .get(`properties?page=${page}${filtersQuery}`)
         .json<PaginatedResponse<Property>>();
       return response;
     },
@@ -102,6 +150,7 @@ export function useCreateProperty() {
             key !== "attachments" &&
             key !== "characteristics" &&
             key !== "purpose" &&
+            key !== "responsible_user_id" &&
             value !== undefined &&
             value !== null
           ) {
@@ -109,23 +158,27 @@ export function useCreateProperty() {
           }
         });
 
+        if (data.responsible_user_id != null) {
+          formData.append("user_id", String(data.responsible_user_id));
+        }
+
         // Adicionar características no formato correto com o campo "text"
+        // Salvamos o ID (ex: "arCondicionado"), não o label — facilita edição posterior
         if (data.characteristics && data.characteristics.length > 0) {
           data.characteristics.forEach((characteristic, index) => {
-            // Garantir que não haja problemas de codificação
             formData.append(`characteristics[${index}][text]`, characteristic);
           });
         } else {
-          // Garantir que pelo menos uma característica vazia seja enviada
           formData.append("characteristics[0][text]", "");
         }
 
-        // Adicionar imagens (máximo 5)
-        if (data.attachments && Array.isArray(data.attachments) && data.attachments.length > 0) {
-          // Garantir o máximo de 5 arquivos
-          const limitedAttachments = data.attachments.slice(0, 5);
-          limitedAttachments.forEach((attachment) => {
-            formData.append("attachments[]", attachment);
+        // Adicionar imagens (máximo 5) - apenas novos arquivos
+        if (data.attachments && Array.isArray(data.attachments)) {
+          const newFiles = data.attachments.filter(
+            (a): a is File => a instanceof File
+          );
+          newFiles.slice(0, 5).forEach((file) => {
+            formData.append("attachments[]", file);
           });
         }
 
@@ -169,12 +222,17 @@ export function useUpdateProperty() {
             key !== "attachments" &&
             key !== "characteristics" &&
             key !== "purpose" &&
+            key !== "responsible_user_id" &&
             value !== undefined &&
             value !== null
           ) {
             formData.append(key, String(value));
           }
         });
+
+        if (data.responsible_user_id != null) {
+          formData.append("user_id", String(data.responsible_user_id));
+        }
 
         // Adicionar características no formato correto com o campo "text"
         if (data.characteristics && data.characteristics.length > 0) {
@@ -186,12 +244,15 @@ export function useUpdateProperty() {
           formData.append("characteristics[0][text]", "");
         }
 
-        // Adicionar imagens (máximo 5)
-        if (data.attachments && Array.isArray(data.attachments) && data.attachments.length > 0) {
-          // Garantir o máximo de 5 arquivos
-          const limitedAttachments = data.attachments.slice(0, 5);
-          limitedAttachments.forEach((attachment) => {
-            formData.append("attachments[]", attachment);
+        // Adicionar imagens (máximo 5) - apenas novos arquivos.
+        // Anexos já existentes vêm como objetos { url, ... } e são preservados
+        // no backend, portanto não devem ser reenviados.
+        if (data.attachments && Array.isArray(data.attachments)) {
+          const newFiles = data.attachments.filter(
+            (a): a is File => a instanceof File
+          );
+          newFiles.slice(0, 5).forEach((file) => {
+            formData.append("attachments[]", file);
           });
         }
 

@@ -9,7 +9,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import { DollarSign, FileText, Building } from "lucide-react";
+import { DollarSign, FileText, Building, Home } from "lucide-react";
 import { PropertyFormValues } from "../../schemas/property-schema";
 
 interface ValuesStepProps {
@@ -19,13 +19,14 @@ interface ValuesStepProps {
 export function ValuesStep({ form }: ValuesStepProps) {
   const purpose = form.watch("purpose");
   const isRent = purpose === "rent";
+  const isBoth = purpose === "both";
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-4">
         <DollarSign className="w-5 h-5 text-blue-500" />
         <h3 className="text-lg font-medium">
-          Valores do imóvel {isRent ? "(Aluguel)" : "(Venda)"}
+          Valores do imóvel {isRent ? "(Aluguel)" : isBoth ? "(Venda e Aluguel)" : "(Venda)"}
         </h3>
       </div>
 
@@ -53,6 +54,31 @@ export function ValuesStep({ form }: ValuesStepProps) {
           )}
         />
 
+        {isBoth && (
+          <FormField
+            control={form.control}
+            name="rent_price"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-base font-medium flex items-center gap-2">
+                  <Home className="w-4 h-4" />
+                  Valor do aluguel
+                  <span className="text-red-500">*</span>
+                </FormLabel>
+                <FormControl>
+                  <CurrencyInput
+                    placeholder="Ex: R$ 2.500,00"
+                    value={field.value}
+                    onChange={field.onChange}
+                    className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
         <div className="grid gap-6 md:grid-cols-2">
           <FormField
             control={form.control}
@@ -78,7 +104,7 @@ export function ValuesStep({ form }: ValuesStepProps) {
 
           <FormField
             control={form.control}
-            name="condo_value"
+            name="condominium_value"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-base font-medium flex items-center gap-2">
@@ -107,6 +133,12 @@ export function ValuesStep({ form }: ValuesStepProps) {
             <>
               <li>• <strong>Aluguel:</strong> Valor mensal que será cobrado do inquilino</li>
               <li>• <strong>IPTU:</strong> Valor mensal (se for responsabilidade do inquilino)</li>
+              <li>• <strong>Condomínio:</strong> Valor mensal das taxas condominiais</li>
+            </>
+          ) : isBoth ? (
+            <>
+              <li>• <strong>Venda:</strong> Valor total de venda do imóvel</li>
+              <li>• <strong>Aluguel:</strong> Valor mensal de locação do imóvel</li>
               <li>• <strong>Condomínio:</strong> Valor mensal das taxas condominiais</li>
             </>
           ) : (

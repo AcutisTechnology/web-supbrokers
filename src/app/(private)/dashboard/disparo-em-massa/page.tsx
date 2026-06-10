@@ -62,7 +62,6 @@ export default function DisparoEmMassaPage() {
             <Bot className="w-5 h-5 text-[#9747FF]" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold text-[#141414]">Disparo</h1>
             <p className="text-[#777777]">Gerencie suas campanhas de disparo automatizado com agentes inteligentes</p>
           </div>
         </div>

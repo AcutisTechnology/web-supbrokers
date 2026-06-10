@@ -5,6 +5,7 @@ import { ProposalsHeader } from "./proposals-header";
 import { ProposalsTable } from "./proposals-table";
 import { useProposals } from "../hooks/use-proposals";
 import { Pagination } from "@/components/ui/pagination"; // Preciso verificar se esse componente existe no local correto
+import { TopNav } from "@/features/dashboard/imoveis/top-nav";
 
 export function ProposalsPage() {
   const [page, setPage] = useState(1);
@@ -14,7 +15,9 @@ export function ProposalsPage() {
   const { data, isLoading } = useProposals(page, search, status === "all" ? undefined : status);
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+    <>
+      <TopNav title_secondary="Propostas" />
+      <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <ProposalsHeader 
         search={search} 
         setSearch={setSearch} 
@@ -42,5 +45,6 @@ export function ProposalsPage() {
         </div>
       )}
     </div>
+    </>
   );
 }

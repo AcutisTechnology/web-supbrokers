@@ -12,6 +12,7 @@ import { FlowPresets, flowPresets, type FlowPresetKey } from "./flow-presets";
 import { PaymentBlock, type PaymentBlockKey, type PaymentCategory } from "./payment-block";
 import { SimulationSummary } from "./simulation-summary";
 import { Calculator, ChevronDown, ChevronUp, RotateCcw, Sparkles } from "lucide-react";
+import { TopNav } from "@/features/dashboard/imoveis/top-nav";
 
 type OptionalFeeKey = "itbi" | "registro" | "escritura" | "banco_seguros";
 
@@ -34,13 +35,14 @@ type FlowState = {
 
 const STORAGE_KEY = "calculadora_fluxo_data";
 
-const FLOW_KEYS: PaymentBlockKey[] = ["entrada", "mensais", "semestrais", "chaves"];
-const FLOW_KEYS_NO_CHAVES: PaymentBlockKey[] = ["entrada", "mensais", "semestrais"];
+const FLOW_KEYS: PaymentBlockKey[] = ["entrada", "mensais", "semestrais", "anuais", "chaves"];
+const FLOW_KEYS_NO_CHAVES: PaymentBlockKey[] = ["entrada", "mensais", "semestrais", "anuais"];
 
 const DEFAULT_WEIGHTS: Record<PaymentBlockKey, number> = {
   entrada: 25,
   mensais: 25,
   semestrais: 25,
+  anuais: 0,
   chaves: 25,
 };
 
@@ -48,6 +50,7 @@ const DEFAULT_INSTALLMENTS: Record<PaymentBlockKey, number> = {
   entrada: 1,
   mensais: 24,
   semestrais: 4,
+  anuais: 2,
   chaves: 1,
 };
 
@@ -72,8 +75,8 @@ function formatCurrencyFromCents(cents: number) {
 }
 
 function formatPercent4(value: number) {
-  const rounded = Math.round((Number.isFinite(value) ? value : 0) * 10000) / 10000;
-  return rounded.toLocaleString("pt-BR", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+  const rounded = Math.round((Number.isFinite(value) ? value : 0) * 100) / 100;
+  return rounded.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function formatPercentCompact(value: number) {
@@ -119,6 +122,7 @@ function createDefaultCategories(): Record<PaymentBlockKey, PaymentCategory> {
     entrada: { amountCents: 0, installments: DEFAULT_INSTALLMENTS.entrada },
     mensais: { amountCents: 0, installments: DEFAULT_INSTALLMENTS.mensais },
     semestrais: { amountCents: 0, installments: DEFAULT_INSTALLMENTS.semestrais },
+    anuais: { amountCents: 0, installments: DEFAULT_INSTALLMENTS.anuais },
     chaves: { amountCents: 0, installments: DEFAULT_INSTALLMENTS.chaves },
   };
 }
@@ -146,7 +150,7 @@ function computeChavesRemainder(totalCents: number, categories: Record<PaymentBl
   }, {} as Record<PaymentBlockKey, number>);
 
   const sumWeights = FLOW_KEYS_NO_CHAVES.reduce((acc, k) => acc + weights[k], 0);
-  const fallback = sumWeights > 0 ? weights : ({ entrada: 1, mensais: 1, semestrais: 1 } as Record<PaymentBlockKey, number>);
+  const fallback = sumWeights > 0 ? weights : ({ entrada: 1, mensais: 1, semestrais: 1, anuais: 1 } as Record<PaymentBlockKey, number>);
   const dist = distributeCents(total, FLOW_KEYS_NO_CHAVES, fallback);
 
   return {
@@ -154,6 +158,7 @@ function computeChavesRemainder(totalCents: number, categories: Record<PaymentBl
     entrada: { ...categories.entrada, amountCents: dist.entrada },
     mensais: { ...categories.mensais, amountCents: dist.mensais },
     semestrais: { ...categories.semestrais, amountCents: dist.semestrais },
+    anuais: { ...categories.anuais, amountCents: dist.anuais },
     chaves: { ...categories.chaves, amountCents: 0 },
   };
 }
@@ -178,14 +183,15 @@ function redistributeAllForTotalChange(totalCents: number, prev: Record<PaymentB
 
   const weights3 = FLOW_KEYS_NO_CHAVES.reduce((acc, k) => ({ ...acc, [k]: Math.max(0, Math.floor(prev[k].amountCents || 0)) }), {} as Record<PaymentBlockKey, number>);
   const sumWeights3 = FLOW_KEYS_NO_CHAVES.reduce((acc, k) => acc + weights3[k], 0);
-  const dist3 = distributeCents(targetOthers, FLOW_KEYS_NO_CHAVES, sumWeights3 > 0 ? weights3 : ({ entrada: 1, mensais: 1, semestrais: 1 } as Record<PaymentBlockKey, number>));
+  const dist3 = distributeCents(targetOthers, FLOW_KEYS_NO_CHAVES, sumWeights3 > 0 ? weights3 : ({ entrada: 1, mensais: 1, semestrais: 1, anuais: 1 } as Record<PaymentBlockKey, number>));
 
   const next = {
     ...prev,
     entrada: { ...prev.entrada, amountCents: dist3.entrada },
     mensais: { ...prev.mensais, amountCents: dist3.mensais },
     semestrais: { ...prev.semestrais, amountCents: dist3.semestrais },
-    chaves: { ...prev.chaves, amountCents: total - (dist3.entrada + dist3.mensais + dist3.semestrais) },
+    anuais: { ...prev.anuais, amountCents: dist3.anuais },
+    chaves: { ...prev.chaves, amountCents: total - (dist3.entrada + dist3.mensais + dist3.semestrais + dist3.anuais) },
   };
 
   return next;
@@ -455,6 +461,7 @@ export function FlowCalculatorPage() {
       { key: "entrada", label: "Entrada" },
       { key: "mensais", label: "Mensais" },
       { key: "semestrais", label: "Semestrais" },
+      { key: "anuais", label: "Anuais" },
       { key: "chaves", label: "Chaves" },
     ];
 
@@ -635,13 +642,10 @@ export function FlowCalculatorPage() {
   }, [state]);
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <>
+    <TopNav title_secondary="Calculadora de Fluxo" />
+    <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#4A316A]">Calculadora de Fluxo</h1>
-          <p className="text-[#969696]">Simule o fluxo de pagamento e copie o resumo para o cliente</p>
-        </div>
-
         <div className="flex flex-col sm:flex-row gap-2">
           <Button variant="outline" className="bg-white border-[#E2E2E2]" onClick={handleAdjustHundred}>
             <Calculator className="w-4 h-4" />
@@ -713,26 +717,28 @@ export function FlowCalculatorPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-xl border border-[#E2E2E2] bg-gray-50 px-4 py-3">
-            <div>
-              <p className="text-sm font-bold text-[#4A316A]">Auto-balancear percentuais</p>
-              <p className="text-xs text-[#969696]">Mantém automaticamente o total em 100%</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="flex items-center justify-between rounded-xl border border-[#E2E2E2] bg-gray-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-bold text-[#4A316A]">Auto-balancear percentuais</p>
+                <p className="text-xs text-[#969696]">Mantém automaticamente o total em 100%</p>
+              </div>
+              <Switch
+                checked={state.autoBalance}
+                onCheckedChange={(checked) => setState((prev) => ({ ...prev, autoBalance: checked }))}
+              />
             </div>
-            <Switch
-              checked={state.autoBalance}
-              onCheckedChange={(checked) => setState((prev) => ({ ...prev, autoBalance: checked }))}
-            />
-          </div>
 
-          <div className="flex items-center justify-between rounded-xl border border-[#E2E2E2] bg-gray-50 px-4 py-3">
-            <div>
-              <p className="text-sm font-bold text-[#4A316A]">Chaves completar 100%</p>
-              <p className="text-xs text-[#969696]">Chaves vira o restante exato do fluxo</p>
+            <div className="flex items-center justify-between rounded-xl border border-[#E2E2E2] bg-gray-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-bold text-[#4A316A]">Chaves completar 100%</p>
+                <p className="text-xs text-[#969696]">Chaves vira o restante exato do fluxo</p>
+              </div>
+              <Checkbox
+                checked={state.chavesCompletar}
+                onCheckedChange={(checked) => handleToggleChavesCompletar(checked === true)}
+              />
             </div>
-            <Checkbox
-              checked={state.chavesCompletar}
-              onCheckedChange={(checked) => handleToggleChavesCompletar(checked === true)}
-            />
           </div>
         </CardContent>
       </Card>
@@ -769,6 +775,17 @@ export function FlowCalculatorPage() {
           onInstallmentsChange={(v) => handleInstallmentsChange("semestrais", v)}
         />
         <PaymentBlock
+          title="Anuais"
+          blockKey="anuais"
+          totalCents={totalCents}
+          category={categories.anuais}
+          chavesCompletar={state.chavesCompletar}
+          onPercentCommit={(v) => setCategoryPercent("anuais", v)}
+          onAmountCommit={(c) => setCategoryAmount("anuais", c)}
+          onInstallmentsChange={(v) => handleInstallmentsChange("anuais", v)}
+        />
+        <div className="md:col-span-2">
+        <PaymentBlock
           title="Chaves"
           blockKey="chaves"
           totalCents={totalCents}
@@ -779,6 +796,7 @@ export function FlowCalculatorPage() {
           onAmountCommit={(c) => setCategoryAmount("chaves", c)}
           onInstallmentsChange={(v) => handleInstallmentsChange("chaves", v)}
         />
+        </div>
       </div>
 
       <Card className="border-[#E2E2E2] shadow-sm">
@@ -882,5 +900,6 @@ export function FlowCalculatorPage() {
         Os valores desta simulação são estimativas e podem variar conforme condições comerciais e reajustes contratuais.
       </p>
     </div>
+    </>
   );
 }

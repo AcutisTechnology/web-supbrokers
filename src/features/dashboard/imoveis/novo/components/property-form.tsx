@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Loader2, RefreshCw, Film } from "lucide-react";
-import { useState, useLayoutEffect } from "react";
+import { useState, useLayoutEffect, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -28,13 +28,25 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
-import { FileUpload } from "@/components/ui/file-upload";
+import { FileUpload, type UploadItem } from "@/components/ui/file-upload";
 import { PropertyPreview } from "./property-preview";
+import { QualidadeAnuncioMeter } from "./qualidade-anuncio-meter";
 import { useCreateProperty, useUpdateProperty } from "../../services/property-service";
-import { PropertyFormValues, defaultValues, propertySchema } from "../schemas/property-schema";
+import {
+  PROPERTY_TYPES,
+  PROPERTY_TYPES_UI,
+  PROPERTY_TYPE_LABELS,
+  PropertyFormValues,
+  defaultValues,
+  propertySchema,
+} from "../schemas/property-schema";
 import { formatCurrency } from "@/lib/utils";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useCurrentUser } from "@/shared/hooks/use-current-user";
+import { api } from "@/shared/configs/api";
+
+type Broker = { id: number; name: string; user_type?: string | null };
 
 interface PropertyFormProps {
   initialValues?: Partial<PropertyFormValues>;
@@ -48,6 +60,17 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
   const queryClient = useQueryClient();
   const createPropertyMutation = useCreateProperty();
   const updatePropertyMutation = useUpdateProperty();
+  const { isBroker, isManager, user, userId } = useCurrentUser();
+
+  const { data: brokersData } = useQuery({
+    queryKey: ["brokers", "list"],
+    queryFn: () => api.get("users").json<{ data: Broker[] }>(),
+    enabled: isManager,
+  });
+
+  const brokers = (brokersData?.data ?? []).filter(
+    (b) => b.user_type === "corretor" || b.user_type === "admin"
+  );
 
   const form = useForm<PropertyFormValues>({
     resolver: zodResolver(propertySchema),
@@ -55,6 +78,13 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
   });
 
   const watchedValues = form.watch();
+  const selectedResponsibleId = form.watch("responsible_user_id");
+
+  useEffect(() => {
+    if (isBroker && userId && !form.getValues("responsible_user_id")) {
+      form.setValue("responsible_user_id", userId);
+    }
+  }, [isBroker, userId, form]);
 
   // Invalidar consultas quando o componente for montado para garantir dados atualizados ao retornar
   useLayoutEffect(() => {
@@ -66,34 +96,59 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
 
   // Lista de características disponíveis - Detalhes do imóvel
   const propertyCharacteristics = [
-    { id: "aquecimentoForm", label: "Aquecimento" },
-    { id: "arCondicionadoForm", label: "Ar condicionado" },
-    { id: "areaServicoForm", label: "Área de serviço" },
-    { id: "armariosCozinhaForm", label: "Armários na cozinha" },
-    { id: "armariosQuartoForm", label: "Armários no quarto" },
-    { id: "banheiroQuartoForm", label: "Banheiro no quarto" },
-    { id: "churrasqueiraForm", label: "Churrasqueira" },
-    { id: "internetForm", label: "Internet" },
-    { id: "mobiliadoForm", label: "Mobiliado" },
-    { id: "piscinaForm", label: "Piscina" },
-    { id: "porteiro24hForm", label: "Porteiro 24h" },
-    { id: "quartoServicoForm", label: "Quarto de serviço" },
-    { id: "tvCaboForm", label: "Tv a cabo" },
-    { id: "varandaForm", label: "Varanda" },
+    { id: "aquecimento", label: "Aquecimento" },
+    { id: "arCondicionado", label: "Ar condicionado" },
+    { id: "areaServico", label: "Área de serviço" },
+    { id: "armariosCozinha", label: "Armários na cozinha" },
+    { id: "armariosQuarto", label: "Armários no quarto" },
+    { id: "banheiroQuarto", label: "Banheiro no quarto" },
+    { id: "churrasqueira", label: "Churrasqueira" },
+    { id: "closet", label: "Closet" },
+    { id: "cozinha", label: "Cozinha" },
+    { id: "entradaCaminhoes", label: "Entrada para caminhões" },
+    { id: "frenteParaOLeste", label: "Frente para o leste" },
+    { id: "internet", label: "Internet" },
+    { id: "jardim", label: "Jardim" },
+    { id: "mobiliado", label: "Mobiliado" },
+    { id: "piscina", label: "Piscina" },
+    { id: "plano", label: "Plano" },
+    { id: "porteiro24h", label: "Porteiro 24h" },
+    { id: "quartoServico", label: "Quarto de serviço" },
+    { id: "redeAguaEsgoto", label: "Rede de água e esgoto" },
+    { id: "refeitorio", label: "Refeitório" },
+    { id: "ruaAsfaltada", label: "Rua asfaltada" },
+    { id: "tvCabo", label: "Tv a cabo" },
+    { id: "varanda", label: "Varanda" },
   ];
 
   // Lista de características disponíveis - Detalhes do condomínio
   const condominiumCharacteristics = [
-    { id: "academiaCondominioForm", label: "Academia" },
-    { id: "areaMuradaForm", label: "Área murada" },
-    { id: "condominioFechadoForm", label: "Condomínio fechado" },
-    { id: "elevadorForm", label: "Elevador" },
-    { id: "permitidoAnimaisForm", label: "Permitido animais" },
-    { id: "piscinaCondominioForm", label: "Piscina" },
-    { id: "portaoEletronicoForm", label: "Portão eletrônico" },
-    { id: "portariaForm", label: "Portaria" },
-    { id: "salaoFestasCondominioForm", label: "Salão de festas" },
-    { id: "seguranca24hForm", label: "Segurança 24h" },
+    { id: "academiaCondominio", label: "Academia" },
+    { id: "acessoDeficientes", label: "Acesso para deficientes" },
+    { id: "areaMurada", label: "Área murada" },
+    { id: "bicicletario", label: "Bicicletário" },
+    { id: "cinema", label: "Cinema" },
+    { id: "condominioFechado", label: "Condomínio fechado" },
+    { id: "coworking", label: "Coworking" },
+    { id: "elevador", label: "Elevador" },
+    { id: "espacoGourmet", label: "Espaço gourmet" },
+    { id: "estacionamento", label: "Estacionamento" },
+    { id: "lavanderia", label: "Lavanderia" },
+    { id: "permitidoAnimais", label: "Permitido animais" },
+    { id: "piscinaCondominio", label: "Piscina" },
+    { id: "playground", label: "Playground" },
+    { id: "portaoEletronico", label: "Portão eletrônico" },
+    { id: "portaria", label: "Portaria" },
+    { id: "quadraSquash", label: "Quadra de squash" },
+    { id: "quadraTenis", label: "Quadra de tênis" },
+    { id: "quadraPoliesportiva", label: "Quadra poliesportiva" },
+    { id: "restaurante", label: "Restaurante" },
+    { id: "salaoFestasCondominio", label: "Salão de festas" },
+    { id: "salaoJogos", label: "Salão de jogos" },
+    { id: "sauna", label: "Sauna" },
+    { id: "seguranca24h", label: "Segurança 24h" },
+    { id: "spa", label: "Spa" },
+    { id: "vestiario", label: "Vestiário" },
   ];
 
   // Função para lidar com a seleção de características
@@ -138,10 +193,12 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
 
   const onSubmit = async (data: PropertyFormValues) => {
     try {
-      // Definir rent ou sale com base na seleção
       if (data.purpose === "rent") {
         data.rent = 1;
         data.sale = 0;
+      } else if (data.purpose === "both") {
+        data.rent = 1;
+        data.sale = 1;
       } else {
         data.rent = 0;
         data.sale = 1;
@@ -271,31 +328,32 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                 )}
               />
               
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="street"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Endereço<span className="text-red-500">*</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          className="bg-white"
-                          placeholder="Rua, número, complemento"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="street"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Endereço<span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        className="bg-white"
+                        placeholder="Rua, número, complemento"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-4 sm:grid-cols-4">
                 <FormField
                   control={form.control}
                   name="neighborhood"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="sm:col-span-2">
                       <FormLabel>
                         Bairro<span className="text-red-500">*</span>
                       </FormLabel>
@@ -310,8 +368,102 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cidade</FormLabel>
+                      <FormControl>
+                        <Input
+                          className="bg-white"
+                          placeholder="Cidade"
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>UF</FormLabel>
+                      <FormControl>
+                        <Input
+                          maxLength={2}
+                          className="bg-white uppercase"
+                          placeholder="SP"
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <FormField
+                  control={form.control}
+                  name="zipcode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CEP</FormLabel>
+                      <FormControl>
+                        <Input
+                          className="bg-white"
+                          placeholder="00000-000"
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="property_type"
+                  render={({ field }) => (
+                    <FormItem className="sm:col-span-2">
+                      <FormLabel>Tipo do imóvel</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value ?? undefined}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="bg-white">
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {PROPERTY_TYPES_UI.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {PROPERTY_TYPE_LABELS[type]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
@@ -319,7 +471,7 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Vender ou alugar?<span className="text-red-500">*</span>
+                        Finalidade<span className="text-red-500">*</span>
                       </FormLabel>
                       <Select
                         onValueChange={field.onChange}
@@ -331,8 +483,9 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="sell">Vender</SelectItem>
-                          <SelectItem value="rent">Alugar</SelectItem>
+                          <SelectItem value="sell">Venda</SelectItem>
+                          <SelectItem value="rent">Aluguel</SelectItem>
+                          <SelectItem value="both">Venda e Aluguel</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -349,7 +502,7 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                       </FormLabel>
                       <FormControl>
                         <div className="flex gap-2">
-                          <Button 
+                          <Button
                             type="button"
                             variant="outline"
                             size="icon"
@@ -370,27 +523,107 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                   )}
                 />
               </div>
-              
+
+              {(isBroker || isManager) && (
+                <FormItem>
+                  <FormLabel>Responsável</FormLabel>
+                  <FormControl>
+                    {isBroker ? (
+                      <div className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                        {user?.name ?? "—"}
+                      </div>
+                    ) : (
+                      <Select
+                        value={selectedResponsibleId != null ? String(selectedResponsibleId) : "none"}
+                        onValueChange={(val) =>
+                          form.setValue(
+                            "responsible_user_id",
+                            val === "none" ? null : Number(val)
+                          )
+                        }
+                      >
+                        <SelectTrigger className="bg-white">
+                          <SelectValue placeholder="Selecione o responsável" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Nenhum</SelectItem>
+                          {brokers.map((b) => (
+                            <SelectItem key={b.id} value={String(b.id)}>
+                              {b.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+
               <div className="grid gap-4 sm:grid-cols-3">
-                <FormField
-                  control={form.control}
-                  name="value"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Valor<span className="text-red-500">*</span>
-                      </FormLabel>
-                      <FormControl>
-                        <CurrencyInput
-                          placeholder="Valor do imóvel"
-                          value={field.value}
-                          onChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {watchedValues.purpose === "both" ? (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="value"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Valor de venda<span className="text-red-500">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <CurrencyInput
+                              placeholder="Valor de venda"
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="rent_price"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Valor de aluguel<span className="text-red-500">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <CurrencyInput
+                              placeholder="Valor de aluguel"
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                ) : (
+                  <FormField
+                    control={form.control}
+                    name="value"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {watchedValues.purpose === "rent" ? "Valor do aluguel" : "Valor de venda"}
+                          <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <CurrencyInput
+                            placeholder="Valor do imóvel"
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={form.control}
                   name="iptu_value"
@@ -410,7 +643,7 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                 />
                 <FormField
                   control={form.control}
-                  name="condo_value"
+                  name="condominium_value"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Valor do Condomínio</FormLabel>
@@ -427,14 +660,14 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                 />
               </div>
               
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
                 <FormField
                   control={form.control}
                   name="bedrooms"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Número de quartos<span className="text-red-500">*</span>
+                        Quartos<span className="text-red-500">*</span>
                       </FormLabel>
                       <Select
                         onValueChange={(value) => field.onChange(parseInt(value))}
@@ -450,7 +683,64 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                           <SelectItem value="1">1</SelectItem>
                           <SelectItem value="2">2</SelectItem>
                           <SelectItem value="3">3</SelectItem>
-                          <SelectItem value="4">4+</SelectItem>
+                          <SelectItem value="4">4</SelectItem>
+                          <SelectItem value="5">5+</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="suites"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Suítes</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                        value={field.value?.toString() ?? "0"}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="bg-white">
+                            <SelectValue placeholder="Escolha" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="0">0</SelectItem>
+                          <SelectItem value="1">1</SelectItem>
+                          <SelectItem value="2">2</SelectItem>
+                          <SelectItem value="3">3</SelectItem>
+                          <SelectItem value="4">4</SelectItem>
+                          <SelectItem value="5">5+</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="bathrooms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Banheiros</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                        value={field.value?.toString() ?? "0"}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="bg-white">
+                            <SelectValue placeholder="Escolha" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="0">0</SelectItem>
+                          <SelectItem value="1">1</SelectItem>
+                          <SelectItem value="2">2</SelectItem>
+                          <SelectItem value="3">3</SelectItem>
+                          <SelectItem value="4">4</SelectItem>
+                          <SelectItem value="5">5+</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -463,7 +753,7 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Área(m²)<span className="text-red-500">*</span>
+                        Área útil (m²)<span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -479,10 +769,30 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                 />
                 <FormField
                   control={form.control}
+                  name="total_size"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Área total (m²)</FormLabel>
+                      <FormControl>
+                        <Input
+                          className="bg-white"
+                          type="number"
+                          placeholder="m²"
+                          min="0"
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value === "" ? null : e.target.value)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="garages"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Vagas na garagem</FormLabel>
+                      <FormLabel>Vagas</FormLabel>
                       <Select
                         onValueChange={(value) => field.onChange(parseInt(value))}
                         defaultValue={field.value?.toString()}
@@ -496,7 +806,8 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                           <SelectItem value="0">0</SelectItem>
                           <SelectItem value="1">1</SelectItem>
                           <SelectItem value="2">2</SelectItem>
-                          <SelectItem value="3">3+</SelectItem>
+                          <SelectItem value="3">3</SelectItem>
+                          <SelectItem value="4">4+</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -564,7 +875,7 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
                     <FormItem>
                       <FormControl>
                         <FileUpload
-                          value={field.value as File[]}
+                          value={field.value as UploadItem[]}
                           onChange={field.onChange}
                           multiple={true}
                           accept="*"
@@ -609,6 +920,7 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
             <h2 className="mb-1 text-lg font-medium">Visualização</h2>
             <PropertyPreview data={watchedValues} />
           </div>
+          <QualidadeAnuncioMeter data={watchedValues} />
         </div>
       </div>
     </div>

@@ -224,10 +224,6 @@ export default function LinksUteisPage() {
       <TopNav title_secondary="Utilidades" />
 
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-[#141414]">Utilidades</h1>
-          <p className="text-[#777777]">Gerencie links e contatos importantes para uso diário dos corretores.</p>
-        </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={openCreate}>

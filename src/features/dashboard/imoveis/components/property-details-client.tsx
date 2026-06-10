@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { PROPERTY_FALLBACK_IMAGE, resolveCharacteristicLabel } from "@/lib/property";
 import { 
   Carousel,
   CarouselContent,
@@ -50,6 +51,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import React from "react";
+import { QRCodeCanvas } from "qrcode.react";
 import { useQueryClient } from "@tanstack/react-query";
 
 export function PropertyDetailsClient({ slug }: { slug: string }) {
@@ -58,6 +60,7 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [publicLink, setPublicLink] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [propertyPublicUrl, setPropertyPublicUrl] = useState("");
   const queryClient = useQueryClient();
   
   // Buscar dados do imóvel
@@ -78,7 +81,12 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
   // Efeito para marcar quando o componente está montado no cliente
   useLayoutEffect(() => {
     setIsMounted(true);
-  }, []);
+    const userData = localStorage.getItem('@SupBrokers:user');
+    const user = userData ? JSON.parse(userData).user : null;
+    if (user?.slug) {
+      setPropertyPublicUrl(`${window.location.origin}/${user.slug}/imovel/${slug}`);
+    }
+  }, [slug]);
 
   // Função para compartilhar o imóvel
   const handleShare = () => {
@@ -139,22 +147,24 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
 
   // Função para gerar link público
   const handleGeneratePublicLink = () => {
-    if (!isMounted) return;
-    
-    const userData = localStorage.getItem('@SupBrokers:user');
-    const user = userData ? JSON.parse(userData).user : null;
-
-    console.log(user)
-    
-    const baseUrl = window.location.origin;
-    const publicUrl = `${baseUrl}/${user?.slug}/imovel/${slug}`;
-    setPublicLink(publicUrl);
-    
-    navigator.clipboard.writeText(publicUrl);
+    if (!propertyPublicUrl) return;
+    setPublicLink(propertyPublicUrl);
+    navigator.clipboard.writeText(propertyPublicUrl);
     toast({
       title: "Link público copiado!",
       description: "O link foi copiado para a área de transferência.",
     });
+  };
+
+  // Download do QR Code como PNG
+  const handleDownloadQrCode = () => {
+    const canvas = document.getElementById('property-qrcode') as HTMLCanvasElement;
+    if (!canvas) return;
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.download = `qrcode-${slug}.png`;
+    a.href = url;
+    a.click();
   };
 
   // Formatar o valor para exibição
@@ -213,19 +223,29 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
                   <DialogHeader>
                     <DialogTitle>QR Code do Imóvel</DialogTitle>
                     <DialogDescription>
-                      Escaneie este QR Code para acessar o imóvel
+                      Escaneie para acessar a página pública do imóvel
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="flex justify-center p-4">
-                    {property.qr_code ? (
-                      <img 
-                        src={property.qr_code} 
-                        alt="QR Code do imóvel" 
-                        className="w-64 h-64"
-                      />
+                  <div className="flex flex-col items-center gap-4 p-4">
+                    {isMounted && propertyPublicUrl ? (
+                      <>
+                        <QRCodeCanvas
+                          id="property-qrcode"
+                          value={propertyPublicUrl}
+                          size={256}
+                          level="M"
+                          includeMargin
+                        />
+                        <p className="text-xs text-gray-500 break-all text-center max-w-xs">
+                          {propertyPublicUrl}
+                        </p>
+                        <Button size="sm" variant="outline" onClick={handleDownloadQrCode}>
+                          Download PNG
+                        </Button>
+                      </>
                     ) : (
                       <div className="w-64 h-64 bg-gray-100 flex items-center justify-center">
-                        <p className="text-gray-500">QR Code não disponível</p>
+                        <p className="text-gray-500">Carregando QR Code...</p>
                       </div>
                     )}
                   </div>
@@ -368,8 +388,13 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
                   )}
                 </div>
               ) : (
-                <div className="h-[300px] md:h-[400px] bg-gray-100 flex items-center justify-center">
-                  <p className="text-gray-500">Sem imagens disponíveis</p>
+                <div className="relative h-[300px] md:h-[400px] w-full">
+                  <Image
+                    src={PROPERTY_FALLBACK_IMAGE}
+                    alt="Imóvel sem imagem"
+                    fill
+                    className="object-cover"
+                  />
                 </div>
               )}
             </div>
@@ -429,6 +454,12 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
                       Publicado em {new Date(property.created_at).toLocaleDateString('pt-BR')}
                     </span>
                   </div>
+                  {property.responsible_user?.name && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Users className="h-4 w-4" />
+                      <span>Responsável: <strong>{property.responsible_user.name}</strong></span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -447,7 +478,7 @@ export function PropertyDetailsClient({ slug }: { slug: string }) {
                 <div className="flex flex-wrap gap-2">
                   {property.characteristics.map((characteristic, index) => (
                     <Badge key={index} variant="outline" className="text-sm">
-                      {characteristic.text}
+                      {resolveCharacteristicLabel(characteristic.text)}
                     </Badge>
                   ))}
                 </div>

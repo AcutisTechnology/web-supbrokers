@@ -20,13 +20,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useProperties } from "@/features/dashboard/imoveis/services/property-service";
-import { useCustomers } from "@/features/dashboard/clientes/services/customer-service";
+import { useCrmLeads, useCrmMetrics } from "@/features/dashboard/crm/services/crm-service";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/shared/hooks/auth/use-auth";
+import { PROPERTY_FALLBACK_IMAGE } from "@/lib/property";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -69,53 +70,40 @@ export default function DashboardPage() {
     window.open(publicUrl, '_blank');
   };
   
-  // Buscar imóveis e clientes
-  const { 
-    data: propertiesData, 
-    isLoading: isLoadingProperties, 
+  // Buscar imóveis e leads
+  const {
+    data: propertiesData,
+    isLoading: isLoadingProperties,
     isError: isErrorProperties,
     error: errorProperties
   } = useProperties(1);
-  
-  const { 
-    data: customersData, 
-    isLoading: isLoadingCustomers, 
-    isError: isErrorCustomers,
-    error: errorCustomers
-  } = useCustomers(1);
-  
+
+  const { data: leadsData, isLoading: isLoadingLeads } = useCrmLeads({ sort: "recent", direction: "desc" });
+  const { data: metricsData } = useCrmMetrics();
+
   // Verificar se o componente está montado no cliente
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  
-  // Calcular o total de imóveis e o limite
+
+  // Calcular o total de imóveis
   const totalProperties = propertiesData?.meta?.total || 0;
-  const propertyLimit = 10; // Limite fictício, pode ser ajustado conforme necessário
-  
+
   // Obter o imóvel mais recente
-  const latestProperty = propertiesData?.data && propertiesData.data.length > 0 
-    ? propertiesData.data[0] 
+  const latestProperty = propertiesData?.data && propertiesData.data.length > 0
+    ? propertiesData.data[0]
     : null;
-  
-  // Obter o cliente mais recente
-  const latestCustomer = customersData?.data && customersData.data.length > 0 
-    ? customersData.data[0] 
-    : null;
-    
-  // Calcular estatísticas
-  const totalCustomers = customersData?.data?.length || 0;
-  const interestedCustomers = customersData?.data?.filter(
-    customer => customer.interested_properties && customer.interested_properties.length > 0
-  ).length || 0;
-  const interestedPercentage = totalCustomers > 0 
-    ? Math.round((interestedCustomers / totalCustomers) * 100) 
-    : 0;
-  
+
+  // Leads e métricas do CRM
+  const latestLead = leadsData?.[0] ?? null;
+  const totalLeads = metricsData?.total_leads ?? 0;
+  const wonLeads = metricsData?.won_leads ?? 0;
+  const conversionRate = metricsData?.conversion_rate ?? 0;
+
   // Verificar se está carregando ou se houve erro
-  const isLoading = isLoadingProperties || isLoadingCustomers;
-  const isError = isErrorProperties || isErrorCustomers;
-  const error = errorProperties || errorCustomers;
+  const isLoading = isLoadingProperties || isLoadingLeads;
+  const isError = isErrorProperties;
+  const error = errorProperties;
 
   // Personalizar mensagem de erro para 403
   const errorMessage = error?.message?.includes('403')
@@ -138,7 +126,7 @@ export default function DashboardPage() {
       {/* Cabeçalho com saudação e data */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-gradient-to-r from-[#9747ff]/10 to-white p-4 sm:p-6 rounded-xl">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#141414]">Olá, Corretor</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#141414]">Olá, {user?.user?.name?.split(" ")[0] ?? "Corretor"}</h1>
           <p className="text-[#969696] mt-1 text-sm sm:text-base">{formattedDate}</p>
         </div>
         <div className="mt-4 sm:mt-0 flex items-center gap-2 sm:gap-3">
@@ -156,25 +144,25 @@ export default function DashboardPage() {
       {/* Card do Link Público */}
       <Card className="bg-gradient-to-r from-[#9747ff]/5 to-transparent">
         <CardContent className="p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#9747ff]/10 rounded-full flex items-center justify-center">
-                <LinkIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#9747ff]" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="w-10 h-10 bg-[#9747ff]/10 rounded-full flex items-center justify-center">
+                <LinkIcon className="w-5 h-5 text-[#9747ff]" />
               </div>
               <div>
-                <h3 className="font-medium text-base sm:text-lg">Seu Link Público</h3>
-                <p className="text-xs sm:text-sm text-[#969696]">Compartilhe este link com seus clientes</p>
+                <h3 className="font-medium text-sm sm:text-base">Seu Link Público</h3>
+                <p className="text-xs text-[#969696]">Compartilhe este link com seus clientes</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <div className="bg-white px-3 sm:px-4 py-2 rounded-lg border flex items-center gap-2 flex-1 sm:flex-none sm:min-w-[200px]">
-                <span className="text-xs sm:text-sm text-[#141414] truncate">{publicUrl}</span>
+            <div className="min-w-0 flex-1 sm:max-w-xs">
+              <div className="bg-white px-3 py-2 rounded-lg border flex items-center gap-1 w-full min-w-0">
+                <span className="text-xs text-[#141414] truncate flex-1 min-w-0">{publicUrl}</span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleCopyLink}
                   disabled={!publicUrl}
-                  className="h-8 w-8 p-0 hover:bg-transparent"
+                  className="h-7 w-7 p-0 shrink-0 hover:bg-transparent"
                 >
                   {isCopied ? (
                     <Check className="w-4 h-4 text-green-500" />
@@ -182,13 +170,12 @@ export default function DashboardPage() {
                     <Copy className="w-4 h-4 text-[#9747ff]" />
                   )}
                 </Button>
-
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleNavigateToLink}
                   disabled={!publicUrl}
-                  className="h-8 p-0 hover:bg-transparent cursor-pointer"
+                  className="h-7 w-7 p-0 shrink-0 hover:bg-transparent"
                 >
                   <Navigation className="w-4 h-4 text-[#9747ff]" />
                 </Button>
@@ -231,32 +218,32 @@ export default function DashboardPage() {
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs sm:text-sm font-medium text-[#969696]">Total de Clientes</p>
-                    <h3 className="text-xl sm:text-2xl font-bold mt-1">{totalCustomers}</h3>
+                    <p className="text-xs sm:text-sm font-medium text-[#969696]">Total de Leads</p>
+                    <h3 className="text-xl sm:text-2xl font-bold mt-1">{totalLeads}</h3>
                   </div>
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#16ae4f]/10 rounded-full flex items-center justify-center">
                     <Users className="w-5 h-5 sm:w-6 sm:h-6 text-[#16ae4f]" />
                   </div>
                 </div>
                 <div className="mt-3 sm:mt-4 text-xs text-[#969696]">
-                  <span className="text-green-600 font-medium">+12%</span> desde o último mês
+                  <span className="text-green-600 font-medium">{wonLeads}</span> ganhos
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card className="border-l-4 border-l-[#f59e0b]">
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs sm:text-sm font-medium text-[#969696]">Taxa de Interesse</p>
-                    <h3 className="text-xl sm:text-2xl font-bold mt-1">{interestedPercentage}%</h3>
+                    <p className="text-xs sm:text-sm font-medium text-[#969696]">Taxa de Conversão</p>
+                    <h3 className="text-xl sm:text-2xl font-bold mt-1">{conversionRate}%</h3>
                   </div>
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#f59e0b]/10 rounded-full flex items-center justify-center">
                     <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-[#f59e0b]" />
                   </div>
                 </div>
                 <div className="mt-3 sm:mt-4 text-xs text-[#969696]">
-                  <span className="text-green-600 font-medium">{interestedCustomers}</span> clientes interessados
+                  leads convertidos em vendas
                 </div>
               </CardContent>
             </Card>
@@ -288,16 +275,23 @@ export default function DashboardPage() {
                     <Building2 className="w-5 h-5 text-[#9747ff]" />
                     <CardTitle className="text-base sm:text-lg font-medium">Imóveis</CardTitle>
                   </div>
-                  <Link href="/dashboard/imoveis">
-                    <Button variant="ghost" size="sm" className="gap-1">
-                      <span className="hidden sm:inline">Ver todos</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </Link>
+                  <div className="flex items-center gap-1">
+                    <Link href="/dashboard/imoveis/novo">
+                      <Button size="sm" className="bg-[#9747ff] hover:bg-[#9747ff]/90 h-8 text-xs px-3 gap-1">
+                        <span className="hidden sm:inline">Cadastrar</span>
+                        <span className="sm:hidden">+</span>
+                      </Button>
+                    </Link>
+                    <Link href="/dashboard/imoveis">
+                      <Button variant="ghost" size="sm" className="gap-1 h-8">
+                        <span className="hidden sm:inline">Ver todos</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
                 <CardDescription className="text-xs sm:text-sm">
-                  <span className="font-medium text-[#141414]">{totalProperties}/{propertyLimit}</span> imóveis
-                  cadastrados
+                  <span className="font-medium text-[#141414]">{totalProperties}</span> imóveis cadastrados
                 </CardDescription>
               </CardHeader>
 
@@ -307,18 +301,16 @@ export default function DashboardPage() {
                     <h3 className="font-medium text-xs sm:text-sm text-[#969696] mb-3">Imóvel mais recente</h3>
                     <div className="bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
                       <div className="h-32 sm:h-40 relative">
-                        {latestProperty.attachments && latestProperty.attachments.length > 0 ? (
-                          <Image
-                            src={latestProperty.attachments[0].url}
-                            alt={latestProperty.title}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                            <Building2 className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
-                          </div>
-                        )}
+                        <Image
+                          src={
+                            latestProperty.attachments && latestProperty.attachments.length > 0
+                              ? latestProperty.attachments[0].url
+                              : PROPERTY_FALLBACK_IMAGE
+                          }
+                          alt={latestProperty.title}
+                          fill
+                          className="object-cover"
+                        />
                         <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-white px-2 py-1 rounded text-xs font-medium">
                           {latestProperty.rent ? 'Aluguel' : 'Venda'}
                         </div>
@@ -363,7 +355,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <User className="w-5 h-5 text-[#16ae4f]" />
-                    <CardTitle className="text-base sm:text-lg font-medium">Clientes</CardTitle>
+                    <CardTitle className="text-base sm:text-lg font-medium">Leads</CardTitle>
                   </div>
                   <Link href="/dashboard/clientes">
                     <Button variant="ghost" size="sm" className="gap-1">
@@ -373,15 +365,14 @@ export default function DashboardPage() {
                   </Link>
                 </div>
                 <CardDescription className="text-xs sm:text-sm">
-                  <span className="font-medium text-[#141414]">{customersData?.meta?.total || 0}</span> clientes
-                  cadastrados
+                  <span className="font-medium text-[#141414]">{totalLeads}</span> leads cadastrados
                 </CardDescription>
               </CardHeader>
 
               <CardContent className="p-4 sm:p-6">
-                {latestCustomer ? (
+                {latestLead ? (
                   <div>
-                    <h3 className="font-medium text-xs sm:text-sm text-[#969696] mb-3">Cliente mais recente</h3>
+                    <h3 className="font-medium text-xs sm:text-sm text-[#969696] mb-3">Lead mais recente</h3>
                     <div className="bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
                       <div className="p-4">
                         <div className="flex items-center gap-3">
@@ -389,53 +380,33 @@ export default function DashboardPage() {
                             <User className="w-6 h-6 sm:w-8 sm:h-8 text-[#16ae4f]" />
                           </div>
                           <div>
-                            <h3 className="font-medium text-base sm:text-lg">{latestCustomer.name}</h3>
-                            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
-                              <Mail className="w-3 h-3" />
-                              <span>{latestCustomer.email}</span>
-                            </div>
+                            <h3 className="font-medium text-base sm:text-lg">{latestLead.name}</h3>
+                            {latestLead.email && (
+                              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                                <Mail className="w-3 h-3" />
+                                <span>{latestLead.email}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
-                        
-                        <div className="mt-4 pt-4 sm:pt-6 border-t">
-                          <h4 className="font-medium text-xs sm:text-sm mb-2">Informações de contato</h4>
+
+                        <div className="mt-4 pt-4 border-t">
                           <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 mb-1">
                             <span className="font-medium">Telefone:</span>
-                            <span>{latestCustomer.phone}</span>
+                            <span>{latestLead.phone}</span>
                           </div>
-                          
-                          {latestCustomer.interested_properties && latestCustomer.interested_properties.length > 0 ? (
-                            <div className="mt-3">
-                              <h4 className="font-medium text-xs sm:text-sm mb-2">Imóveis de interesse</h4>
-                              <div className="space-y-2">
-                                {latestCustomer.interested_properties.slice(0, 2).map((property, index) => (
-                                  <div key={index} className="bg-white p-2 rounded border text-xs sm:text-sm">
-                                    <div className="font-medium">{property.title}</div>
-                                    <div className="text-xs sm:text-sm text-gray-500">{property.neighborhood}</div>
-                                    <div className="text-xs sm:text-sm text-green-600 mt-1">
-                                      {property.rent ? 'Aluguel' : 'Venda'}: R$ {property.value}
-                                    </div>
-                                  </div>
-                                ))}
-                                
-                                {latestCustomer.interested_properties.length > 2 && (
-                                  <div className="text-xs sm:text-sm text-center text-[#9747ff]">
-                                    +{latestCustomer.interested_properties.length - 2} imóveis
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="mt-3 text-xs sm:text-sm text-gray-500">
-                              Nenhum imóvel de interesse
+                          {latestLead.pipeline_stage && (
+                            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                              <span className="font-medium">Etapa:</span>
+                              <span>{latestLead.pipeline_stage.name}</span>
                             </div>
                           )}
                         </div>
-                        
+
                         <div className="mt-4">
                           <Link href="/dashboard/clientes">
                             <Button className="w-full bg-[#16ae4f] hover:bg-[#16ae4f]/90 text-sm">
-                              Ver detalhes
+                              Ver todos os leads
                             </Button>
                           </Link>
                         </div>
@@ -444,7 +415,7 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="text-center py-6 sm:py-8 text-sm text-gray-500">
-                    Nenhum cliente cadastrado
+                    Nenhum lead cadastrado
                   </div>
                 )}
               </CardContent>
@@ -453,8 +424,8 @@ export default function DashboardPage() {
         </>
       )}
 
-      {/* Seção Primeiros Passos */}
-      <Card className="bg-gradient-to-r from-[#9747ff]/5 to-transparent border-[#9747ff]/20">
+      {/* Seção Primeiros Passos — oculta */}
+      {false && <Card className="bg-gradient-to-r from-[#9747ff]/5 to-transparent border-[#9747ff]/20">
         <CardHeader className="p-4 sm:p-6">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-[#9747ff]/10 rounded-full flex items-center justify-center">
@@ -507,7 +478,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card>}
 
       <Card className="overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-[#9747ff]/5 to-transparent p-4 sm:p-6">

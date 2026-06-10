@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TopNav } from "@/features/dashboard/imoveis/top-nav";
@@ -12,70 +12,121 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { LoadingState } from "@/components/ui/loading-state";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/shared/hooks/auth/use-auth";
+import { useCurrentUser } from "@/shared/hooks/use-current-user";
 import { useProfile, useUpdateProfile } from "@/features/dashboard/profile/services/profile-service";
-import { PageSettingsForm } from "@/features/dashboard/page-settings/components/page-settings-form";
-import { PageSettingsPreview } from "@/features/dashboard/page-settings/components/page-settings-preview";
-import { useBrokerProperties } from "@/features/landing/services/broker-service";
-import { usePageSettings } from "@/features/dashboard/page-settings/hooks/use-page-settings";
-import type { PageSettings } from "@/features/dashboard/page-settings/services/page-settings-service";
+import { SiteAppearanceForm, type SiteAppearanceFormData } from "@/features/dashboard/site/components/site-appearance-form";
+import { SiteFooterForm, type SiteFooterFormData } from "@/features/dashboard/site/components/site-footer-form";
+import { SiteSocialLinksManager } from "@/features/dashboard/site/components/site-social-links-manager";
+import { AgentProfilesManager } from "@/features/dashboard/site/components/agent-profiles-manager";
+import { HomeHeroForm } from "@/features/dashboard/site/components/home-hero-form";
+import { SiteStatsManager } from "@/features/dashboard/site/components/site-stats-manager";
+import { InstitutionalForm } from "@/features/dashboard/site/components/institutional-form";
+import { TestimonialsManager } from "@/features/dashboard/site/components/testimonials-manager";
+import { PostsManager } from "@/features/dashboard/site/components/posts-manager";
+import { HomeLayoutManager } from "@/features/dashboard/site/components/home-layout-manager";
+import { type HomeSection } from "@/features/dashboard/site/services/home-layout-service";
+import { SeoListingForm } from "@/features/dashboard/site/components/seo-listing-form";
+import { ListingForm } from "@/features/dashboard/site/components/listing-form";
+import { WhatsappTemplatesManager } from "@/features/dashboard/site/components/whatsapp-templates-manager";
+import { SitePreview } from "@/features/dashboard/site/components/site-preview";
+import { SitePagesManager } from "@/features/dashboard/site/components/site-pages-manager";
+import { SitePagePreview } from "@/features/dashboard/site/components/site-page-preview";
+import { useSiteFooter, useSiteSettings, useSiteSocialLinks } from "@/features/dashboard/site/hooks/use-site";
+import { useSitePages } from "@/features/dashboard/site/hooks/use-site-pages";
+import type { SitePage } from "@/features/dashboard/site/services/site-pages-service";
+import type { SitePageFormValues } from "@/features/dashboard/site/components/site-pages-form";
 import { useSettings } from "@/features/dashboard/settings/hooks/use-settings";
-import type { TeamMemberSetting, UserSettingsData } from "@/features/dashboard/settings/services/settings-service";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { api } from "@/shared/configs/api";
+import type { UserSettingsData } from "@/features/dashboard/settings/services/settings-service";
+import {
+  cancelInvitation,
+  sendTeamInvitation,
+  getReceivedInvitations,
+  acceptInvitation,
+  rejectInvitation,
+  getTeamMembers,
+  removeTeamMember,
+  type TeamInvitationReceived,
+  type TeamMemberReal,
+  type TeamInvitationSent,
+} from "@/features/dashboard/settings/services/team-invitation-service";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Camera, CheckCircle, XCircle, Building2, Calendar, CreditCard, Globe, Mail, PlugZap, Settings2, Shield, ShieldCheck, Users, UserCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Building2, Calendar, CreditCard, PlugZap, Settings2, Shield, ShieldCheck, Users, UserCircle2 } from "lucide-react";
 import { GruposPermissaoFeature } from "@/features/dashboard/grupos-permissao";
 
-type SectionKey = "profile" | "company" | "team" | "billing" | "integrations" | "automations" | "permissions";
+type SectionKey = "profile" | "company" | "page" | "team" | "billing" | "integrations" | "automations" | "permissions";
 
+/**
+ * permissionKey: chave necessária para ver a aba.
+ * null = sempre visível (sem restrição de permissão).
+ */
 const settingsSections: Array<{
   key: SectionKey;
   label: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
+  permissionKey: string | null;
 }> = [
   {
     key: "profile",
     label: "Meu Perfil",
     description: "Dados pessoais e segurança",
     icon: UserCircle2,
+    permissionKey: null,
   },
   {
     key: "company",
     label: "Imobiliária",
-    description: "Dados, contato e aparência",
+    description: "Dados, contato e endereço",
     icon: Building2,
+    permissionKey: "settings.company",
+  },
+  {
+    key: "page",
+    label: "Página",
+    description: "Aparência da sua página pública",
+    icon: Globe,
+    permissionKey: "settings.page",
   },
   {
     key: "team",
     label: "Equipe & Acesso",
     description: "Convidar e gerenciar membros",
     icon: Users,
+    permissionKey: "settings.team",
   },
   {
     key: "billing",
     label: "Planos & Faturas",
     description: "Assinaturas e pagamentos",
     icon: CreditCard,
+    permissionKey: "settings.billing",
   },
   {
     key: "integrations",
     label: "Integrações",
     description: "Conectar serviços externos",
     icon: PlugZap,
+    permissionKey: "settings.integrations",
   },
   {
     key: "automations",
     label: "Automações (Cobrança)",
     description: "Fluxos e regras de cobrança",
     icon: Settings2,
+    permissionKey: "settings.automations",
   },
   {
     key: "permissions",
     label: "Grupos de Permissão",
     description: "Gerenciar grupos e acessos",
     icon: ShieldCheck,
+    permissionKey: "settings.permissions",
   },
 ];
 
@@ -153,8 +204,25 @@ export default function ConfiguracoesPage() {
 function ConfiguracoesPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { hasPermission } = useCurrentUser();
+
+  // Filtra seções pelas permissões do usuário (null = sem restrição)
+  const visibleSections = settingsSections.filter(
+    (s) => s.permissionKey === null || hasPermission(s.permissionKey)
+  );
+
   const sectionParam = (searchParams.get("sec") ?? "profile") as SectionKey;
-  const section: SectionKey = settingsSections.some((s) => s.key === sectionParam) ? sectionParam : "profile";
+  const isAllowed = visibleSections.some((s) => s.key === sectionParam);
+  const section: SectionKey = isAllowed ? sectionParam : "profile";
+
+  // Redireciona se a seção não é permitida para este usuário
+  useEffect(() => {
+    if (!isAllowed && sectionParam !== "profile") {
+      const params = new URLSearchParams(Array.from(searchParams.entries()));
+      params.set("sec", "profile");
+      router.replace(`/dashboard/configuracoes?${params.toString()}`);
+    }
+  }, [isAllowed, sectionParam, router, searchParams]);
 
   const setSection = (next: SectionKey) => {
     const params = new URLSearchParams(Array.from(searchParams.entries()));
@@ -162,7 +230,7 @@ function ConfiguracoesPageContent() {
     router.replace(`/dashboard/configuracoes?${params.toString()}`);
   };
 
-  const active = settingsSections.find((s) => s.key === section) ?? settingsSections[0];
+  const active = visibleSections.find((s) => s.key === section) ?? visibleSections[0];
 
   return (
     <>
@@ -170,12 +238,13 @@ function ConfiguracoesPageContent() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-4 xl:col-span-3">
-          <SettingsSidebar activeKey={section} onSelect={setSection} />
+          <SettingsSidebar activeKey={section} onSelect={setSection} sections={visibleSections} />
         </div>
 
         <div className="lg:col-span-8 xl:col-span-9 space-y-6">
           {active.key === "profile" && <ProfileSection />}
           {active.key === "company" && <CompanySection />}
+          {active.key === "page" && <PageSection />}
           {active.key === "team" && <TeamAccessSection />}
           {active.key === "billing" && <BillingSection />}
           {active.key === "integrations" && <IntegrationsSection />}
@@ -226,18 +295,20 @@ function SettingsPageSkeleton() {
 function SettingsSidebar({
   activeKey,
   onSelect,
+  sections,
 }: {
   activeKey: SectionKey;
   onSelect: (key: SectionKey) => void;
+  sections: typeof settingsSections;
 }) {
   return (
-    <Card className="border border-gray-100 shadow-sm rounded-2xl sticky top-24">
+    <Card className="border border-gray-100 shadow-sm rounded-2xl sticky top-4">
       <CardHeader className="pb-3">
         <CardTitle className="text-base">Configurações</CardTitle>
         <CardDescription>Gerencie preferências e dados</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
-        {settingsSections.map((item) => {
+        {sections.map((item) => {
           const Icon = item.icon;
           const isActive = item.key === activeKey;
           return (
@@ -299,14 +370,16 @@ function SettingsCard({
   description,
   children,
   right,
+  className,
 }: {
   title: string;
   description?: string;
   children: ReactNode;
   right?: ReactNode;
+  className?: string;
 }) {
   return (
-    <Card className="border border-gray-100 shadow-sm rounded-2xl">
+    <Card className={cn("border border-gray-100 shadow-sm rounded-2xl", className)}>
       <CardHeader className="pb-3 flex flex-row items-start justify-between gap-4">
         <div>
           <CardTitle className="text-base">{title}</CardTitle>
@@ -321,7 +394,7 @@ function SettingsCard({
 
 function ProfileSection() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { data, isLoading, isError, error, refetch } = useProfile();
   const updateProfile = useUpdateProfile();
   const {
@@ -347,6 +420,26 @@ function ProfileSection() {
   const [didInit, setDidInit] = useState(false);
 
   const [twoFaEnabled, setTwoFaEnabled] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const json = await api.post("upload/avatar", { body: formData }).json<{ avatarUrl: string }>();
+      updateUser({ avatar_url: json.avatarUrl });
+      toast({ title: "Foto atualizada com sucesso!" });
+    } catch {
+      toast({ title: "Erro ao enviar foto", variant: "destructive" });
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  };
 
   useEffect(() => {
     if (didInit || (!profile && !settings)) return;
@@ -434,14 +527,45 @@ function ProfileSection() {
           >
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
               <div className="flex items-center gap-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarFallback className="bg-[#9747FF]/10 text-[#9747FF] font-semibold">
-                    {getInitials(draft.name)}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative group">
+                  <Avatar className="h-16 w-16">
+                    {user?.user?.avatar_url && (
+                      <AvatarImage src={user.user.avatar_url} alt={draft.name} className="object-cover" />
+                    )}
+                    <AvatarFallback className="bg-[#9747FF]/10 text-[#9747FF] font-semibold text-lg">
+                      {getInitials(draft.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={avatarUploading}
+                    className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  >
+                    {avatarUploading
+                      ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      : <Camera className="h-5 w-5 text-white" />
+                    }
+                  </button>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
+                </div>
                 <div>
                   <div className="text-base font-semibold text-[#141414]">{draft.name || "Usuário"}</div>
                   <div className="text-sm text-[#777777]">{groupName ?? "Sem grupo"}</div>
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={avatarUploading}
+                    className="text-xs text-[#9747FF] hover:underline mt-0.5"
+                  >
+                    {avatarUploading ? "Enviando..." : "Alterar foto"}
+                  </button>
                 </div>
               </div>
             </div>
@@ -667,64 +791,332 @@ function CompanySection() {
           </div>
         </SettingsCard>
       </div>}
-
-      <AppearanceSettingsSection />
     </div>
   );
 }
 
-function AppearanceSettingsSection() {
-  const { user } = useAuth();
-  const slug = user?.user?.slug ?? "";
-  const { data: properties, isLoading, isError, error, refetch } = useBrokerProperties(slug);
-  const { updateSettings } = usePageSettings();
+type PageSubTab =
+  | "appearance"
+  | "home"
+  | "footer"
+  | "pages"
+  | "messages";
 
-  const settings = properties?.data?.user?.page_settings;
-  const defaultSettings = useMemo<PageSettings>(
-    () => ({
-      primary_color: "#9747FF",
-      title: "Encontre o imóvel perfeito para você",
-      subtitle: "Confira os melhores imóveis disponíveis",
-      brand_image: "/logo-extendida-roxo.svg",
-    }),
-    []
-  );
+function PageSection() {
+  const [tab, setTab] = useState<PageSubTab>("appearance");
 
-  const [previewSettings, setPreviewSettings] = useState<PageSettings>(() => settings || defaultSettings);
+  const {
+    settings,
+    isLoading: isLoadingSettings,
+    isError: isErrorSettings,
+    error: errorSettings,
+    refetch: refetchSettings,
+    update: updateSettings,
+    isUpdating: isUpdatingSettings,
+  } = useSiteSettings();
+
+  const {
+    footer,
+    isLoading: isLoadingFooter,
+    isError: isErrorFooter,
+    error: errorFooter,
+    refetch: refetchFooter,
+    update: updateFooter,
+    isUpdating: isUpdatingFooter,
+  } = useSiteFooter();
+
+  const {
+    socialLinks,
+    isLoading: isLoadingSocial,
+    isError: isErrorSocial,
+    error: errorSocial,
+    refetch: refetchSocial,
+    create: createSocial,
+    update: updateSocial,
+    remove: removeSocial,
+    isCreating,
+    isUpdating: isUpdatingSocial,
+    isRemoving,
+  } = useSiteSocialLinks();
+
+  const isLoading = isLoadingSettings || isLoadingFooter || isLoadingSocial;
+  const isError = isErrorSettings || isErrorFooter || isErrorSocial;
+  const error = (errorSettings || errorFooter || errorSocial) as Error | null;
+
+  const retryAll = () => {
+    refetchSettings();
+    refetchFooter();
+    refetchSocial();
+  };
+
+  const [previewSettings, setPreviewSettings] = useState<
+    Partial<SiteAppearanceFormData> & {
+      site_subtitle?: string | null;
+      hero_eyebrow?: string | null;
+      hero_title_line_1?: string | null;
+      hero_title_line_2?: string | null;
+      hero_background_url?: string | null;
+      hero_overlay_color?: string | null;
+      hero_overlay_opacity?: number | null;
+    }
+  >({});
+  const [previewFooter, setPreviewFooter] = useState<Partial<SiteFooterFormData>>({});
+  const [previewLayout, setPreviewLayout] = useState<HomeSection[]>([]);
 
   useEffect(() => {
-    if (!settings) return;
-    setPreviewSettings(settings);
+    if (settings) {
+      setPreviewSettings({
+        site_subtitle: settings.site_subtitle ?? undefined,
+        brand_image: settings.brand_image ?? undefined,
+        hero_eyebrow: settings.hero_eyebrow ?? undefined,
+        hero_title_line_1: settings.hero_title_line_1 ?? undefined,
+        hero_title_line_2: settings.hero_title_line_2 ?? undefined,
+        hero_background_url: settings.hero_background_url ?? undefined,
+        hero_overlay_color: settings.hero_overlay_color ?? undefined,
+        hero_overlay_opacity: settings.hero_overlay_opacity ?? undefined,
+      });
+    }
   }, [settings]);
 
-  const handleFormChange = (data: Partial<PageSettings>) => {
-    setPreviewSettings((prev) => ({ ...prev, ...data }));
-  };
+  useEffect(() => {
+    if (footer) {
+      setPreviewFooter({
+        company_name: footer.company_name ?? "",
+        email: footer.email ?? "",
+        phone: footer.phone ?? "",
+        whatsapp: footer.whatsapp ?? "",
+        address: footer.address ?? "",
+        address_number: footer.address_number ?? "",
+        district: footer.district ?? "",
+        city: footer.city ?? "",
+        state: footer.state ?? "",
+        zipcode: footer.zipcode ?? "",
+        creci: footer.creci ?? "",
+        footer_text: footer.footer_text ?? "",
+        show_social_links: footer.show_social_links,
+      });
+    }
+  }, [footer]);
 
-  const handleSubmit = async (data: PageSettings) => {
-    await updateSettings(data);
-    await refetch();
-  };
+  const subTabs: Array<{ key: PageSubTab; label: string; description: string }> = [
+    { key: "home", label: "Home", description: "Hero e estatísticas" },
+    { key: "footer", label: "Rodapé", description: "Contato, redes sociais e CRECI" },
+    { key: "pages", label: "Menu", description: "Logo, links e páginas do menu" },
+    { key: "messages", label: "Mensagens", description: "Templates de WhatsApp" },
+    { key: "appearance", label: "SEO", description: "Meta tags e imagem de compartilhamento" },
+  ];
+
+  const { pages: sitePages } = useSitePages();
+  const menuPages = sitePages.filter((p) => p.is_published && p.show_in_menu);
+  const [activePage, setActivePage] = useState<SitePage | undefined>(undefined);
+  const [pageDraft, setPageDraft] = useState<SitePageFormValues | null>(null);
 
   return (
     <div className="space-y-6">
       <SettingsHeader
-        title="Aparência da Página"
-        description="Personalize como sua página de imóveis será exibida."
+        title="Página"
+        description="Configure como sua página pública é exibida para o cliente."
       />
 
-      <LoadingState isLoading={isLoading} isError={isError} error={error as Error} onRetry={() => refetch()} />
+      <LoadingState isLoading={isLoading} isError={isError} error={error ?? undefined} onRetry={retryAll} />
 
       {!isLoading && !isError && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div className="lg:col-span-6">
-            <SettingsCard title="Configuração" description="Ajuste cor, logo e textos do cabeçalho.">
-              <PageSettingsForm initialData={settings || defaultSettings} onSubmit={handleSubmit} onChange={handleFormChange} />
-            </SettingsCard>
+          <div className="lg:col-span-8 space-y-4">
+            <div className="flex gap-1 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm overflow-x-auto">
+              {subTabs.map((item) => {
+                const isActive = item.key === tab;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setTab(item.key)}
+                    className={cn(
+                      "flex-1 whitespace-nowrap rounded-xl px-3 py-2 text-center transition-colors",
+                      isActive ? "bg-[#9747FF]/10" : "hover:bg-gray-50"
+                    )}
+                  >
+                    <div className={cn("text-sm font-semibold", isActive ? "text-[#9747FF]" : "text-[#141414]")}>
+                      {item.label}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {tab === "appearance" && (
+              <SettingsCard
+                title="SEO"
+                description="Meta tags e imagem de compartilhamento do site público."
+              >
+                <SeoListingForm
+                  initial={settings}
+                  onSubmit={async payload => {
+                    await updateSettings(payload);
+                  }}
+                  isSubmitting={isUpdatingSettings}
+                />
+              </SettingsCard>
+            )}
+
+            {tab === "footer" && (
+              <>
+                <SettingsCard title="Rodapé" description="Dados de contato e textos exibidos no rodapé do site público.">
+                  <SiteFooterForm
+                    initial={footer}
+                    onSubmit={async (payload) => {
+                      await updateFooter(payload);
+                    }}
+                    onChange={(data) => setPreviewFooter((prev) => ({ ...prev, ...data }))}
+                    isSubmitting={isUpdatingFooter}
+                  />
+                </SettingsCard>
+                <SettingsCard
+                  title="Redes Sociais"
+                  description="Cadastre os perfis sociais que aparecerão no rodapé."
+                >
+                  <SiteSocialLinksManager
+                    socialLinks={socialLinks}
+                    isLoading={isLoadingSocial}
+                    onCreate={createSocial}
+                    onUpdate={(id, payload) => updateSocial({ id, payload })}
+                    onDelete={removeSocial}
+                    isMutating={isCreating || isUpdatingSocial || isRemoving}
+                  />
+                </SettingsCard>
+              </>
+            )}
+
+            {tab === "pages" && (
+              <>
+                <SettingsCard title="Logo da Marca" description="Logomarca exibida no menu e no rodapé do site.">
+                  <SiteAppearanceForm
+                    initial={settings}
+                    onSubmit={async (payload) => {
+                      await updateSettings(payload);
+                    }}
+                    onChange={(data) => setPreviewSettings((prev) => ({ ...prev, ...data }))}
+                    isSubmitting={isUpdatingSettings}
+                  />
+                </SettingsCard>
+                <SettingsCard
+                  title="Menu"
+                  description="Gerencie os itens exibidos no menu superior do site. Cada página adicionada aqui aparece como um link na navegação principal."
+                >
+                  <SitePagesManager
+                    onActivePageChange={setActivePage}
+                    onDraftChange={setPageDraft}
+                  />
+                </SettingsCard>
+              </>
+            )}
+
+            {tab === "messages" && (
+              <SettingsCard
+                title="Mensagens de WhatsApp"
+                description="Personalize as mensagens pré-preenchidas dos botões de WhatsApp em todo o site."
+              >
+                <WhatsappTemplatesManager />
+              </SettingsCard>
+            )}
+
+            {tab === "home" && (
+              <div className="space-y-4">
+                <SettingsCard
+                  title="Hero da Home"
+                  description="Imagem de fundo, eyebrow, título em 2 linhas e subtítulo do hero principal."
+                >
+                  <HomeHeroForm
+                    initial={settings}
+                    onChange={data =>
+                      setPreviewSettings(prev => ({
+                        ...prev,
+                        hero_eyebrow: data.hero_eyebrow,
+                        hero_title_line_1: data.hero_title_line_1,
+                        hero_title_line_2: data.hero_title_line_2,
+                        hero_background_url: data.hero_background_url,
+                        site_subtitle: data.site_subtitle ?? undefined,
+                        hero_overlay_color: data.hero_overlay_color,
+                        hero_overlay_opacity: data.hero_overlay_opacity,
+                      }))
+                    }
+                    onSubmit={async payload => {
+                      await updateSettings(payload);
+                    }}
+                    isSubmitting={isUpdatingSettings}
+                  />
+                </SettingsCard>
+                <SettingsCard
+                  title="Listagem de imóveis"
+                  description="Quantidade de imóveis por página e ordenação padrão da listagem."
+                >
+                  <ListingForm
+                    initial={settings}
+                    onSubmit={async payload => {
+                      await updateSettings(payload);
+                    }}
+                    isSubmitting={isUpdatingSettings}
+                  />
+                </SettingsCard>
+                <SettingsCard
+                  title="Seções da Home"
+                  description="Ative, desative e reordene as seções exibidas na home pública."
+                >
+                  <HomeLayoutManager onChange={setPreviewLayout} />
+                </SettingsCard>
+                <SettingsCard
+                  title="Estatísticas"
+                  description="Cards numéricos exibidos abaixo do hero (anos de mercado, imóveis vendidos, etc.)."
+                >
+                  <SiteStatsManager />
+                </SettingsCard>
+                <SettingsCard
+                  title="Institucional (Sobre)"
+                  description="Seção 'Sobre' da home: imagem, textos, valores e diferenciais."
+                >
+                  <InstitutionalForm />
+                </SettingsCard>
+                <SettingsCard
+                  title="Depoimentos"
+                  description="Depoimentos de clientes exibidos no slider da home."
+                >
+                  <TestimonialsManager />
+                </SettingsCard>
+                <SettingsCard
+                  title="Blog (Trends & Insights)"
+                  description="Artigos exibidos na seção de conteúdo da home."
+                >
+                  <PostsManager />
+                </SettingsCard>
+                <SettingsCard
+                  title="Equipe / Corretores"
+                  description="Gerencie os corretores exibidos na página /equipe do site público."
+                >
+                  <AgentProfilesManager />
+                </SettingsCard>
+              </div>
+            )}
           </div>
-          <div className="lg:col-span-6">
-            <SettingsCard title="Preview" description="Pré-visualização em tempo real.">
-              <PageSettingsPreview settings={previewSettings} />
+
+          <div className="lg:col-span-4 lg:pt-16 flex flex-col">
+            <SettingsCard title="Preview" description="Pré-visualização em tempo real." className="flex-1 flex flex-col [&>div:last-child]:flex-1">
+              {tab === "pages" ? (
+                <SitePagePreview
+                  settings={{ ...settings, ...previewSettings }}
+                  footer={{ ...footer, ...previewFooter }}
+                  socialLinks={socialLinks}
+                  menuPages={menuPages}
+                  page={activePage}
+                  draft={pageDraft}
+                />
+              ) : (
+                <SitePreview
+                  settings={{ ...settings, ...previewSettings }}
+                  footer={{ ...footer, ...previewFooter }}
+                  socialLinks={socialLinks}
+                  homeLayout={previewLayout}
+                />
+              )}
             </SettingsCard>
           </div>
         </div>
@@ -734,99 +1126,270 @@ function AppearanceSettingsSection() {
 }
 
 function TeamAccessSection() {
-  const { toast } = useToast();
   const { user } = useAuth();
-  const { data, isLoading, isError, error, refetch, updateSettings, isUpdating } = useSettings();
-
-  const [invite, setInvite] = useState({ email: "", role: "corretor" });
-  const [members, setMembers] = useState<TeamMemberSetting[]>([]);
-  const [didInit, setDidInit] = useState(false);
-
-  useEffect(() => {
-    if (!data?.data.team.members || didInit) return;
-    setMembers(data.data.team.members);
-    setDidInit(true);
-  }, [data?.data.team.members, didInit]);
-
-  const ownerMember = useMemo(
-    () => ({
-      id: `owner-${user?.user?.id ?? "current"}`,
-      name: user?.user?.name ?? "Usuário",
-      email: user?.user?.email ?? "email@exemplo.com",
-      role: data?.data.profile.job_title ?? "Administrador",
-      status: "Ativo" as const,
-    }),
-    [data?.data.profile.job_title, user?.user?.email, user?.user?.id, user?.user?.name]
-  );
-
-  const persistMembers = async (nextMembers: TeamMemberSetting[]) => {
-    setMembers(nextMembers);
-
-    try {
-      await updateSettings({
-        team: {
-          members: nextMembers,
-        },
-      });
-      await refetch();
-    } catch {
-      setMembers(members);
-    }
-  };
-
-  const handleInvite = async () => {
-    if (!invite.email.trim()) {
-      toast({
-        title: "Email obrigatório",
-        description: "Informe o email do membro que deseja convidar.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const nextMembers = [
-      ...members,
-      {
-        id: `member-${Date.now()}`,
-        name: invite.email.split("@")[0] || "Novo membro",
-        email: invite.email.trim(),
-        role: invite.role.trim() || "corretor",
-        status: "Convite pendente" as const,
-      },
-    ];
-
-    await persistMembers(nextMembers);
-    setInvite({ email: "", role: "corretor" });
-  };
-
-  const handleRemove = async (memberId: string) => {
-    await persistMembers(members.filter((member) => member.id !== memberId));
-  };
-
-  const tableMembers = [ownerMember, ...members];
+  const userType = user?.user?.user_type;
+  const isCorretor = userType === "corretor";
 
   return (
     <div className="space-y-6">
       <SettingsHeader title="Equipe & Acesso" description="Convide membros e gerencie permissões." />
+      {isCorretor ? <CorretorTeamView /> : <ImobiliariaTeamView />}
+    </div>
+  );
+}
 
-      <LoadingState isLoading={isLoading} isError={isError} error={error as Error} onRetry={() => refetch()} />
+function CorretorTeamView() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-      {!isLoading && !isError && <>
+  const { data: invitationsData, isLoading, isError, refetch } = useQuery({
+    queryKey: ["team-invitations-received"],
+    queryFn: getReceivedInvitations,
+  });
+
+  const acceptMutation = useMutation({
+    mutationFn: acceptInvitation,
+    onSuccess: () => {
+      toast({ title: "Convite aceito!", description: "Você agora faz parte da equipe." });
+      queryClient.invalidateQueries({ queryKey: ["team-invitations-received"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao aceitar convite", variant: "destructive" });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: rejectInvitation,
+    onSuccess: () => {
+      toast({ title: "Convite recusado." });
+      queryClient.invalidateQueries({ queryKey: ["team-invitations-received"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao recusar convite", variant: "destructive" });
+    },
+  });
+
+  const invitations: TeamInvitationReceived[] = invitationsData?.data ?? [];
+  const isMutating = acceptMutation.isPending || rejectMutation.isPending;
+
+  return (
+    <SettingsCard
+      title="Convites recebidos"
+      description="Imobiliárias que convidaram você para fazer parte da equipe."
+    >
+      <LoadingState isLoading={isLoading} isError={isError} onRetry={refetch} />
+
+      {!isLoading && !isError && (
+        <>
+          {invitations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+              <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+                <Mail className="h-6 w-6 text-[#777777]" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-[#141414]">Nenhum convite pendente</p>
+                <p className="text-xs text-[#777777] mt-1">Quando uma imobiliária convidar você, o convite aparecerá aqui.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {invitations.map((inv) => (
+                <div
+                  key={inv.id}
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl border border-[#E2E2E2] bg-white"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#9747FF]/10 flex items-center justify-center flex-shrink-0">
+                      <Building2 className="h-5 w-5 text-[#9747FF]" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-[#141414]">{inv.inviter_name ?? "Imobiliária"}</p>
+                      <p className="text-xs text-[#777777]">{inv.inviter_email}</p>
+                      <p className="text-xs text-[#9747FF] mt-0.5">Cargo: {inv.role}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      size="sm"
+                      className="bg-gradient-to-r from-[#9747FF] to-[#7C3AED] hover:from-[#9747FF]/90 hover:to-[#7C3AED]/90 gap-1.5"
+                      onClick={() => acceptMutation.mutate(inv.id)}
+                      disabled={isMutating}
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Aceitar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 gap-1.5"
+                      onClick={() => rejectMutation.mutate(inv.id)}
+                      disabled={isMutating}
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Recusar
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </SettingsCard>
+  );
+}
+
+function ImobiliariaTeamView() {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const [invite, setInvite] = useState({ email: "", role: "corretor" });
+  const [emailInput, setEmailInput] = useState("");   // valor imediato do input
+  const [emailQuery, setEmailQuery] = useState("");   // valor debounced (dispara API)
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Debounce: atualiza emailQuery 400ms após parar de digitar
+  useEffect(() => {
+    const timer = setTimeout(() => setEmailQuery(emailInput), 400);
+    return () => clearTimeout(timer);
+  }, [emailInput]);
+
+  const { data: emailSuggestions } = useQuery({
+    queryKey: ["users", "search-email", emailQuery],
+    queryFn: async () => {
+      const res = await api.get("users/search-email", {
+        searchParams: { q: emailQuery },
+      }).json<{ data: { id: number; name: string; email: string }[] }>();
+      return res.data;
+    },
+    enabled: emailQuery.length >= 4,
+    staleTime: 5000,
+  });
+
+  const { data: teamData, isLoading, isError, refetch } = useQuery({
+    queryKey: ["team-members"],
+    queryFn: getTeamMembers,
+  });
+
+  const inviteMutation = useMutation({
+    mutationFn: ({ email, role }: { email: string; role: string }) => sendTeamInvitation(email, role),
+    onSuccess: () => {
+      toast({ title: "Convite enviado!", description: "O corretor receberá o convite para aceitar." });
+      setInvite({ email: "", role: "corretor" });
+      queryClient.invalidateQueries({ queryKey: ["team-members"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao enviar convite", variant: "destructive" });
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: removeTeamMember,
+    onSuccess: () => {
+      toast({ title: "Membro removido." });
+      queryClient.invalidateQueries({ queryKey: ["team-members"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao remover membro", variant: "destructive" });
+    },
+  });
+
+  const cancelInviteMutation = useMutation({
+    mutationFn: cancelInvitation,
+    onSuccess: () => {
+      toast({ title: "Convite cancelado." });
+      queryClient.invalidateQueries({ queryKey: ["team-members"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao cancelar convite", variant: "destructive" });
+    },
+  });
+
+  const handleInvite = () => {
+    if (!invite.email.trim()) {
+      toast({ title: "Email obrigatório", variant: "destructive" });
+      return;
+    }
+    inviteMutation.mutate({ email: invite.email.trim(), role: invite.role.trim() || "corretor" });
+  };
+
+  const members: TeamMemberReal[] = teamData?.data?.members ?? [];
+  const pendingInvitations: TeamInvitationSent[] = teamData?.data?.invitations ?? [];
+
+  const ownerRow = {
+    id: `owner-${user?.user?.id}`,
+    name: user?.user?.name ?? "Proprietário",
+    email: user?.user?.email ?? "",
+    role: "Proprietário",
+    status: "active" as const,
+    isOwner: true,
+  };
+
+  return (
+    <>
       <SettingsCard title="Convidar membro" description="Envie um convite por email para sua equipe.">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
           <div className="md:col-span-6 space-y-2">
             <Label>Email</Label>
-            <Input value={invite.email} onChange={(e) => setInvite((p) => ({ ...p, email: e.target.value }))} placeholder="email@exemplo.com" />
+            <div className="relative">
+              <Input
+                value={invite.email}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setInvite((p) => ({ ...p, email: val }));
+                  setEmailInput(val);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => emailInput.length >= 4 && setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                placeholder="email@exemplo.com"
+                onKeyDown={(e) => e.key === "Enter" && handleInvite()}
+                autoComplete="off"
+              />
+              {showSuggestions && emailSuggestions && emailSuggestions.length > 0 && (
+                <div className="absolute z-50 top-full mt-1 w-full bg-white border border-[#E2E2E2] rounded-xl shadow-lg overflow-hidden">
+                  {emailSuggestions.map((u) => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-[#9747FF]/5 transition-colors text-left"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setInvite((p) => ({ ...p, email: u.email }));
+                        setEmailInput(u.email);
+                        setShowSuggestions(false);
+                      }}
+                    >
+                      <div className="w-7 h-7 rounded-full bg-[#9747FF]/10 flex items-center justify-center text-xs font-semibold text-[#9747FF] flex-shrink-0">
+                        {u.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-[#141414] truncate">{u.name}</p>
+                        <p className="text-xs text-[#777777] truncate">{u.email}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <div className="md:col-span-4 space-y-2">
             <Label>Cargo</Label>
-            <Input value={invite.role} onChange={(e) => setInvite((p) => ({ ...p, role: e.target.value }))} placeholder="corretor" />
+            <Select value={invite.role} onValueChange={(v) => setInvite((p) => ({ ...p, role: v }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o cargo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="corretor">Corretor</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="md:col-span-2 flex items-end">
             <Button
               className="w-full bg-gradient-to-r from-[#9747FF] to-[#7C3AED] hover:from-[#9747FF]/90 hover:to-[#7C3AED]/90"
               onClick={handleInvite}
-              disabled={isUpdating}
+              disabled={inviteMutation.isPending}
             >
               Convidar
             </Button>
@@ -834,60 +1397,120 @@ function TeamAccessSection() {
         </div>
       </SettingsCard>
 
-      <SettingsCard title="Membros" description="Gerencie acesso e perfis da sua equipe.">
-        <div className="bg-white rounded-xl border border-[#E2E2E2] overflow-hidden shadow-sm">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 border-b border-[#E2E2E2]">
-                <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">NOME</th>
-                <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">EMAIL</th>
-                <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">CARGO</th>
-                <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">STATUS</th>
-                <th className="text-right px-6 py-4 font-semibold text-[#4A316A]">AÇÕES</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tableMembers.map((m) => (
-                <tr key={m.id} className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50">
+      <LoadingState isLoading={isLoading} isError={isError} onRetry={refetch} />
+
+      {!isLoading && !isError && (
+        <SettingsCard title="Membros" description="Gerencie acesso e perfis da sua equipe.">
+          <div className="overflow-x-auto rounded-xl border border-[#E2E2E2] shadow-sm">
+            <table className="w-full text-sm min-w-[600px]">
+              <thead>
+                <tr className="bg-gray-50 border-b border-[#E2E2E2]">
+                  <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">NOME</th>
+                  <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">EMAIL</th>
+                  <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">CARGO</th>
+                  <th className="text-left px-6 py-4 font-semibold text-[#4A316A]">STATUS</th>
+                  <th className="text-right px-6 py-4 font-semibold text-[#4A316A]">AÇÕES</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Owner row */}
+                <tr className="border-b border-gray-100 hover:bg-gray-50/50">
                   <td className="px-6 py-4 text-[#141414] font-medium">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
                         <AvatarFallback className="bg-[#9747FF]/10 text-[#9747FF] font-semibold">
-                          {getInitials(m.name)}
+                          {getInitials(ownerRow.name)}
                         </AvatarFallback>
                       </Avatar>
-                      <span>{m.name}</span>
+                      <span>{ownerRow.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-[#141414]">{m.email}</td>
-                  <td className="px-6 py-4 text-[#141414]">{m.role}</td>
+                  <td className="px-6 py-4 text-[#141414]">{ownerRow.email}</td>
+                  <td className="px-6 py-4 text-[#141414]">Imobiliaria</td>
                   <td className="px-6 py-4">
-                    <Badge className={m.status === "Ativo" ? "bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]" : "bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]"}>
-                      {m.status}
-                    </Badge>
+                    <Badge className="bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]">Ativo</Badge>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {m.id !== ownerMember.id ? (
+                    <span className="text-xs text-[#777777]">Proprietário</span>
+                  </td>
+                </tr>
+
+                {/* Active members */}
+                {members.map((m) => (
+                  <tr key={m.id} className="border-b border-gray-100 hover:bg-gray-50/50">
+                    <td className="px-6 py-4 text-[#141414] font-medium">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarFallback className="bg-[#9747FF]/10 text-[#9747FF] font-semibold">
+                            {getInitials(m.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{m.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-[#141414]">{m.email}</td>
+                    <td className="px-6 py-4 text-[#141414]">{m.user_type ?? "corretor"}</td>
+                    <td className="px-6 py-4">
+                      <Badge className="bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]">Ativo</Badge>
+                    </td>
+                    <td className="px-6 py-4 text-right">
                       <Button
                         variant="ghost"
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleRemove(m.id)}
-                        disabled={isUpdating}
+                        onClick={() => removeMutation.mutate(m.id)}
+                        disabled={removeMutation.isPending}
                       >
                         Remover
                       </Button>
-                    ) : (
-                      <span className="text-xs text-[#777777]">Proprietário</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </SettingsCard>
-      </>}
-    </div>
+                    </td>
+                  </tr>
+                ))}
+
+                {/* Pending invitations */}
+                {pendingInvitations.map((inv) => (
+                  <tr key={`inv-${inv.id}`} className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50">
+                    <td className="px-6 py-4 text-[#141414] font-medium">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarFallback className="bg-gray-100 text-[#777777] font-semibold">
+                            {(inv.invitee_email[0] ?? "?").toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-[#777777]">{inv.invitee_email.split("@")[0]}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-[#141414]">{inv.invitee_email}</td>
+                    <td className="px-6 py-4 text-[#141414]">{inv.role}</td>
+                    <td className="px-6 py-4">
+                      <Badge className="bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">Convite pendente</Badge>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 gap-1.5"
+                        onClick={() => cancelInviteMutation.mutate(inv.id)}
+                        disabled={cancelInviteMutation.isPending}
+                      >
+                        Cancelar convite
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+
+                {members.length === 0 && pendingInvitations.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-[#777777]">
+                      Nenhum membro na equipe ainda. Envie um convite acima.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </SettingsCard>
+      )}
+    </>
   );
 }
 

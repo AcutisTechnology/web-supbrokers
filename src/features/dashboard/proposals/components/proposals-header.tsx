@@ -27,10 +27,7 @@ export function ProposalsHeader({
 }: ProposalsHeaderProps) {
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
-      <div>
-        <h1 className="text-2xl font-bold text-[#4A316A]">Propostas</h1>
-        <p className="text-[#969696]">Gerencie suas propostas comerciais</p>
-      </div>
+      <div></div>
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="relative w-full md:w-64">

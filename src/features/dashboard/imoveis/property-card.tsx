@@ -1,6 +1,7 @@
 import { Users, Bath, Home, MapPin, Tag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
+import { PROPERTY_FALLBACK_IMAGE, resolveCharacteristicLabel } from "@/lib/property";
 import { Property } from "./services/property-service";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -25,10 +26,9 @@ interface PropertyCardProps {
 export function PropertyCard({ property, onDelete }: PropertyCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   
-  // Obter a primeira imagem ou usar um placeholder
   const imageUrl = property.attachments && property.attachments.length > 0
     ? property.attachments[0].url
-    : "/placeholder.svg";
+    : PROPERTY_FALLBACK_IMAGE;
 
   // Formatar o valor para exibição
   const formattedValue = property.value 
@@ -92,14 +92,14 @@ export function PropertyCard({ property, onDelete }: PropertyCardProps) {
         </div>
         {property.characteristics && property.characteristics.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
-            {property.characteristics.slice(0, 3).map((characteristic, index) => (
-              <Badge key={index} variant="outline" className="text-xs">
-                {characteristic.text}
+            {property.characteristics.slice(0, 4).map((characteristic, index) => (
+              <Badge key={index} variant="secondary" className="text-xs font-normal">
+                {resolveCharacteristicLabel(characteristic.text)}
               </Badge>
             ))}
-            {property.characteristics.length > 3 && (
-              <Badge variant="outline" className="text-xs">
-                +{property.characteristics.length - 3}
+            {property.characteristics.length > 4 && (
+              <Badge variant="outline" className="text-xs text-muted-foreground">
+                +{property.characteristics.length - 4} mais
               </Badge>
             )}
           </div>

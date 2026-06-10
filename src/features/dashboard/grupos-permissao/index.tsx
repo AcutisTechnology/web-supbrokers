@@ -58,14 +58,6 @@ export function GruposPermissaoFeature() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-[#4A316A]">Grupos de Permissão</h1>
-        <p className="text-sm text-gray-500">
-          Gerencie perfis de acesso e vincule-os aos usuários do sistema.
-        </p>
-      </div>
-
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <div className="relative flex-1 w-full">

@@ -1,7 +1,7 @@
 "use client";
 
 import { Proposal } from "../types/proposal";
-import { PaginatedResponse } from "@/features/dashboard/clientes/services/customer-service";
+import { PaginatedResponse } from "../services/proposal-service";
 import { ProposalDesktopRow } from "./proposal-desktop-row";
 import { ProposalMobileCard } from "./proposal-mobile-card";
 
