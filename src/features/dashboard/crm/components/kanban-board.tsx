@@ -22,10 +22,21 @@ interface KanbanBoardProps {
   stages: CrmPipelineStage[];
   leads: CrmLead[];
   onMove: (leadId: number, toStageId: number) => void;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  onLoadMore?: () => void;
 }
 
-export function KanbanBoard({ stages, leads, onMove }: KanbanBoardProps) {
+export function KanbanBoard({ stages, leads, onMove, hasNextPage, isFetchingNextPage, onLoadMore }: KanbanBoardProps) {
   const [activeLead, setActiveLead] = useState<CrmLead | null>(null);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 150 && hasNextPage && !isFetchingNextPage) {
+      onLoadMore?.();
+    }
+  };
+
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -73,10 +84,19 @@ export function KanbanBoard({ stages, leads, onMove }: KanbanBoardProps) {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 [scrollbar-width:thin] snap-x snap-mandatory md:snap-none -mx-4 px-4 md:mx-0 md:px-0">
+      <div
+        onScroll={handleScroll}
+        className="flex gap-3 md:gap-4 overflow-auto snap-x snap-mandatory md:snap-none -mx-4 px-4 md:mx-0 md:px-0 h-[calc(100vh-26rem)] min-h-[500px] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400"
+      >
         {stages.map((stage) => (
           <KanbanColumn key={stage.id} stage={stage} leads={leadsByStage.get(stage.id) ?? []} />
         ))}
+
+        {isFetchingNextPage && (
+          <div className="flex items-end pb-4 pl-2">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#9747FF] border-t-transparent" />
+          </div>
+        )}
       </div>
 
       <DragOverlay>

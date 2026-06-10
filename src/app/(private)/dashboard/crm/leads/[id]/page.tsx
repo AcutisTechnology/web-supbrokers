@@ -218,7 +218,7 @@ export default function CrmLeadDetailPage() {
               <h1 className="text-2xl font-semibold text-[#141414] truncate">{lead?.name ?? "Carregando…"}</h1>
               {lead?.status && (
                 <Badge className="bg-gray-100 text-[#777777] border border-gray-200">
-                  {lead.status === "open" ? "Em aberto" : lead.status === "won" ? "Ganho" : "Perdido"}
+                  {lead.status === "open" ? "Em aberto" : lead.status === "won" ? "Negócio Fechado" : "Perdido"}
                 </Badge>
               )}
               {lead?.is_hot && (
@@ -260,7 +260,7 @@ export default function CrmLeadDetailPage() {
               disabled={markWonMutation.isPending}
             >
               <CheckCircle2 className="h-4 w-4" />
-              Marcar ganho
+              Negócio Fechado
             </Button>
           )}
           {lead && lead.status !== "lost" && (

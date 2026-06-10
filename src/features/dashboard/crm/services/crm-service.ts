@@ -6,6 +6,7 @@ export type CrmPipelineStage = {
   id: number;
   company_id: number;
   name: string;
+  description?: string | null;
   order: number;
   color: string | null;
   is_default: boolean;
@@ -266,7 +267,7 @@ export function useInfiniteCrmLeads(filters?: CrmLeadsFilters) {
     queryFn: async ({ pageParam }) => {
       const sep = qs ? "&" : "?";
       const response = await api
-        .get(`crm/leads${qs}${sep}page=${pageParam}`)
+        .get(`crm/leads${qs}${sep}page=${pageParam}&per_page=100`)
         .json<{ data: CrmLead[]; meta: CrmLeadsMeta }>();
       return response;
     },
@@ -468,11 +469,11 @@ export function useMarkWonCrmLead() {
       queryClient.invalidateQueries({ queryKey: ["crm", "lead", id] });
       queryClient.invalidateQueries({ queryKey: ["crm", "pipeline-stages"] });
       queryClient.invalidateQueries({ queryKey: ["crm", "metrics"] });
-      toast({ title: "Lead marcado como ganho!" });
+      toast({ title: "Negócio fechado com sucesso!" });
     },
     onError: () => {
       toast({
-        title: "Erro ao marcar como ganho",
+        title: "Erro ao fechar negócio",
         description: "Ocorreu um erro ao atualizar. Tente novamente.",
         variant: "destructive",
       });
@@ -686,7 +687,7 @@ export function useCreateCrmPipelineStage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  return useMutation<{ data: CrmPipelineStage }, Error, { name: string; color?: string | null; order?: number; is_won?: boolean; is_lost?: boolean }>({
+  return useMutation<{ data: CrmPipelineStage }, Error, { name: string; description?: string | null; color?: string | null; order?: number; is_won?: boolean; is_lost?: boolean }>({
     mutationFn: async (payload) =>
       api.post("crm/pipeline-stages", { json: payload }).json<{ data: CrmPipelineStage }>(),
     onSuccess: () => {
@@ -707,7 +708,7 @@ export function useUpdateCrmPipelineStage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  return useMutation<{ data: CrmPipelineStage }, Error, { id: number; name?: string; color?: string | null; order?: number; is_won?: boolean; is_lost?: boolean }>({
+  return useMutation<{ data: CrmPipelineStage }, Error, { id: number; name?: string; description?: string | null; color?: string | null; order?: number; is_won?: boolean; is_lost?: boolean }>({
     mutationFn: async ({ id, ...payload }) =>
       api.put(`crm/pipeline-stages/${id}`, { json: payload }).json<{ data: CrmPipelineStage }>(),
     onSuccess: () => {
@@ -728,9 +729,9 @@ export function useDeleteCrmPipelineStage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, number>({
-    mutationFn: async (id) => {
-      await api.delete(`crm/pipeline-stages/${id}`).json();
+  return useMutation<void, Error, { id: number; target_stage_id?: number }>({
+    mutationFn: async ({ id, target_stage_id }) => {
+      await api.delete(`crm/pipeline-stages/${id}`, { json: { target_stage_id } }).json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["crm", "pipeline-stages"] });

@@ -2,7 +2,7 @@ import { CrmLead } from "../services/customer-service";
 
 export function getLeadStatusLabel(status: CrmLead["status"]): string {
   switch (status) {
-    case "won":  return "Ganho";
+    case "won":  return "Negócio Fechado";
     case "lost": return "Perdido";
     default:     return "Em aberto";
   }

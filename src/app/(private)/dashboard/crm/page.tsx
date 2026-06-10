@@ -16,7 +16,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   CrmLeadsFilters,
-  useCrmLeads,
+  useInfiniteCrmLeads,
   useCrmLeadSources,
   useCrmMetrics,
   useCrmPipelineStages,
@@ -57,7 +57,7 @@ export default function CrmPage() {
     search: "",
     status: "all",
     assigned_user_id: "all",
-    period: "this_month",
+    period: "all",
     sort: "recent",
     direction: "desc",
     tag_ids: [],
@@ -66,13 +66,20 @@ export default function CrmPage() {
     no_contact_days: undefined,
   });
 
-  const { data: leadsData, isLoading: isLoadingLeads } = useCrmLeads(filters);
+  const {
+    data: leadsData,
+    isLoading: isLoadingLeads,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteCrmLeads(filters);
   const { data: metricsData } = useCrmMetrics(filters.period);
 
   const moveStageMutation = useMoveCrmLeadStage();
 
-  const stages   = useMemo(() => (stagesData ?? []).slice().sort((a, b) => a.order - b.order), [stagesData]);
-  const leads    = useMemo(() => leadsData ?? [], [leadsData]);
+  const stages = useMemo(() => (stagesData ?? []).slice().sort((a, b) => a.order - b.order), [stagesData]);
+  const leads  = useMemo(() => leadsData?.pages.flatMap((p) => p.data) ?? [], [leadsData]);
+
   const tags     = useMemo(() => tagsData  ?? [], [tagsData]);
   const sources  = useMemo(() => sourcesData ?? [], [sourcesData]);
   const brokers  = useMemo(() => brokersData ?? [], [brokersData]);
@@ -106,12 +113,14 @@ export default function CrmPage() {
               Dashboard
             </Link>
           </Button>
-          <Button asChild variant="ghost" className="gap-2">
-            <Link href="/dashboard/crm/config">
-              <Settings2 className="h-4 w-4" />
-              Configurações
-            </Link>
-          </Button>
+          {hasPermission("crm.manage") && (
+            <Button asChild variant="ghost" className="gap-2">
+              <Link href="/dashboard/crm/config">
+                <Settings2 className="h-4 w-4" />
+                Configurações
+              </Link>
+            </Button>
+          )}
 
           {hasPermission("crm.import") && (
             <Button variant="outline" className="gap-2" onClick={() => setImportOpen(true)}>
@@ -357,7 +366,7 @@ export default function CrmPage() {
                     status: "all",
                     assigned_user_id: "all",
                     source_id: "all",
-                    period: "this_month",
+                    period: "all",
                     sort: "recent",
                     direction: "desc",
                     tag_ids: [],
@@ -415,6 +424,9 @@ export default function CrmPage() {
           stages={stages}
           leads={leads}
           onMove={(leadId, toStageId) => moveStageMutation.mutate({ id: leadId, to_stage_id: toStageId })}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onLoadMore={fetchNextPage}
         />
       )}
     </>

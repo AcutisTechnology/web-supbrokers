@@ -33,10 +33,17 @@ export function KanbanColumn({ stage, leads }: KanbanColumnProps) {
         }}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <h3 className="text-sm font-semibold text-[#141414] truncate">{stage.name}</h3>
+          <div className="relative group/tooltip min-w-0">
+            <h3 className="text-sm font-semibold text-[#141414] truncate cursor-default">{stage.name}</h3>
+            {stage.description && (
+              <div className="pointer-events-none absolute left-0 top-full mt-1.5 z-50 hidden group-hover/tooltip:block w-56 rounded-lg bg-gray-900 px-3 py-2 text-xs leading-relaxed text-white shadow-xl">
+                {stage.description}
+              </div>
+            )}
+          </div>
           {stage.is_won && (
             <span className="text-[10px] uppercase tracking-wide text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
-              Ganho
+              Fechado
             </span>
           )}
           {stage.is_lost && (
@@ -49,6 +56,12 @@ export function KanbanColumn({ stage, leads }: KanbanColumnProps) {
           {leads.length}
         </span>
       </div>
+
+      {leads.length > 0 && (
+        <div className="mb-2 px-1 text-xs text-[#777777]">
+          Total: <strong className="text-[#141414]">{formatCurrency(totalValue)}</strong>
+        </div>
+      )}
 
       <div
         ref={setNodeRef}
@@ -78,12 +91,6 @@ export function KanbanColumn({ stage, leads }: KanbanColumnProps) {
           </div>
         )}
       </div>
-
-      {leads.length > 0 && (
-        <div className="mt-2 px-3 py-2 text-xs text-[#777777] border-t border-dashed border-gray-200">
-          Total: <strong className="text-[#141414]">{formatCurrency(totalValue)}</strong>
-        </div>
-      )}
     </div>
   );
 }

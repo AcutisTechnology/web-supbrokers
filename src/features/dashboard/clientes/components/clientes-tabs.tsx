@@ -21,7 +21,7 @@ export function ClientesTabs({ status, onStatusChange, total }: ClientesTabsProp
             Em aberto
           </TabsTrigger>
           <TabsTrigger value="won" className="text-sm flex-1 md:flex-none px-3 md:px-4">
-            Ganhos
+            Negócios Fechados
           </TabsTrigger>
           <TabsTrigger value="lost" className="text-sm flex-1 md:flex-none px-3 md:px-4">
             Perdidos
