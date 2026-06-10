@@ -10,8 +10,9 @@ import { TopNav } from "@/features/dashboard/imoveis/top-nav";
 import { api } from "@/shared/configs/api";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, ExternalLink, MessageCircle, Pencil, Plus } from "lucide-react";
+import { Check, Copy, Download, ExternalLink, MessageCircle, Pencil, Plus, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -81,6 +82,11 @@ export default function ConstrutorasPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editingBuilderId, setEditingBuilderId] = useState<number | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importJsonText, setImportJsonText] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ total_processados: number; criados: number; atualizados: number; erros: Array<Record<string, unknown>> } | null>(null);
   const [copiedBuilderId, setCopiedBuilderId] = useState<number | null>(null);
   const [formName, setFormName] = useState("");
   const [formContact, setFormContact] = useState("");
@@ -165,6 +171,67 @@ export default function ConstrutorasPage() {
     }
   };
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const data = await api.get("builders/export").json<unknown[]>();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "construtoras.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Exportação concluída", description: `${data.length} construtoras exportadas.` });
+    } catch {
+      toast({ title: "Erro na exportação", variant: "destructive" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImportFile = async (file: File | null) => {
+    if (!file) return;
+    const text = await file.text();
+    setImportJsonText(text);
+  };
+
+  const handleImport = async () => {
+    setIsImporting(true);
+    setImportResult(null);
+    try {
+      const trimmed = importJsonText.trim();
+      if (!trimmed) throw new Error("Cole ou selecione um JSON para importar.");
+      const parsed: unknown = JSON.parse(trimmed);
+      let items: unknown[];
+      if (Array.isArray(parsed)) {
+        items = parsed;
+      } else if (typeof parsed === "object" && parsed !== null) {
+        const obj = parsed as Record<string, unknown>;
+        if (Array.isArray(obj.items)) items = obj.items as unknown[];
+        else if (Array.isArray(obj.data)) items = obj.data as unknown[];
+        else throw new Error("Formato inválido. Envie um array JSON ou { items: [...] } / { data: [...] }.");
+      } else {
+        throw new Error("Formato inválido.");
+      }
+
+      const response = await api.post("builders/import", { json: items }).json<{ total_processados: number; criados: number; atualizados: number; erros: Array<Record<string, unknown>> }>();
+      setImportResult(response);
+      toast({
+        title: "Importação concluída",
+        description: `Processadas: ${response.total_processados} • Criadas: ${response.criados} • Atualizadas: ${response.atualizados}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["builders"] });
+      setImportDialogOpen(false);
+      setImportJsonText("");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Falha ao importar.";
+      toast({ title: "Erro na importação", description: message, variant: "destructive" });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const applySearch = () => {
     setCurrentPage(1);
     setAppliedSearch(draftSearch);
@@ -190,11 +257,66 @@ export default function ConstrutorasPage() {
       <TopNav title_secondary="Construtoras" />
 
       <div className="flex items-center justify-between mb-6">
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova construtora
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={handleExport} disabled={isExporting}>
+            <Download className="mr-2 h-4 w-4" />
+            {isExporting ? "Exportando..." : "Exportar JSON"}
+          </Button>
+          <Button variant="outline" onClick={() => { setImportResult(null); setImportJsonText(""); setImportDialogOpen(true); }}>
+            <Upload className="mr-2 h-4 w-4" />
+            Importar JSON
+          </Button>
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova construtora
+          </Button>
+        </div>
       </div>
+
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Importar construtoras</DialogTitle>
+            <DialogDescription>
+              Cole o JSON ou selecione um arquivo .json. A importação faz upsert pelo nome da construtora.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              type="file"
+              accept="application/json,.json"
+              onChange={(e) => handleImportFile(e.target.files?.[0] ?? null)}
+            />
+            <Textarea
+              value={importJsonText}
+              onChange={(e) => setImportJsonText(e.target.value)}
+              placeholder='[{"nome":"Construtora ABC","contato":"(83) 99999-9999","url":"https://..."}]'
+              className="min-h-[200px] font-mono text-xs"
+            />
+            {importResult?.erros?.length ? (
+              <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <div className="font-medium">Erros ({importResult.erros.length})</div>
+                <div className="mt-1 space-y-1">
+                  {importResult.erros.slice(0, 5).map((err, idx) => (
+                    <div key={idx} className="break-words">
+                      {typeof err.message === "string" ? err.message : "Erro ao importar registro."}
+                    </div>
+                  ))}
+                  {importResult.erros.length > 5 ? <div>…</div> : null}
+                </div>
+              </div>
+            ) : null}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)} disabled={isImporting}>
+              Cancelar
+            </Button>
+            <Button onClick={handleImport} disabled={isImporting}>
+              {isImporting ? "Importando..." : "Importar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card className="border border-gray-100 shadow-sm mb-6">
         <CardHeader className="pb-3">

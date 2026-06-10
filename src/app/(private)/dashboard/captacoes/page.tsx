@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Pagination } from "@/components/ui/pagination";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import { ChevronDown, ChevronUp, ExternalLink, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -75,6 +75,7 @@ export default function CaptacoesPage() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importJsonText, setImportJsonText] = useState("");
   const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [importResult, setImportResult] = useState<CaptacoesImportResult | null>(null);
 
   const handlePageChange = (page: number) => {
@@ -107,6 +108,25 @@ export default function CaptacoesPage() {
     }
 
     throw new Error("Formato inválido. Envie um array JSON ou { items: [...] } / { data: [...] }.");
+  };
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const data = await api.get("captacoes/export").json<unknown[]>();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "captacoes.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Exportação concluída", description: `${data.length} captações exportadas.` });
+    } catch {
+      toast({ title: "Erro na exportação", variant: "destructive" });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleImportFile = async (file: File | null) => {
@@ -224,6 +244,10 @@ export default function CaptacoesPage() {
       <TopNav title_secondary="Captações" />
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={handleExport} disabled={isExporting}>
+            <Download className="mr-2 h-4 w-4" />
+            {isExporting ? "Exportando..." : "Exportar JSON"}
+          </Button>
           <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">Importar JSON</Button>
