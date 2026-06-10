@@ -1,14 +1,12 @@
 import { Card } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import Image from "next/image";
+import { PROPERTY_FALLBACK_IMAGE } from "@/lib/property";
 import { PropertyFormValues } from "../schemas/property-schema";
 
 interface PropertyPreviewProps {
   data: Partial<PropertyFormValues>;
 }
-
-const PLACEHOLDER_IMAGE =
-  "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Supbrokers__C_C3_B3pia_S_C3_A9rgio_-i5IjBZhamqbTXLQvYD1E6xOv8YJ5Vg.png";
 
 // Resolve a URL de exibição de um anexo, que pode ser um File novo
 // (selecionado agora) ou um objeto já existente vindo do servidor ({ url }).
@@ -26,7 +24,7 @@ export function PropertyPreview({ data }: PropertyPreviewProps) {
   // Obter a primeira imagem para exibição, se disponível
   const firstAttachment =
     data.attachments && data.attachments.length > 0 ? data.attachments[0] : null;
-  const previewImage = resolveAttachmentUrl(firstAttachment) ?? PLACEHOLDER_IMAGE;
+  const previewImage = resolveAttachmentUrl(firstAttachment) ?? PROPERTY_FALLBACK_IMAGE;
 
   // Formatar o valor para exibição
   const formattedValue = data.value ? formatCurrency(data.value) : "R$ 0,00";

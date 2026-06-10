@@ -4,11 +4,11 @@ import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  MapPin, 
-  Home, 
-  DollarSign, 
-  Image, 
+import {
+  MapPin,
+  Home,
+  DollarSign,
+  Image,
   CheckCircle,
   Bed,
   Car,
@@ -21,6 +21,7 @@ import {
   PropertyFormValues,
 } from "../../schemas/property-schema";
 import { formatCurrency } from "@/lib/utils";
+import { QualidadeAnuncioMeter } from "../qualidade-anuncio-meter";
 
 interface ReviewStepProps {
   form: UseFormReturn<PropertyFormValues>;
@@ -384,6 +385,9 @@ export function ReviewStep({ form }: ReviewStepProps) {
       <div className="min-h-[400px]">
         {renderTabContent()}
       </div>
+
+      {/* Quality meter */}
+      <QualidadeAnuncioMeter data={form.watch()} />
 
       {/* Footer */}
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">

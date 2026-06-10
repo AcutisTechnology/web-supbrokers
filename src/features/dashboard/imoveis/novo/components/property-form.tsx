@@ -30,6 +30,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { FileUpload, type UploadItem } from "@/components/ui/file-upload";
 import { PropertyPreview } from "./property-preview";
+import { QualidadeAnuncioMeter } from "./qualidade-anuncio-meter";
 import { useCreateProperty, useUpdateProperty } from "../../services/property-service";
 import {
   PROPERTY_TYPES,
@@ -919,6 +920,7 @@ export function PropertyForm({ initialValues, isEditing = false, propertySlug }:
             <h2 className="mb-1 text-lg font-medium">Visualização</h2>
             <PropertyPreview data={watchedValues} />
           </div>
+          <QualidadeAnuncioMeter data={watchedValues} />
         </div>
       </div>
     </div>
