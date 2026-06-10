@@ -1,8 +1,9 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { AnimatePresence, motion } from "framer-motion";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Inbox } from "lucide-react";
+import { useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { CrmLead, CrmPipelineStage } from "../services/crm-service";
 import { LeadCard } from "./lead-card";
@@ -21,12 +22,23 @@ export function KanbanColumn({ stage, leads }: KanbanColumnProps) {
     data: { stageId: stage.id },
   });
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: leads.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 138,
+    overscan: 5,
+    measureElement: (el) => el.getBoundingClientRect().height,
+  });
+
   const totalValue = leads.reduce((acc, lead) => acc + Number(lead.value ?? 0), 0);
+  const virtualItems = virtualizer.getVirtualItems();
 
   return (
-    <div className="w-[85vw] sm:w-[280px] md:min-w-[280px] md:max-w-[300px] flex-shrink-0 snap-start md:snap-align-none">
+    <div className="w-[85vw] sm:w-[280px] md:min-w-[280px] md:max-w-[300px] flex-shrink-0 snap-start md:snap-align-none flex flex-col h-full">
       <div
-        className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl sticky top-0 z-10 backdrop-blur"
+        className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl"
         style={{
           backgroundColor: `${stage.color ?? "#9747FF"}1a`,
           borderLeft: `4px solid ${stage.color ?? "#9747FF"}`,
@@ -63,33 +75,47 @@ export function KanbanColumn({ stage, leads }: KanbanColumnProps) {
         </div>
       )}
 
+      {/* scroll container por coluna */}
       <div
-        ref={setNodeRef}
-        className={cn(
-          "min-h-[400px] rounded-xl p-2 space-y-2 transition-colors border border-dashed",
-          isOver ? "bg-[#9747FF]/10 border-[#9747FF]/50 ring-2 ring-[#9747FF]/20" : "border-transparent",
-        )}
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400"
       >
-        <AnimatePresence initial={false}>
-          {leads.map((lead) => (
-            <motion.div
-              key={lead.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-            >
-              <LeadCard lead={lead} />
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        {leads.length === 0 && (
-          <div className="flex flex-col items-center justify-center text-center py-8 text-[#777777]">
-            <Inbox className="h-6 w-6 mb-2 opacity-40" />
-            <div className="text-xs">Sem leads nesta etapa</div>
-            <div className="text-[10px] mt-1 opacity-70">Arraste cards até aqui</div>
-          </div>
-        )}
+        <div
+          ref={setNodeRef}
+          className={cn(
+            "rounded-xl p-2 transition-colors border border-dashed relative",
+            isOver
+              ? "bg-[#9747FF]/10 border-[#9747FF]/50 ring-2 ring-[#9747FF]/20"
+              : "border-transparent",
+          )}
+          style={{ height: `${Math.max(400, virtualizer.getTotalSize() + 16)}px` }}
+        >
+          {leads.length === 0 ? (
+            <div className="flex flex-col items-center justify-center text-center py-8 text-[#777777]">
+              <Inbox className="h-6 w-6 mb-2 opacity-40" />
+              <div className="text-xs">Sem leads nesta etapa</div>
+              <div className="text-[10px] mt-1 opacity-70">Arraste cards até aqui</div>
+            </div>
+          ) : (
+            virtualItems.map((virtualItem) => (
+              <div
+                key={virtualItem.key}
+                data-index={virtualItem.index}
+                ref={virtualizer.measureElement}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 8,
+                  right: 8,
+                  transform: `translateY(${virtualItem.start}px)`,
+                  paddingBottom: 8,
+                }}
+              >
+                <LeadCard lead={leads[virtualItem.index]} />
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
