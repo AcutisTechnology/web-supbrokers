@@ -37,6 +37,13 @@ const SEGMENT_LABELS: Record<string, string> = {
   planos: "Planos",
   propostas: "Propostas",
   "calculadora-fluxo": "Calculadora de Fluxo",
+  kit: "Kit do Corretor",
+  "scripts-de-vendas": "Scripts de Vendas",
+  "resgatador-de-leads": "O Resgatador de Leads",
+  mcmv: "Minha Casa Minha Vida",
+  "medio-padrao": "Médio Padrão",
+  "alto-padrao": "Alto Padrão",
+  "audios-magneticos": "Roteiro de Áudios Magnéticos",
 };
 
 // Descrições por rota exata. Para rotas dinâmicas, o algoritmo
@@ -76,6 +83,13 @@ const ROUTE_DESCRIPTIONS: Record<string, string> = {
   "/dashboard/canal-pro":                      "Canal profissional de vendas",
   "/dashboard/grupos-permissao":               "Gestão de permissões de usuários",
   "/dashboard/planos":                         "Planos e assinaturas",
+  "/dashboard/kit":                                      "Escolha seu módulo",
+  "/dashboard/kit/scripts-de-vendas":                    "Scripts validados de alta conversão",
+  "/dashboard/kit/resgatador-de-leads":                  "Escolha o segmento para reativar seus leads",
+  "/dashboard/kit/resgatador-de-leads/mcmv":             "Cadência de 10 dias — segmento econômico",
+  "/dashboard/kit/resgatador-de-leads/medio-padrao":     "Cadência de 10 dias — clientes em ascensão",
+  "/dashboard/kit/resgatador-de-leads/alto-padrao":      "Cadência de 10 dias — segmento premium",
+  "/dashboard/kit/audios-magneticos":                    "Guia de gravação + 10 roteiros prontos para converter",
 };
 
 function getDescription(pathname: string): string | undefined {

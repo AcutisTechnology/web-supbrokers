@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Home, Building2, Users, Settings, LogOut, Files, Menu, X, HelpCircle, ChevronLeft, ChevronRight, Building, Calendar, Calculator, ClipboardList, Crown, MessageCircle, ListTodo, Send, Link2, Bot, Megaphone, Filter, CalendarCheck, Wallet, ShoppingCart, Receipt, CreditCard, FileBarChart, Search } from "lucide-react";
+import { Home, Building2, Users, Settings, LogOut, Files, Menu, X, HelpCircle, ChevronLeft, ChevronRight, Building, Calendar, Calculator, ClipboardList, Crown, MessageCircle, ListTodo, Send, Link2, Bot, Megaphone, Filter, CalendarCheck, Wallet, ShoppingCart, Receipt, CreditCard, FileBarChart, Search, BookOpen } from "lucide-react";
 import { useAuth } from "../hooks/auth/use-auth";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -224,6 +224,16 @@ export function Sidebar() {
                 {!isCollapsed && <span>Utilidades</span>}
               </Link>
             )}
+
+            <Link
+              href="/dashboard/kit"
+              className={`flex items-center gap-3 text-sm font-medium text-[#16ae4f] rounded-xl hover:bg-[#e8f5f0] hover:shadow-sm transition-all duration-200 group ${isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'}`}
+              onClick={() => setIsOpen(false)}
+              title={isCollapsed ? "Kit do Corretor" : ""}
+            >
+              <BookOpen size={20} className="text-[#16ae4f] transition-colors" />
+              {!isCollapsed && <span>Kit do Corretor</span>}
+            </Link>
 
             {!isCollapsed && showAtendimento && (
               <div className="pt-4 mt-4">
