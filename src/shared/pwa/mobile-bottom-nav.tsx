@@ -8,19 +8,21 @@ import { usePathname } from 'next/navigation';
 export interface BottomNavItem {
   label: string;
   icon: LucideIcon;
+  /** Rota interna. Omitir quando for ação externa (href). */
   to?: string;
+  /** Link externo (ex.: WhatsApp). */
   href?: string;
+  /** Match exato (ex.: home). Por padrão usa startsWith. */
   exact?: boolean;
 }
 
 interface MobileBottomNavProps {
   items: BottomNavItem[];
+  /** Tema do container. */
   theme?: 'light' | 'dark';
-  /** Cor do fundo da página — usada pelo indicador para criar o efeito de "buraco" na barra. */
-  bgColor?: string;
 }
 
-export function MobileBottomNav({ items, theme = 'light', bgColor = '#f6f6f6' }: MobileBottomNavProps) {
+export function MobileBottomNav({ items, theme = 'light' }: MobileBottomNavProps) {
   const pathname = usePathname();
   const isDark = theme === 'dark';
 
@@ -30,120 +32,81 @@ export function MobileBottomNav({ items, theme = 'light', bgColor = '#f6f6f6' }:
     return pathname === item.to || pathname.startsWith(`${item.to}/`);
   };
 
-  const activeIndex = items.findIndex(isActive);
-  const itemWidthPct = 100 / items.length;
-
   return (
     <nav
       aria-label="Navegação principal"
-      className="lg:hidden fixed bottom-0 inset-x-0 z-50 px-3 pb-[max(env(safe-area-inset-bottom),10px)]"
+      className={`lg:hidden fixed bottom-0 inset-x-0 z-50 border-t pb-safe ${
+        isDark
+          ? 'bg-[#0F0820]/90 border-white/10'
+          : 'bg-white/85 border-black/5'
+      } backdrop-blur-xl`}
     >
-      <div
-        className={`relative h-[70px] rounded-[10px] flex justify-center overflow-visible ${
-          isDark ? 'bg-[#252432]' : 'bg-white'
-        } shadow-[0_5px_15px_rgba(0,0,0,0.1)]`}
-      >
-        <ul className="flex w-full relative">
-          {/* ── Indicador deslizante ── */}
-          {activeIndex >= 0 && (
-            <motion.div
-              className="absolute h-[70px] z-0"
-              style={{
-                width: `${itemWidthPct}%`,
-                top: '-10px',
-                background: bgColor,
-                border: `6px solid ${bgColor}`,
-                borderBottomLeftRadius: '50%',
-                borderBottomRightRadius: '50%',
-              }}
-              animate={{ left: `${activeIndex * itemWidthPct}%` }}
-              initial={{ left: `${activeIndex * itemWidthPct}%` }}
-              transition={{ type: 'spring', stiffness: 500, damping: 38, mass: 0.8 }}
-            >
-              {/* Asa esquerda — curva côncava */}
-              <span
-                className="absolute w-[20px] h-[20px] rounded-tr-[20px]"
-                style={{ top: '4px', left: '-25.75px', boxShadow: `4px -6px 0 2px ${bgColor}` }}
-              />
-              {/* Asa direita */}
-              <span
-                className="absolute w-[20px] h-[20px] rounded-tl-[20px]"
-                style={{ top: '4px', right: '-25.75px', boxShadow: `-4px -6px 0 2px ${bgColor}` }}
-              />
-              {/* Círculo decorativo interno */}
-              <span
-                className="absolute rounded-full bg-white border-[4px] border-[#9747ff] shadow-[0_5px_15px_rgba(0,0,0,0.15)]"
-                style={{
-                  bottom: '3px',
-                  left: '50%',
-                  transform: 'translateX(-50%) scale(0.85)',
-                  transformOrigin: 'bottom',
-                  width: '60px',
-                  height: '60px',
-                }}
-              />
-            </motion.div>
-          )}
-
-          {/* ── Itens de navegação ── */}
-          {items.map((item, index) => {
-            const active = index === activeIndex;
-            const Icon = item.icon;
-
-            const inner = (
-              <span className="relative flex justify-center items-center flex-col w-full h-full text-center">
-                {/* Ícone — levanta quando ativo */}
-                <span
-                  className="transition-all duration-500"
-                  style={{
-                    transform: active ? 'translateY(-8px)' : 'translateY(0)',
-                    color: active
-                      ? '#9747ff'
-                      : isDark
-                        ? 'rgba(255,255,255,0.65)'
-                        : 'rgba(0,0,0,0.55)',
-                  }}
-                >
-                  <Icon size={22} strokeWidth={active ? 2.2 : 1.8} />
-                </span>
-                {/* Label — só aparece quando ativo, abaixo do ícone */}
-                <span
-                  className="absolute bottom-[8px] text-[10px] font-semibold leading-none tracking-wide transition-all duration-300"
-                  style={{
-                    color: '#9747ff',
-                    opacity: active ? 1 : 0,
-                    transform: active ? 'translateY(0)' : 'translateY(4px)',
-                  }}
-                >
-                  {item.label}
-                </span>
-              </span>
-            );
-
-            return (
-              <li
-                key={item.label}
-                style={{ width: `${itemWidthPct}%` }}
-                className="relative list-none h-[70px] z-10"
-              >
-                {item.href ? (
-                  <a href={item.href} target="_blank" rel="noreferrer" className="block w-full h-full">
-                    {inner}
-                  </a>
-                ) : (
-                  <Link
-                    href={item.to ?? '#'}
-                    className="block w-full h-full"
-                    aria-current={active ? 'page' : undefined}
-                  >
-                    {inner}
-                  </Link>
+      <ul className="flex items-stretch justify-around px-1">
+        {items.map(item => {
+          const active = isActive(item);
+          const Icon = item.icon;
+          const content = (
+            <>
+              <span className="relative flex items-center justify-center">
+                {active && (
+                  <motion.span
+                    layoutId="bottom-nav-active"
+                    className="absolute -inset-x-3 -inset-y-1.5 rounded-full bg-[#9747FF]/12"
+                    transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                  />
                 )}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+                <Icon
+                  className={`relative w-[22px] h-[22px] transition-colors ${
+                    active
+                      ? 'text-[#9747FF]'
+                      : isDark
+                        ? 'text-white/70'
+                        : 'text-[#777]'
+                  }`}
+                  strokeWidth={active ? 2.4 : 1.8}
+                />
+              </span>
+              <span
+                className={`text-[10px] font-medium transition-colors ${
+                  active
+                    ? 'text-[#9747FF]'
+                    : isDark
+                      ? 'text-white/60'
+                      : 'text-[#777]'
+                }`}
+              >
+                {item.label}
+              </span>
+            </>
+          );
+
+          const className =
+            'flex flex-col items-center justify-center gap-1 py-2.5 px-2 min-w-0 flex-1 active:scale-95 transition-transform';
+
+          return (
+            <li key={item.label} className="flex-1">
+              {item.href ? (
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={className}
+                >
+                  {content}
+                </a>
+              ) : (
+                <Link
+                  href={item.to ?? '#'}
+                  className={className}
+                  aria-current={active ? 'page' : undefined}
+                >
+                  {content}
+                </Link>
+              )}
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 }
