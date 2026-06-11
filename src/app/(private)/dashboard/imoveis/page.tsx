@@ -27,6 +27,7 @@ import { ImportPropertiesModal } from "@/features/dashboard/imoveis/components/i
 const emptyOption = { id: null as number | null, name: "" };
 
 const defaultFilters = (): PropertiesFilters => ({
+  code: "",
   search: "",
   neighborhood: { ...emptyOption },
   city: { ...emptyOption },
@@ -142,7 +143,18 @@ export default function PropertiesPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Linha 1 — sempre visível */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <div className="text-sm font-medium mb-2 text-[#141414]">Código</div>
+              <Input
+                placeholder="Ex: TD01"
+                value={draftFilters.code ?? ""}
+                onChange={(e) =>
+                  setDraftFilters((p) => ({ ...p, code: e.target.value }))
+                }
+              />
+            </div>
+
             <div>
               <div className="text-sm font-medium mb-2 text-[#141414]">Nome</div>
               <Input
