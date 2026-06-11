@@ -133,6 +133,63 @@ export function useBlastCrmContacts() {
   });
 }
 
+/**
+ * Retorna leads de estágios específicos do CRM para seleção na campanha.
+ */
+export function useBlastCrmContactsByStages(stageIds: number[]) {
+  const key = [...stageIds].sort().join(",");
+  return useQuery({
+    queryKey: ["blast", "crm-contacts-stages", key],
+    queryFn: () =>
+      api
+        .get("crm/leads", { searchParams: { pipeline_stage_ids: key, per_page: "500" } })
+        .json<{ data: { id: number; name: string; phone: string }[] }>()
+        .then((r) =>
+          r.data
+            .filter((lead) => lead.phone)
+            .map(
+              (lead): BlastContact => ({
+                id: String(lead.id),
+                name: lead.name,
+                phone: lead.phone,
+                type: "Lead",
+                crm_lead_id: lead.id,
+              })
+            )
+        ),
+    enabled: stageIds.length > 0,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Busca leads do CRM por nome, telefone ou e-mail (server-side).
+ * Habilitado apenas quando `search` é não-vazio.
+ */
+export function useBlastCrmContactsSearch(search: string) {
+  const trimmed = search.trim();
+  return useQuery({
+    queryKey: ["blast", "crm-contacts-search", trimmed],
+    queryFn: () =>
+      api
+        .get("crm/leads", { searchParams: { search: trimmed, per_page: "100" } })
+        .json<{ data: { id: number; name: string; phone: string }[] }>()
+        .then((r) =>
+          r.data.map(
+            (lead): BlastContact => ({
+              id: String(lead.id),
+              name: lead.name,
+              phone: lead.phone,
+              type: "Lead",
+              crm_lead_id: lead.id,
+            })
+          )
+        ),
+    enabled: trimmed.length > 0,
+    staleTime: 30_000,
+  });
+}
+
 // ── Mutations ─────────────────────────────────────────────────────────────────
 
 export function useCreateBlastCampaign() {
