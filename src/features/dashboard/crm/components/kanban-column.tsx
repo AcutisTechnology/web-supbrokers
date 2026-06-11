@@ -1,8 +1,9 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { AnimatePresence, motion } from "framer-motion";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Inbox } from "lucide-react";
+import { memo, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { CrmLead, CrmPipelineStage } from "../services/crm-service";
 import { LeadCard } from "./lead-card";
@@ -15,25 +16,54 @@ interface KanbanColumnProps {
 const formatCurrency = (value: number) =>
   value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-export function KanbanColumn({ stage, leads }: KanbanColumnProps) {
+// Mistura uma cor hex (#RRGGBB) sobre branco no alpha dado → cor opaca.
+// Usado para o cabeçalho parecer "fosco" sem depender de backdrop-blur.
+const blendOverWhite = (hex: string, alpha: number) => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return "#ffffff";
+  const int = parseInt(m[1], 16);
+  const r = (int >> 16) & 255;
+  const g = (int >> 8) & 255;
+  const b = int & 255;
+  const blend = (c: number) => Math.round(c * alpha + 255 * (1 - alpha));
+  return `rgb(${blend(r)}, ${blend(g)}, ${blend(b)})`;
+};
+
+function KanbanColumnComponent({ stage, leads }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `stage-${stage.id}`,
     data: { stageId: stage.id },
   });
 
   const color = stage.color ?? "#9747FF";
+  const headerBg = blendOverWhite(color, 0.12);
   const totalValue = leads.reduce((acc, lead) => acc + Number(lead.value ?? 0), 0);
+
+  // Virtualização: só os cards visíveis na coluna ficam no DOM. Sem isso, uma
+  // base com milhares de leads renderiza tudo de uma vez (dezenas de milhares
+  // de nós) e o drag trava. Cada coluna é seu próprio container de scroll.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: leads.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 161,
+    overscan: 10,
+    getItemKey: (index) => leads[index].id,
+  });
 
   return (
     <div
-      className="w-[85vw] sm:w-[280px] md:min-w-[280px] md:max-w-[300px] flex-shrink-0 snap-start md:snap-align-none rounded-2xl min-h-full flex flex-col"
+      ref={setNodeRef}
+      className={cn(
+        "w-[85vw] sm:w-[280px] md:min-w-[280px] md:max-w-[300px] flex-shrink-0 snap-start md:snap-align-none rounded-2xl h-full flex flex-col overflow-hidden transition-shadow",
+        isOver && "ring-2 ring-inset ring-[#9747FF]/40",
+      )}
       style={{ backgroundColor: `${color}0a` }}
     >
-      {/* cabeçalho sticky — fica fixo enquanto os cards rolam */}
-      <div
-        className="sticky top-0 z-10 rounded-t-2xl px-3 pt-3 pb-2 backdrop-blur-sm"
-        style={{ backgroundColor: `${color}18` }}
-      >
+      {/* cabeçalho — fica fixo no topo da coluna enquanto os cards rolam.
+          Sem backdrop-blur: blur em elemento sticky é repintado a cada frame
+          durante o drag/scroll e trava o board. Fundo opaco resolve o overlap. */}
+      <div className="rounded-t-2xl px-3 pt-3 pb-2" style={{ backgroundColor: headerBg }}>
         <div
           className="flex items-center justify-between py-1.5 px-2.5 rounded-xl"
           style={{ borderLeft: `4px solid ${color}` }}
@@ -64,48 +94,45 @@ export function KanbanColumn({ stage, leads }: KanbanColumnProps) {
             {leads.length}
           </span>
         </div>
-
       </div>
 
       {leads.length > 0 && (
-        <div className="px-3 py-1.5 text-xs text-[#555]">
+        <div className="px-3 py-1.5 text-xs text-[#555] shrink-0">
           Total: <strong className="text-[#141414]">{formatCurrency(totalValue)}</strong>
         </div>
       )}
 
-      {/* área de drop + cards */}
+      {/* área de cards rolável + virtualizada — a coluna inteira é a zona de drop
+          (ref do droppable está na raiz). */}
       <div
-        ref={setNodeRef}
-        className={cn(
-          "flex-1 p-2 space-y-2 transition-colors rounded-b-2xl border border-t-0 border-dashed",
-          isOver
-            ? "border-[#9747FF]/50 ring-2 ring-inset ring-[#9747FF]/20"
-            : "border-transparent",
-        )}
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto p-2 transition-colors rounded-b-2xl [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300"
         style={isOver ? { backgroundColor: `${color}1a` } : undefined}
       >
-        <AnimatePresence initial={false}>
-          {leads.map((lead) => (
-            <motion.div
-              key={lead.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-            >
-              <LeadCard lead={lead} />
-            </motion.div>
-          ))}
-        </AnimatePresence>
-
-        {leads.length === 0 && (
+        {leads.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center py-8 text-[#777777]">
             <Inbox className="h-6 w-6 mb-2 opacity-40" />
             <div className="text-xs">Sem leads nesta etapa</div>
             <div className="text-[10px] mt-1 opacity-70">Arraste cards até aqui</div>
+          </div>
+        ) : (
+          <div style={{ height: virtualizer.getTotalSize(), position: "relative", width: "100%" }}>
+            {virtualizer.getVirtualItems().map((item) => (
+              <div
+                key={item.key}
+                data-index={item.index}
+                ref={virtualizer.measureElement}
+                className="absolute left-0 top-0 w-full pb-2"
+                style={{ transform: `translateY(${item.start}px)` }}
+              >
+                <LeadCard lead={leads[item.index]} />
+              </div>
+            ))}
           </div>
         )}
       </div>
     </div>
   );
 }
+
+export const KanbanColumn = memo(KanbanColumnComponent);

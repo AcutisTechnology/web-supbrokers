@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCurrentUser } from "@/shared/hooks/use-current-user";
 import { api } from "@/shared/configs/api";
-import { BarChart3, Filter, Plus, Search, Settings2, Upload, Users } from "lucide-react";
+import { BarChart3, ChevronDown, Filter, Plus, Search, Settings2, SlidersHorizontal, Upload, Users } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -40,6 +40,7 @@ const formatCurrency = (value: string | null | undefined) => {
 export default function CrmPage() {
   const { isBroker, user: currentUser, userId: currentUserId, hasPermission } = useCurrentUser();
   const [importOpen, setImportOpen] = useState(false);
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
 
   const { data: stagesData, isLoading: isLoadingStages } = useCrmPipelineStages();
   const { data: tagsData } = useCrmTags();
@@ -95,6 +96,18 @@ export default function CrmPage() {
   };
 
   const headerIsLoading = isLoadingStages || isLoadingLeads;
+
+  // Algum filtro avançado (escondido sob "Mais filtros") está ativo? Serve para
+  // marcar o botão e não esconder filtros ativos do usuário sem aviso.
+  const hasAdvancedFilters =
+    (filters.assigned_user_id ?? "all") !== "all" ||
+    (filters.source_id ?? "all") !== "all" ||
+    (filters.sort ?? "recent") !== "recent" ||
+    (filters.direction ?? "desc") !== "desc" ||
+    (filters.tag_ids?.length ?? 0) > 0 ||
+    !!filters.is_hot ||
+    !!filters.no_activity ||
+    filters.no_contact_days != null;
 
   return (
     <>
@@ -213,6 +226,8 @@ export default function CrmPage() {
               </Select>
             </div>
 
+            {showMoreFilters && (
+            <>
             <div>
               <Select
                 value={String(filters.assigned_user_id ?? "all")}
@@ -278,8 +293,11 @@ export default function CrmPage() {
                 </SelectContent>
               </Select>
             </div>
+            </>
+            )}
 
-            <div className="md:col-span-4 flex items-center justify-between gap-3 flex-wrap">
+            {showMoreFilters && (
+            <div className="md:col-span-4 flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -353,9 +371,30 @@ export default function CrmPage() {
                   <span className="text-xs text-[#777777]">dias</span>
                 </div>
               </div>
+            </div>
+            )}
+
+            <div className="md:col-span-4 flex items-center justify-between gap-3">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="gap-2 text-[#555]"
+                onClick={() => setShowMoreFilters((v) => !v)}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                {showMoreFilters ? "Menos filtros" : "Mais filtros"}
+                {!showMoreFilters && hasAdvancedFilters && (
+                  <span className="h-2 w-2 rounded-full bg-[#9747FF]" title="Há filtros avançados ativos" />
+                )}
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${showMoreFilters ? "rotate-180" : ""}`}
+                />
+              </Button>
 
               <Button
                 variant="ghost"
+                size="sm"
                 className="gap-2"
                 onClick={() =>
                   setFilters({
