@@ -4,6 +4,7 @@ import { Building2, LayoutDashboard, Settings, Users, Wallet } from "lucide-reac
 import { Sidebar } from "@/shared/components/sidebar";
 // import { SubscriptionModal } from "@/shared/components/subscription-modal";
 import { MobileBottomNav, type BottomNavItem } from "@/shared/pwa/mobile-bottom-nav";
+import { EmailVerificationBanner } from "@/shared/components/email-verification-banner";
 
 const ADMIN_NAV: BottomNavItem[] = [
   { label: "Início", icon: LayoutDashboard, to: "/dashboard", exact: true },
@@ -31,6 +32,7 @@ export default function RootLayout({
     <div className="flex min-h-screen bg-[#f6f6f6]">
       <Sidebar />
       <main className="flex-1 min-w-0 p-4 md:p-8 md:py-6 mt-16 md:mt-0 pb-[calc(env(safe-area-inset-bottom)+4.75rem)] lg:pb-6">
+        <EmailVerificationBanner />
         {children}
       </main>
       <MobileBottomNav items={ADMIN_NAV} theme="light" />

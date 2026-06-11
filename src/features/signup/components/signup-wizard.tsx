@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { UserTypeStep } from "./steps/user-type-step";
 
 import { CredentialsStep } from "./steps/credentials-step";
+import { EmailVerificationStep } from "./steps/email-verification-step";
 import { DiscoveryStep } from "./steps/discovery-step";
 import { PersonalDataStep } from "./steps/personal-data-step";
 import { CompletionStep } from "./steps/completion-step";
@@ -41,15 +42,21 @@ export interface StepSharedProps {
   onEmailAvailableChange?: (val: boolean | null) => void;
   usernameAvailable?: boolean | null;
   onUsernameAvailableChange?: (val: boolean | null) => void;
+  emailVerified?: boolean;
+  onEmailVerifiedChange?: (val: boolean) => void;
 }
 
 const STEPS = [
   { id: 1, title: "Tipo de usuário", component: UserTypeStep },
   { id: 2, title: "Dados pessoais", component: PersonalDataStep },
   { id: 3, title: "Credenciais", component: CredentialsStep },
-  { id: 4, title: "Como nos conheceu", component: DiscoveryStep },
-  { id: 5, title: "Finalização", component: CompletionStep },
+  { id: 4, title: "Verificar e-mail", component: EmailVerificationStep },
+  { id: 5, title: "Como nos conheceu", component: DiscoveryStep },
+  { id: 6, title: "Finalização", component: CompletionStep },
 ];
+
+// Passo no qual a conta é efetivamente criada (penúltimo: "Como nos conheceu").
+const SUBMIT_STEP = STEPS.length - 1;
 
 export function SignupWizard() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -57,6 +64,7 @@ export function SignupWizard() {
   const [cpfAvailable, setCpfAvailable] = useState<boolean | null>(null);
   const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [emailVerified, setEmailVerified] = useState(false);
   const { signup, loading } = useAuth();
   const router = useRouter();
 
@@ -78,8 +86,8 @@ export function SignupWizard() {
   const CurrentStepComponent = STEPS[currentStep - 1]?.component;
 
   const handleNext = async () => {
-    if (currentStep === 4) {
-      // Submit form on step 4 (DiscoveryStep)
+    if (currentStep === SUBMIT_STEP) {
+      // Cria a conta no passo "Como nos conheceu" (penúltimo).
       const data = form.getValues();
       const formattedData = {
         ...data,
@@ -128,8 +136,10 @@ export function SignupWizard() {
           agreedToTerms
         );
       case 4:
-        return data.discoverySource !== '';
+        return emailVerified === true;
       case 5:
+        return data.discoverySource !== '';
+      case 6:
         return true;
       default:
         return false;
@@ -239,6 +249,8 @@ export function SignupWizard() {
                     onEmailAvailableChange={setEmailAvailable}
                     usernameAvailable={usernameAvailable}
                     onUsernameAvailableChange={setUsernameAvailable}
+                    emailVerified={emailVerified}
+                    onEmailVerifiedChange={setEmailVerified}
                   />
                 )}
               </motion.div>
@@ -267,7 +279,7 @@ export function SignupWizard() {
               >
                 {loading
                   ? "Criando conta..."
-                  : currentStep === 4
+                  : currentStep === SUBMIT_STEP
                   ? "Finalizar cadastro"
                   : currentStep === STEPS.length
                   ? "Ir para o painel"

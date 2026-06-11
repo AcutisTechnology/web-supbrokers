@@ -23,6 +23,7 @@ export function CredentialsStep({
   onTermsChange,
   emailAvailable,
   onEmailAvailableChange,
+  onEmailVerifiedChange,
 }: CredentialsStepProps) {
   const { register, watch } = form;
   const password = watch("password");
@@ -108,6 +109,8 @@ export function CredentialsStep({
             <Input
               {...register("email", {
                 onChange: () => {
+                  // Trocar o e-mail invalida a verificação anterior.
+                  onEmailVerifiedChange?.(false);
                   if (emailState !== "idle") {
                     setEmailState("idle");
                     onEmailAvailableChange?.(null);
