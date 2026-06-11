@@ -46,6 +46,8 @@ import {
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   useBlastCrmContacts,
+  useBlastCrmContactsSearch,
+  useBlastCrmContactsByStages,
   useImportBlastSpreadsheet,
   useCreateBlastCampaign,
   useStartBlastCampaign,
@@ -56,6 +58,7 @@ import {
   type BlastContact,
 } from "@/features/dashboard/disparo-em-massa/services/blast-service";
 import { useWhatsappInstances } from "@/features/dashboard/whatsapp/services/whatsapp-service";
+import { useCrmPipelineStages, type CrmPipelineStage } from "@/features/dashboard/crm/services/crm-service";
 
 type StepKey = "contacts" | "actions" | "review" | "send" | "results";
 
@@ -78,6 +81,7 @@ type CampaignAction = {
   uniqueImagePreview: boolean;
   fileName: string | null;
   filePath: string | null;
+  fileUrl: string | null;
   isUploading?: boolean;
 };
 
@@ -93,12 +97,24 @@ export default function NovaCampanhaDisparoEmMassaPage() {
   const { toast } = useToast();
   const [activeStep, setActiveStep] = useState<StepKey>("contacts");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [isCrmAbasOpen, setIsCrmAbasOpen] = useState(false);
+  const [selectedStageIds, setSelectedStageIds] = useState<number[]>([]);
+  const [appliedStageIds, setAppliedStageIds] = useState<number[]>([]);
   const [selectedIds, setSelectedIds] = useState<Record<string, true>>({});
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [newContactName, setNewContactName] = useState("");
   const [newContactPhone, setNewContactPhone] = useState("");
+
+  const formatPhoneInput = (raw: string): string => {
+    const digits = raw.replace(/\D/g, "").slice(0, 11);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 2)} ${digits.slice(2)}`;
+    if (digits.length <= 10) return `${digits.slice(0, 2)} ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    return `${digits.slice(0, 2)} ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
   const [isInternational, setIsInternational] = useState(false);
   const [ignoreNinthDigit, setIgnoreNinthDigit] = useState(false);
   const [selectedSpreadsheetFile, setSelectedSpreadsheetFile] = useState<File | null>(null);
@@ -107,11 +123,10 @@ export default function NovaCampanhaDisparoEmMassaPage() {
   const mediaFileInputRef = useRef<HTMLInputElement | null>(null);
   const [actions, setActions] = useState<CampaignAction[]>([]);
   const [selectedActionId, setSelectedActionId] = useState<string>("");
-  const [intervalSeconds, setIntervalSeconds] = useState<number>(10);
-  const [pauseEveryContacts, setPauseEveryContacts] = useState<number>(10);
-  const [pauseSeconds, setPauseSeconds] = useState<number>(60);
-  const [disableSignature, setDisableSignature] = useState<boolean>(false);
-  const [customSignatureName, setCustomSignatureName] = useState<boolean>(true);
+  const [intervalSeconds, setIntervalSeconds] = useState<number>(30);
+  const [pauseEveryContacts, setPauseEveryContacts] = useState<number>(5);
+  const [pauseSeconds, setPauseSeconds] = useState<number>(150);
+  const [enableSignature, setEnableSignature] = useState<boolean>(false);
   const [signatureName, setSignatureName] = useState<string>("");
   const [isPaused, setIsPaused] = useState<boolean>(true);
 
@@ -123,8 +138,17 @@ export default function NovaCampanhaDisparoEmMassaPage() {
   // Contatos importados via planilha (adicionados à lista existente de CRM)
   const [importedContacts, setImportedContacts] = useState<Contact[]>([]);
 
+  // Debounce de 400ms para não disparar uma request a cada tecla
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
   // API hooks
   const { data: crmContacts = [], isLoading: isLoadingContacts } = useBlastCrmContacts();
+  const { data: searchResults, isFetching: isSearching } = useBlastCrmContactsSearch(debouncedSearch);
+  const { data: stageResults, isFetching: isLoadingStageContacts } = useBlastCrmContactsByStages(appliedStageIds);
+  const { data: pipelineStages = [], isLoading: isLoadingStages } = useCrmPipelineStages();
   const { data: instances = [] } = useWhatsappInstances();
   const { data: campaigns = [] } = useBlastCampaigns();
   const importSpreadsheet = useImportBlastSpreadsheet();
@@ -161,16 +185,31 @@ export default function NovaCampanhaDisparoEmMassaPage() {
     return [...crmMapped, ...importedContacts];
   }, [crmContacts, importedContacts]);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return contacts;
-    return contacts.filter((c) => c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q));
-  }, [contacts, search]);
+  const mapBlastToContact = (c: BlastContact): Contact => ({
+    id: String(c.id),
+    name: c.name,
+    phone: c.phone,
+    type: c.type,
+    crm_lead_id: c.crm_lead_id ?? null,
+  });
+
+  const stageContacts = useMemo<Contact[]>(
+    () => (stageResults ?? []).map(mapBlastToContact),
+    [stageResults]
+  );
+
+  const filtered = useMemo<Contact[]>(() => {
+    if (debouncedSearch.trim()) return (searchResults ?? []).map(mapBlastToContact);
+    if (appliedStageIds.length > 0) return stageContacts;
+    return contacts;
+  }, [contacts, debouncedSearch, searchResults, appliedStageIds, stageContacts]);
 
   const selectedList = useMemo(() => {
     const selected = new Set(Object.keys(selectedIds));
-    return contacts.filter((c) => selected.has(c.id));
-  }, [contacts, selectedIds]);
+    const pool = new Map<string, Contact>(contacts.map((c) => [c.id, c]));
+    stageContacts.forEach((c) => { if (!pool.has(c.id)) pool.set(c.id, c); });
+    return Array.from(selected).map((id) => pool.get(id)).filter(Boolean) as Contact[];
+  }, [contacts, stageContacts, selectedIds]);
 
   // Métricas de progresso (API > local state)
   const processedContacts = progressData?.contacts_processed ?? 0;
@@ -310,7 +349,7 @@ export default function NovaCampanhaDisparoEmMassaPage() {
     const id = `a${Date.now()}`;
     const next: CampaignAction = {
       id, kind, message: "", typingSeconds: 5, waitNextSeconds: 5,
-      uniqueImagePreview: false, fileName: null, filePath: null,
+      uniqueImagePreview: false, fileName: null, filePath: null, fileUrl: null,
     };
     setActions((prev) => [...prev, next]);
     setSelectedActionId(id);
@@ -373,7 +412,9 @@ export default function NovaCampanhaDisparoEmMassaPage() {
 
     try {
       const result = await uploadMedia.mutateAsync(file);
-      updateAction(actionId, { fileName: result.file_name, filePath: result.file_path, isUploading: false });
+      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
+      const fullUrl = result.url.startsWith("http") ? result.url : `${apiBase}${result.url}`;
+      updateAction(actionId, { fileName: result.file_name, filePath: result.file_path, fileUrl: fullUrl, isUploading: false });
     } catch {
       toast({ title: "Erro no upload", description: "Não foi possível enviar o arquivo.", variant: "destructive" });
       updateAction(actionId, { isUploading: false });
@@ -398,9 +439,9 @@ export default function NovaCampanhaDisparoEmMassaPage() {
         interval_seconds: intervalSeconds,
         pause_every_contacts: pauseEveryContacts,
         pause_seconds: pauseSeconds,
-        disable_signature: disableSignature,
-        custom_signature_name: customSignatureName,
-        signature_name: customSignatureName ? signatureName : null,
+        disable_signature: !enableSignature,
+        custom_signature_name: enableSignature && signatureName.trim().length > 0,
+        signature_name: enableSignature && signatureName.trim() ? signatureName.trim() : null,
         contacts: selectedList.map((c) => ({ name: c.name, phone: c.phone, crm_lead_id: c.crm_lead_id ?? null })),
         actions: actions.map((a) => ({
           kind: a.kind,
@@ -497,20 +538,33 @@ export default function NovaCampanhaDisparoEmMassaPage() {
                 </Button>
               </div>
               <div className="space-y-1">
-                {["Inbox", "Etiquetas", "Grupos", "Contatos de grupos", "CRMs / Abas", "Perfil do contato", "Importar planilha"].map((label) => (
-                  <button
-                    key={label}
-                    type="button"
-                    className="w-full text-left px-3 py-2 rounded-xl text-sm text-[#141414] hover:bg-gray-50 transition-colors"
-                    onClick={() =>
-                      label === "Importar planilha"
-                        ? openImportModal()
-                        : toast({ title: "Em breve", description: `A seção "${label}" será disponibilizada em breve.` })
-                    }
-                  >
-                    {label}
-                  </button>
-                ))}
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-[#141414] hover:bg-gray-50 transition-colors"
+                  onClick={() => { setSelectedStageIds(appliedStageIds); setIsCrmAbasOpen(true); }}
+                >
+                  <span>CRMs / Abas</span>
+                  {appliedStageIds.length > 0 && (
+                    <span className="flex items-center gap-1">
+                      <span className="bg-[#9747FF] text-white text-xs font-medium px-1.5 py-0.5 rounded-full">
+                        {appliedStageIds.length}
+                      </span>
+                      <span
+                        className="text-[#777777] hover:text-[#141414] leading-none"
+                        onClick={(e) => { e.stopPropagation(); setAppliedStageIds([]); setSelectedStageIds([]); }}
+                      >
+                        ×
+                      </span>
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="w-full text-left px-3 py-2 rounded-xl text-sm text-[#141414] hover:bg-gray-50 transition-colors"
+                  onClick={openImportModal}
+                >
+                  Importar planilha
+                </button>
               </div>
               <Button variant="outline" className="w-full" onClick={handleExportSelected}>
                 Exportar Contatos Selecionados (.XLSX)
@@ -536,6 +590,8 @@ export default function NovaCampanhaDisparoEmMassaPage() {
               <div className="text-xs text-[#777777] mt-2">
                 {isLoadingContacts ? (
                   <span className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Carregando contatos...</span>
+                ) : isSearching || isLoadingStageContacts ? (
+                  <span className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Buscando...</span>
                 ) : (
                   `${filtered.length} destinatários disponíveis • ${selectedList.length} selecionados`
                 )}
@@ -546,7 +602,7 @@ export default function NovaCampanhaDisparoEmMassaPage() {
                 <div className="max-h-[420px] overflow-auto">
                   {filtered.length === 0 ? (
                     <div className="py-16 text-center text-sm text-[#777777]">
-                      {isLoadingContacts ? "Carregando..." : "Nenhum contato encontrado."}
+                      {isLoadingContacts || isSearching || isLoadingStageContacts ? "Carregando..." : "Nenhum contato encontrado."}
                     </div>
                   ) : (
                     <div className="divide-y divide-gray-100">
@@ -754,29 +810,49 @@ export default function NovaCampanhaDisparoEmMassaPage() {
                               </>
                             ) : (
                               <>
-                                <div className="h-56 rounded-xl border border-gray-100 bg-gray-50 flex items-center justify-center">
-                                  <div className="text-center">
-                                    {a.isUploading ? (
-                                      <><Loader2 className="h-10 w-10 text-[#9747FF] mx-auto animate-spin" /><div className="text-sm text-[#777777] mt-2">Enviando...</div></>
-                                    ) : a.kind === "image" ? (
-                                      <ImageIcon className="h-10 w-10 text-[#777777] mx-auto" />
-                                    ) : a.kind === "video" ? (
-                                      <Video className="h-10 w-10 text-[#777777] mx-auto" />
-                                    ) : a.kind === "audio" ? (
-                                      <Volume2 className="h-10 w-10 text-[#777777] mx-auto" />
-                                    ) : (
-                                      <FileText className="h-10 w-10 text-[#777777] mx-auto" />
-                                    )}
-                                    {!a.isUploading && (
-                                      <>
-                                        <div className="text-sm text-[#777777] mt-2">{a.fileName ? a.fileName : "Nenhum arquivo selecionado"}</div>
-                                        <Button variant="outline" className="mt-3 gap-2" onClick={() => openMediaPicker(a.id, a.kind)}>
+                                <div className="rounded-xl border border-gray-100 bg-gray-50 overflow-hidden">
+                                  {a.isUploading ? (
+                                    <div className="h-56 flex flex-col items-center justify-center">
+                                      <Loader2 className="h-10 w-10 text-[#9747FF] animate-spin" />
+                                      <div className="text-sm text-[#777777] mt-2">Enviando...</div>
+                                    </div>
+                                  ) : a.kind === "image" && a.fileUrl ? (
+                                    <div className="relative group">
+                                      <img
+                                        src={a.fileUrl}
+                                        alt={a.fileName ?? "imagem"}
+                                        className="w-full max-h-72 object-contain"
+                                      />
+                                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="gap-2 bg-white/90 hover:bg-white"
+                                          onClick={() => openMediaPicker(a.id, a.kind)}
+                                        >
                                           <Upload className="h-4 w-4" />
-                                          Selecionar arquivos
+                                          Trocar imagem
                                         </Button>
-                                      </>
-                                    )}
-                                  </div>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="h-56 flex flex-col items-center justify-center text-center">
+                                      {a.kind === "video" ? (
+                                        <Video className="h-10 w-10 text-[#777777] mx-auto" />
+                                      ) : a.kind === "audio" ? (
+                                        <Volume2 className="h-10 w-10 text-[#777777] mx-auto" />
+                                      ) : a.kind === "document" ? (
+                                        <FileText className="h-10 w-10 text-[#777777] mx-auto" />
+                                      ) : (
+                                        <ImageIcon className="h-10 w-10 text-[#777777] mx-auto" />
+                                      )}
+                                      <div className="text-sm text-[#777777] mt-2">{a.fileName ?? "Nenhum arquivo selecionado"}</div>
+                                      <Button variant="outline" className="mt-3 gap-2" onClick={() => openMediaPicker(a.id, a.kind)}>
+                                        <Upload className="h-4 w-4" />
+                                        Selecionar arquivos
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
                                 {a.kind === "image" && (
                                   <div className="flex items-center justify-between">
@@ -822,15 +898,39 @@ export default function NovaCampanhaDisparoEmMassaPage() {
                     <div className="text-sm text-[#777777] text-center py-10">Adicione ações para visualizar o fluxo.</div>
                   ) : (
                     actions.map((a, idx) => (
-                      <div key={a.id} className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-[#2B66FF] text-white flex items-center justify-center text-xs font-semibold">{idx + 1}</div>
-                        <div className="flex-1 rounded-xl bg-white border border-gray-100 px-3 py-2 text-sm text-[#141414]">
-                          {a.kind === "image" ? "📷 Imagem"
-                           : a.kind === "video" ? "🎥 Vídeo"
-                           : a.kind === "audio" ? "🔊 Áudio"
-                           : a.kind === "document" ? "📄 Documento"
-                           : a.message?.trim() ? a.message : "Mensagem de texto"}
-                        </div>
+                      <div key={a.id} className="flex items-start gap-2">
+                        <div className="w-6 h-6 rounded-full bg-[#2B66FF] text-white flex items-center justify-center text-xs font-semibold flex-shrink-0 mt-1">{idx + 1}</div>
+                        {a.kind === "image" ? (
+                          <div className="flex-1 rounded-2xl rounded-tl-sm bg-[#DCF8C6] overflow-hidden shadow-sm max-w-[220px]">
+                            {a.fileUrl ? (
+                              <img
+                                src={a.fileUrl}
+                                alt={a.fileName ?? "imagem"}
+                                className="w-full object-cover max-h-48"
+                              />
+                            ) : (
+                              <div className="h-28 flex items-center justify-center bg-black/10 text-[#777777] text-xs gap-1">
+                                <ImageIcon className="h-5 w-5" />
+                                <span>Sem imagem</span>
+                              </div>
+                            )}
+                            {a.message?.trim() && (
+                              <div className="px-2.5 pt-1.5 pb-2 text-[13px] text-[#141414] leading-snug">
+                                {a.message}
+                              </div>
+                            )}
+                            <div className="px-2.5 pb-1.5 text-right">
+                              <span className="text-[10px] text-[#777777]">agora ✓✓</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex-1 rounded-xl bg-white border border-gray-100 px-3 py-2 text-sm text-[#141414]">
+                            {a.kind === "video" ? "🎥 Vídeo"
+                             : a.kind === "audio" ? "🔊 Áudio"
+                             : a.kind === "document" ? "📄 Documento"
+                             : a.message?.trim() ? a.message : "Mensagem de texto"}
+                          </div>
+                        )}
                       </div>
                     ))
                   )}
@@ -839,34 +939,40 @@ export default function NovaCampanhaDisparoEmMassaPage() {
 
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-[#141414]">Intervalo (s)</span>
+                  <span className="text-[#141414]">Intervalo entre mensagens (s)</span>
                   <Input type="number" className="w-28 h-9" value={intervalSeconds} onChange={(e) => setIntervalSeconds(Number(e.target.value || 0))} />
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#141414]">Pausa (a cada X envios)</span>
+                  <span className="text-[#141414]">Pausa após X contatos</span>
                   <Input type="number" className="w-28 h-9" value={pauseEveryContacts} onChange={(e) => setPauseEveryContacts(Number(e.target.value || 0))} />
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#141414]">Tempo de pausa (s)</span>
+                  <span className="text-[#141414]">Tempo da pausa (s)</span>
                   <Input type="number" className="w-28 h-9" value={pauseSeconds} onChange={(e) => setPauseSeconds(Number(e.target.value || 0))} />
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#141414]">Desativar assinatura</span>
-                  <Switch checked={disableSignature} onCheckedChange={(v) => setDisableSignature(!!v)} />
+                  <span className="text-[#141414]">Ativar assinatura</span>
+                  <Switch checked={enableSignature} onCheckedChange={(v) => setEnableSignature(!!v)} />
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[#141414]">Personalizar o nome da assinatura</span>
-                  <Switch checked={customSignatureName} onCheckedChange={(v) => setCustomSignatureName(!!v)} />
-                </div>
-                <div className="space-y-2">
-                  <span className="text-xs text-[#777777]">Nome da assinatura</span>
-                  <Input value={signatureName} onChange={(e) => setSignatureName(e.target.value)} disabled={!customSignatureName} />
-                </div>
+                {enableSignature && (
+                  <div className="space-y-2">
+                    <span className="text-[#141414]">
+                      Personalizar o nome da assinatura
+                      <span className="text-red-500 ml-0.5">*</span>
+                    </span>
+                    <Input
+                      value={signatureName}
+                      onChange={(e) => setSignatureName(e.target.value)}
+                      placeholder="Nome que aparecerá na assinatura"
+                      className={!signatureName.trim() ? "border-red-300 focus-visible:ring-red-400" : ""}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-between pt-2">
                 <Button variant="outline" onClick={() => setActiveStep("contacts")}>Voltar</Button>
-                <Button onClick={() => setActiveStep("review")} disabled={actions.length === 0}>Próximo</Button>
+                <Button onClick={() => setActiveStep("review")} disabled={actions.length === 0 || (enableSignature && !signatureName.trim())}>Próximo</Button>
               </div>
             </CardContent>
           </Card>
@@ -1388,7 +1494,12 @@ export default function NovaCampanhaDisparoEmMassaPage() {
               <label className="text-sm font-medium text-[#141414]">Número (WhatsApp)</label>
               <Input
                 value={newContactPhone}
-                onChange={(e) => setNewContactPhone(e.target.value)}
+                onChange={(e) => setNewContactPhone(formatPhoneInput(e.target.value))}
+                onPaste={(e) => {
+                  e.preventDefault();
+                  const pasted = e.clipboardData.getData("text");
+                  setNewContactPhone(formatPhoneInput(pasted));
+                }}
                 placeholder="Ex: 83 99999-9999"
                 inputMode="tel"
                 onKeyDown={(e) => e.key === "Enter" && handleConfirmAddContact()}
@@ -1402,6 +1513,73 @@ export default function NovaCampanhaDisparoEmMassaPage() {
             <Button onClick={handleConfirmAddContact} disabled={!newContactPhone.trim()}>
               Adicionar
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal: Selecionar abas do CRM */}
+      <Dialog open={isCrmAbasOpen} onOpenChange={setIsCrmAbasOpen}>
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-[#141414]">Selecionar abas do CRM</DialogTitle>
+            <DialogDescription className="text-sm mt-1">
+              Escolha as abas para carregar apenas os leads delas na campanha.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-3 max-h-72 overflow-auto space-y-1 pr-1">
+            {isLoadingStages ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-[#9747FF]" />
+              </div>
+            ) : pipelineStages.length === 0 ? (
+              <p className="text-sm text-[#777777] text-center py-6">Nenhuma aba encontrada.</p>
+            ) : (
+              pipelineStages.map((stage: CrmPipelineStage) => {
+                const isChecked = selectedStageIds.includes(stage.id);
+                return (
+                  <button
+                    key={stage.id}
+                    type="button"
+                    onClick={() =>
+                      setSelectedStageIds((prev) =>
+                        isChecked ? prev.filter((id) => id !== stage.id) : [...prev, stage.id]
+                      )
+                    }
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <Checkbox checked={isChecked} onCheckedChange={() => {}} />
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: stage.color ?? "#9747FF" }}
+                    />
+                    <span className="text-sm text-[#141414]">{stage.name}</span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+            <button
+              type="button"
+              className="text-sm text-[#777777] hover:text-[#141414] transition-colors"
+              onClick={() => setSelectedStageIds([])}
+            >
+              Limpar seleção
+            </button>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setIsCrmAbasOpen(false)}>Cancelar</Button>
+              <Button
+                onClick={() => {
+                  setAppliedStageIds(selectedStageIds);
+                  setIsCrmAbasOpen(false);
+                }}
+                disabled={selectedStageIds.length === 0}
+              >
+                Aplicar{selectedStageIds.length > 0 ? ` (${selectedStageIds.length})` : ""}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
