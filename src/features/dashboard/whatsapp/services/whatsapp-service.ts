@@ -32,16 +32,24 @@ export function useWhatsappInstances() {
 }
 
 /**
- * Busca o QR Code da instância. Faz refetch a cada 30s enquanto ativo
+ * Busca o QR Code da instância. Faz refetch a cada 4s enquanto ativo
  * (o QR expira em ~45s e a Evolution gera um novo automaticamente).
  */
 export function useWhatsappInstanceQr(id: number | null, enabled: boolean) {
   return useQuery({
     queryKey: ["whatsapp", "instance-qr", id],
-    queryFn: () =>
-      api.get(`whatsapp/instances/${id}/qr`).json<WhatsappInstanceQr>(),
+    queryFn: async () => {
+      console.log(`[WhatsApp QR] Polling QR for instance ${id}...`);
+      const result = await api.get(`whatsapp/instances/${id}/qr`).json<WhatsappInstanceQr>();
+      console.log(`[WhatsApp QR] Response:`, {
+        status: result.status,
+        base64_is_null: result.base64 === null,
+        base64_preview: result.base64 ? result.base64.substring(0, 50) : null,
+      });
+      return result;
+    },
     enabled: enabled && id !== null,
-    refetchInterval: 30_000,
+    refetchInterval: 4_000,
     staleTime: 0,
     gcTime: 0,
   });
@@ -54,8 +62,11 @@ export function useWhatsappInstanceQr(id: number | null, enabled: boolean) {
 export function useWhatsappInstanceStatus(id: number | null, enabled: boolean) {
   return useQuery({
     queryKey: ["whatsapp", "instance-status", id],
-    queryFn: () =>
-      api.get(`whatsapp/instances/${id}/status`).json<WhatsappInstanceStatusResponse>(),
+    queryFn: async () => {
+      const result = await api.get(`whatsapp/instances/${id}/status`).json<WhatsappInstanceStatusResponse>();
+      console.log(`[WhatsApp Status] Instance ${id}:`, result.status);
+      return result;
+    },
     enabled: enabled && id !== null,
     refetchInterval: 3_000,
     staleTime: 0,

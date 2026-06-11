@@ -96,6 +96,9 @@ export default function NovaCampanhaDisparoEmMassaPage() {
   const [selectedIds, setSelectedIds] = useState<Record<string, true>>({});
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [isAddContactOpen, setIsAddContactOpen] = useState(false);
+  const [newContactName, setNewContactName] = useState("");
+  const [newContactPhone, setNewContactPhone] = useState("");
   const [isInternational, setIsInternational] = useState(false);
   const [ignoreNinthDigit, setIgnoreNinthDigit] = useState(false);
   const [selectedSpreadsheetFile, setSelectedSpreadsheetFile] = useState<File | null>(null);
@@ -200,8 +203,46 @@ export default function NovaCampanhaDisparoEmMassaPage() {
     setSelectedIds((prev) => { const next = { ...prev }; delete next[id]; return next; });
   };
 
-  const handleAddContact = () => {
-    toast({ title: "Em breve", description: "A adição manual de contatos será disponibilizada em breve." });
+  const openAddContact = () => {
+    setNewContactName("");
+    setNewContactPhone("");
+    setIsAddContactOpen(true);
+  };
+
+  const handleConfirmAddContact = () => {
+    const digits = newContactPhone.replace(/\D/g, "");
+
+    // Número brasileiro: DDD (2) + número (8 ou 9) = 10 ou 11 dígitos.
+    // Aceita também já com DDI 55 (12 ou 13 dígitos).
+    if (digits.length < 10 || digits.length > 13) {
+      toast({
+        title: "Número inválido",
+        description: "Informe DDD + número (ex: 83 99999-9999).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Evita duplicar números já presentes na lista (CRM + importados/manuais).
+    const alreadyExists = contacts.some((c) => c.phone.replace(/\D/g, "") === digits);
+    if (alreadyExists) {
+      toast({ title: "Contato já existe", description: "Esse número já está na lista.", variant: "destructive" });
+      return;
+    }
+
+    const name = newContactName.trim() || newContactPhone.trim();
+    const newContact: Contact = {
+      id: `manual-${Date.now()}`,
+      name,
+      phone: digits,
+      type: "Manual",
+      crm_lead_id: null,
+    };
+
+    setImportedContacts((prev) => [...prev, newContact]);
+    setSelectedIds((prev) => ({ ...prev, [newContact.id]: true }));
+    setIsAddContactOpen(false);
+    toast({ title: "Contato adicionado", description: `${name} foi adicionado e selecionado.` });
   };
 
   const handleOpenFilters = () => {
@@ -545,7 +586,7 @@ export default function NovaCampanhaDisparoEmMassaPage() {
                   <CardTitle className="text-base">Destinatários selecionados</CardTitle>
                   <p className="text-xs text-[#777777]">{selectedList.length} destinatários</p>
                 </div>
-                <Button variant="outline" size="sm" className="gap-2" onClick={handleAddContact}>
+                <Button variant="outline" size="sm" className="gap-2" onClick={openAddContact}>
                   <Plus className="h-4 w-4" />
                   Adicionar contato
                 </Button>
@@ -1320,6 +1361,47 @@ export default function NovaCampanhaDisparoEmMassaPage() {
                 </li>
               </ol>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal: Adicionar contato manualmente */}
+      <Dialog open={isAddContactOpen} onOpenChange={setIsAddContactOpen}>
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-[#141414]">Adicionar contato</DialogTitle>
+            <DialogDescription className="text-sm mt-1">
+              Informe o nome e o número (com DDD) do destinatário.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[#141414]">Nome</label>
+              <Input
+                value={newContactName}
+                onChange={(e) => setNewContactName(e.target.value)}
+                placeholder="Ex: João Silva (opcional)"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[#141414]">Número (WhatsApp)</label>
+              <Input
+                value={newContactPhone}
+                onChange={(e) => setNewContactPhone(e.target.value)}
+                placeholder="Ex: 83 99999-9999"
+                inputMode="tel"
+                onKeyDown={(e) => e.key === "Enter" && handleConfirmAddContact()}
+              />
+              <p className="text-xs text-[#777777]">DDD + número. O código do país (55) é adicionado automaticamente.</p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setIsAddContactOpen(false)}>Cancelar</Button>
+            <Button onClick={handleConfirmAddContact} disabled={!newContactPhone.trim()}>
+              Adicionar
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

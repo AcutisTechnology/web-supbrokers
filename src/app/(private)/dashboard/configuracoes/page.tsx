@@ -58,6 +58,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Camera, CheckCircle, XCircle, Building2, Calendar, CreditCard, Globe, Mail, PlugZap, Settings2, Shield, ShieldCheck, Users, UserCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GruposPermissaoFeature } from "@/features/dashboard/grupos-permissao";
+import { WhatsappInstancesManager } from "@/features/dashboard/whatsapp/components/whatsapp-instances-manager";
 
 type SectionKey = "profile" | "company" | "page" | "team" | "billing" | "integrations" | "automations" | "permissions";
 
@@ -1551,7 +1552,7 @@ function IntegrationsSection() {
 
   const integrationsState = data?.data.integrations;
 
-  const integrations = useMemo(
+  const otherIntegrations = useMemo(
     () => [
       {
         id: "canal_pro",
@@ -1566,12 +1567,6 @@ function IntegrationsSection() {
         icon: <CreditCard className="h-5 w-5 text-[#141414]" />,
       },
       {
-        id: "whatsapp",
-        name: "WhatsApp",
-        description: "Sessão via QR Code (WhatsApp Web).",
-        icon: <PlugZap className="h-5 w-5 text-[#141414]" />,
-      },
-      {
         id: "google_calendar",
         name: "Google Calendar",
         description: "Sincronize agenda e compromissos.",
@@ -1583,7 +1578,6 @@ function IntegrationsSection() {
 
   const toggleIntegration = async (integrationId: keyof NonNullable<typeof integrationsState>) => {
     if (!integrationsState) return;
-
     try {
       await updateSettings({
         integrations: {
@@ -1602,44 +1596,48 @@ function IntegrationsSection() {
     <div className="space-y-6">
       <SettingsHeader title="Integrações" description="Conecte serviços para automatizar rotinas e dados." />
 
+      {/* WhatsApp — painel real de instâncias */}
+      <SettingsCard
+        title="WhatsApp"
+        description="Conecte seu número via QR Code (WhatsApp Web) para usar nos disparos em massa."
+      >
+        <WhatsappInstancesManager />
+      </SettingsCard>
+
       <LoadingState isLoading={isLoading} isError={isError} error={error as Error} onRetry={() => refetch()} />
 
-      {!isLoading && !isError && <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {integrations.map((i) => (
-          <Card key={i.id} className="border border-gray-100 shadow-sm rounded-2xl hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              {(() => {
-                const isEnabled = integrationsState?.[i.id as keyof NonNullable<typeof integrationsState>]?.enabled ?? false;
-
-                return (
-                  <>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">{i.icon}</div>
-                  <div>
-                    <div className="text-sm font-semibold text-[#141414]">{i.name}</div>
-                    <div className="text-xs text-[#777777] mt-0.5">{i.description}</div>
+      {!isLoading && !isError && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {otherIntegrations.map((i) => {
+            const isEnabled = integrationsState?.[i.id as keyof NonNullable<typeof integrationsState>]?.enabled ?? false;
+            return (
+              <Card key={i.id} className="border border-gray-100 shadow-sm rounded-2xl hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">{i.icon}</div>
+                      <div>
+                        <div className="text-sm font-semibold text-[#141414]">{i.name}</div>
+                        <div className="text-xs text-[#777777] mt-0.5">{i.description}</div>
+                      </div>
+                    </div>
+                    <Badge className={isEnabled ? "bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]" : "bg-gray-100 text-[#777777] border border-gray-200"}>
+                      {isEnabled ? "Conectado" : "Desconectado"}
+                    </Badge>
                   </div>
-                </div>
-                <Badge className={isEnabled ? "bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]" : "bg-gray-100 text-[#777777] border border-gray-200"}>
-                  {isEnabled ? "Conectado" : "Desconectado"}
-                </Badge>
-              </div>
-
-              <Button
-                className="w-full mt-4 bg-gradient-to-r from-[#9747FF] to-[#7C3AED] hover:from-[#9747FF]/90 hover:to-[#7C3AED]/90"
-                onClick={() => toggleIntegration(i.id as keyof NonNullable<typeof integrationsState>)}
-                disabled={isUpdating}
-              >
-                {isEnabled ? "Desconectar" : "Conectar"}
-              </Button>
-                  </>
-                );
-              })()}
-            </CardContent>
-          </Card>
-        ))}
-      </div>}
+                  <Button
+                    className="w-full mt-4 bg-gradient-to-r from-[#9747FF] to-[#7C3AED] hover:from-[#9747FF]/90 hover:to-[#7C3AED]/90"
+                    onClick={() => toggleIntegration(i.id as keyof NonNullable<typeof integrationsState>)}
+                    disabled={isUpdating}
+                  >
+                    {isEnabled ? "Desconectar" : "Conectar"}
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
