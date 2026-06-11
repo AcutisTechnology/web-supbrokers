@@ -75,7 +75,7 @@ export function KanbanBoard({ stages, leads, onMove }: KanbanBoardProps) {
       onDragEnd={handleDragEnd}
     >
       <div
-        className="flex gap-3 md:gap-4 overflow-auto snap-x snap-mandatory md:snap-none -mx-4 px-4 md:mx-0 md:px-0 h-[calc(100vh-26rem)] min-h-[500px] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400"
+        className="flex items-start gap-3 md:gap-4 overflow-auto snap-x snap-mandatory md:snap-none -mx-4 px-4 md:mx-0 md:px-0 h-[calc(100vh-26rem)] min-h-[500px] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400"
       >
         {stages.map((stage) => (
           <KanbanColumn key={stage.id} stage={stage} leads={leadsByStage.get(stage.id) ?? []} />
