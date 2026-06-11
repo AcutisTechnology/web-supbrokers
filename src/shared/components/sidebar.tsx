@@ -11,11 +11,16 @@ import { Button } from "@/components/ui/button";
 export function Sidebar() {
   const { logout } = useAuth();
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [permissions, setPermissions] = useState<string[]>([]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -73,7 +78,7 @@ export function Sidebar() {
   }, [lastScrollY]);
 
   const isActive = (href: string, exact = false) => {
-    if (href === '#') return false;
+    if (!mounted || href === '#') return false;
     if (exact) return pathname === href;
     return pathname === href || pathname.startsWith(href + '/');
   };
