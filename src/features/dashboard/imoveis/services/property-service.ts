@@ -73,6 +73,7 @@ export interface PaginatedResponse<T> {
 }
 
 export type PropertiesFilters = {
+  code?: string;
   search?: string;
   neighborhood?: { id: number | null; name: string };
   city?: { id: number | null; name: string };
@@ -86,6 +87,9 @@ const buildFiltersQuery = (filters?: PropertiesFilters): string => {
   if (!filters) return "";
 
   const params = new URLSearchParams();
+
+  const code = filters.code?.trim();
+  if (code) params.set("code", code);
 
   const search = filters.search?.trim();
   if (search) params.set("search", search);
