@@ -126,7 +126,7 @@ export function BasicInfoStep({ form }: BasicInfoStepProps) {
                 </FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={field.value ?? undefined}
                 >
                   <FormControl>
                     <SelectTrigger className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500">
