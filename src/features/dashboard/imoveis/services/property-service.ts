@@ -4,6 +4,28 @@ import { api } from "@/shared/configs/api";
 import { useToast } from "@/hooks/use-toast"
 import { PROPERTY_CHARACTERISTICS_LABELS } from "@/lib/property"
 
+// Envia as imagens preservando a ordem definida pelo usuário (arrastar/soltar).
+// `attachments[]`        → apenas os arquivos novos (File), em ordem.
+// `attachments_order[]`  → a ordem completa: o `name` de cada anexo já existente
+//                          ou "__new__" referenciando o próximo arquivo novo.
+// O backend reposiciona os existentes, cria os novos e remove os que saíram.
+function appendAttachmentsToFormData(formData: FormData, attachments: unknown) {
+  if (!Array.isArray(attachments)) return;
+  let newCount = 0;
+  for (const item of attachments) {
+    if (item instanceof File) {
+      if (newCount >= 10) continue; // backend aceita no máximo 10 arquivos novos
+      formData.append("attachments[]", item);
+      formData.append("attachments_order[]", "__new__");
+      newCount++;
+    } else if (item && typeof item === "object" && "url" in item) {
+      const existing = item as { name?: string; url: string };
+      const token = existing.name ?? existing.url.split("/").pop() ?? "";
+      if (token) formData.append("attachments_order[]", token);
+    }
+  }
+}
+
 // Interface para os dados de um imóvel
 export interface Property {
   id: number;
@@ -176,15 +198,8 @@ export function useCreateProperty() {
           formData.append("characteristics[0][text]", "");
         }
 
-        // Adicionar imagens (máximo 5) - apenas novos arquivos
-        if (data.attachments && Array.isArray(data.attachments)) {
-          const newFiles = data.attachments.filter(
-            (a): a is File => a instanceof File
-          );
-          newFiles.slice(0, 5).forEach((file) => {
-            formData.append("attachments[]", file);
-          });
-        }
+        // Imagens — arquivos novos + ordem definida pelo usuário
+        appendAttachmentsToFormData(formData, data.attachments);
 
         const response = await api
           .post("properties", {
@@ -248,23 +263,9 @@ export function useUpdateProperty() {
           formData.append("characteristics[0][text]", "");
         }
 
-        // Adicionar imagens (máximo 5) - apenas novos arquivos.
-        // Anexos já existentes vêm como objetos { url, ... } e são preservados
-        // no backend, portanto não devem ser reenviados.
-        if (data.attachments && Array.isArray(data.attachments)) {
-          const newFiles = data.attachments.filter(
-            (a): a is File => a instanceof File
-          );
-          newFiles.slice(0, 5).forEach((file) => {
-            formData.append("attachments[]", file);
-          });
-        }
-
-        // Para debug - mostrar o conteúdo do FormData
-        console.log("FormData enviado para atualização:");
-        for (const pair of formData.entries()) {
-          console.log(pair[0], pair[1]);
-        }
+        // Imagens — arquivos novos + ordem completa (existentes reposicionados,
+        // novos criados, removidos soft-deletados pelo backend).
+        appendAttachmentsToFormData(formData, data.attachments);
 
         // Adicionar método _method para simular PUT
         formData.append("_method", "PUT");
