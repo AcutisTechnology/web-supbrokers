@@ -1,10 +1,9 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
 import { Flame, MessageCircle, Phone, User2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { memo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,19 +25,19 @@ const formatCurrency = (value: string | null | undefined) => {
 
 const normalizePhoneDigits = (phone: string) => phone.replace(/\D/g, "");
 
-export function LeadCard({ lead, draggable = true }: LeadCardProps) {
+function LeadCardComponent({ lead, draggable = true }: LeadCardProps) {
   const [logCallOpen, setLogCallOpen] = useState(false);
 
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `lead-${lead.id}`,
     data: { leadId: lead.id, fromStageId: lead.pipeline_stage_id },
     disabled: !draggable || logCallOpen,
   });
 
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.4 : 1,
-  };
+  // O movimento é feito pelo DragOverlay (clone). O card de origem fica parado
+  // e apenas esmaece — por isso NÃO aplicamos transform aqui. Aplicar transform
+  // no card de origem duplica o trabalho de composição a cada frame.
+  const style = { opacity: isDragging ? 0.4 : 1 };
 
   const phoneDigits = normalizePhoneDigits(lead.phone);
 
@@ -49,7 +48,7 @@ export function LeadCard({ lead, draggable = true }: LeadCardProps) {
       {...attributes}
       {...listeners}
       className={cn(
-        "bg-white border border-gray-100 rounded-xl p-3 shadow-sm hover:shadow-md transition-all",
+        "bg-white border border-gray-100 rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow",
         draggable && "cursor-grab active:cursor-grabbing",
       )}
     >
@@ -176,3 +175,5 @@ export function LeadCard({ lead, draggable = true }: LeadCardProps) {
     </div>
   );
 }
+
+export const LeadCard = memo(LeadCardComponent);
